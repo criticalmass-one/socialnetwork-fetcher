@@ -2,7 +2,7 @@
 
 namespace App\Consumer;
 
-use App\Criticalmass\SocialNetwork\FeedItemPersister\NonDuplicatesFeedItemPersister;
+use App\FeedItemPersister\NonDuplicatesFeedItemPersister;
 use JMS\Serializer\SerializerInterface;
 
 abstract class AbstractFeedItemConsumer

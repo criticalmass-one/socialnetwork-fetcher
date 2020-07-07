@@ -2,8 +2,8 @@
 
 namespace App\FeedFetcher;
 
-use App\Criticalmass\SocialNetwork\FeedFetcher\NetworkFeedFetcher\NetworkFeedFetcherInterface;
-use App\Criticalmass\SocialNetwork\FeedItemPersister\FeedItemPersisterInterface;
+use App\FeedFetcher\NetworkFeedFetcher\NetworkFeedFetcherInterface;
+use App\FeedItemPersister\FeedItemPersisterInterface;
 use App\Entity\SocialNetworkProfile;
 use Doctrine\Persistence\ManagerRegistry;
 

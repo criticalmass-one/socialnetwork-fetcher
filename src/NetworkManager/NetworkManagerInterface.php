@@ -2,7 +2,7 @@
 
 namespace App\NetworkManager;
 
-use App\Criticalmass\Socialnetwork\Network\NetworkInterface;
+use App\Network\NetworkInterface;
 
 interface NetworkManagerInterface
 {

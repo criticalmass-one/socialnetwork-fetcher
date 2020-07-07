@@ -2,7 +2,7 @@
 
 namespace App\FeedFetcher\NetworkFeedFetcher;
 
-use App\Criticalmass\SocialNetwork\FeedFetcher\FetchInfo;
+use App\FeedFetcher\FetchInfo;
 use App\Entity\SocialNetworkProfile;
 
 interface NetworkFeedFetcherInterface

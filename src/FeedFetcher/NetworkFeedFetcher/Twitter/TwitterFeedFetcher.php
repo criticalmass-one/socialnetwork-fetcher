@@ -2,8 +2,8 @@
 
 namespace App\FeedFetcher\NetworkFeedFetcher\Twitter;
 
-use App\Criticalmass\SocialNetwork\FeedFetcher\FetchInfo;
-use App\Criticalmass\SocialNetwork\FeedFetcher\NetworkFeedFetcher\AbstractNetworkFeedFetcher;
+use App\FeedFetcher\FetchInfo;
+use App\FeedFetcher\NetworkFeedFetcher\AbstractNetworkFeedFetcher;
 use App\Entity\SocialNetworkProfile;
 use Codebird\Codebird;
 use Psr\Log\LoggerInterface;

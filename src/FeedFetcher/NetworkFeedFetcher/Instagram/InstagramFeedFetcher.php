@@ -2,8 +2,8 @@
 
 namespace App\FeedFetcher\NetworkFeedFetcher\Instagram;
 
-use App\Criticalmass\SocialNetwork\FeedFetcher\FetchInfo;
-use App\Criticalmass\SocialNetwork\FeedFetcher\NetworkFeedFetcher\AbstractNetworkFeedFetcher;
+use App\FeedFetcher\FetchInfo;
+use App\FeedFetcher\NetworkFeedFetcher\AbstractNetworkFeedFetcher;
 use App\Entity\SocialNetworkProfile;
 use InstagramScraper\Exception\InstagramNotFoundException;
 use InstagramScraper\Instagram;

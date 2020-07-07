@@ -2,7 +2,7 @@
 
 namespace App\EntityNetworkDetector;
 
-use App\Criticalmass\SocialNetwork\Network\NetworkInterface;
+use App\Network\NetworkInterface;
 use App\Entity\SocialNetworkProfile;
 
 interface EntityNetworkDetectorInterface

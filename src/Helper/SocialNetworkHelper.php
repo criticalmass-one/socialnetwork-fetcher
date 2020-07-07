@@ -3,7 +3,7 @@
 namespace App\Helper;
 
 use App\Criticalmass\Router\ObjectRouterInterface;
-use App\Criticalmass\SocialNetwork\EntityInterface\SocialNetworkProfileAble;
+use App\EntityInterface\SocialNetworkProfileAble;
 use App\Criticalmass\Util\ClassUtil;
 use App\Entity\City;
 use App\Entity\Ride;

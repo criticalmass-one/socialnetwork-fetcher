@@ -2,7 +2,7 @@
 
 namespace App\Helper;
 
-use App\Criticalmass\SocialNetwork\EntityInterface\SocialNetworkProfileAble;
+use App\EntityInterface\SocialNetworkProfileAble;
 use App\Entity\City;
 use App\Entity\Ride;
 use App\Entity\SocialNetworkProfile;

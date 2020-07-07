@@ -2,10 +2,9 @@
 
 namespace App\Command;
 
-use App\Criticalmass\SocialNetwork\FeedFetcher\FeedFetcher;
-use App\Criticalmass\SocialNetwork\FeedFetcher\FetchInfo;
-use App\Criticalmass\SocialNetwork\FeedFetcher\FetchResult;
-use Doctrine\Persistence\ManagerRegistry;
+use App\FeedFetcher\FeedFetcher;
+use App\FeedFetcher\FetchInfo;
+use App\FeedFetcher\FetchResult;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;

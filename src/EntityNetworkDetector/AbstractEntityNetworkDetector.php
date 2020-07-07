@@ -2,8 +2,8 @@
 
 namespace App\EntityNetworkDetector;
 
-use App\Criticalmass\SocialNetwork\Network\NetworkInterface;
-use App\Criticalmass\SocialNetwork\NetworkManager\NetworkManagerInterface;
+use App\Network\NetworkInterface;
+use App\NetworkManager\NetworkManagerInterface;
 
 abstract class AbstractEntityNetworkDetector implements EntityNetworkDetectorInterface
 {
