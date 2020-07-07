@@ -8,11 +8,9 @@ use JMS\Serializer\SerializerInterface;
 abstract class AbstractFeedItemConsumer
 {
     protected SerializerInterface $serializer;
-    protected NonDuplicatesFeedItemPersister $feedItemPersister;
 
-    public function __construct(SerializerInterface $serializer, NonDuplicatesFeedItemPersister $feedItemPersister)
+    public function __construct(SerializerInterface $serializer)
     {
         $this->serializer = $serializer;
-        $this->feedItemPersister = $feedItemPersister;
     }
 }

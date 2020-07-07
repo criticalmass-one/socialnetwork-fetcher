@@ -15,11 +15,9 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class FetchFeedCommand extends Command
 {
     protected FeedFetcher $feedFetcher;
-    protected ManagerRegistry $doctrine;
 
-    public function __construct(ManagerRegistry $doctrine, FeedFetcher $feedFetcher)
+    public function __construct(FeedFetcher $feedFetcher)
     {
-        $this->doctrine = $doctrine;
         $this->feedFetcher = $feedFetcher;
 
         parent::__construct(null);

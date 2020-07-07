@@ -13,15 +13,12 @@ abstract class AbstractFeedFetcher implements FeedFetcherInterface
 
     protected array $fetchableNetworkList = [];
 
-    protected ManagerRegistry $doctrine;
-
     protected array $feedItemList = [];
 
     protected FeedItemPersisterInterface $feedItemPersister;
 
-    public function __construct(ManagerRegistry $doctrine, FeedItemPersisterInterface $feedItemPersister)
+    public function __construct(FeedItemPersisterInterface $feedItemPersister)
     {
-        $this->doctrine = $doctrine;
         $this->feedItemPersister = $feedItemPersister;
     }
 
@@ -46,10 +43,7 @@ abstract class AbstractFeedFetcher implements FeedFetcherInterface
 
     protected function getSocialNetworkProfiles(FetchInfo $fetchInfo): array
     {
-        return $this
-            ->doctrine
-            ->getRepository(SocialNetworkProfile::class)
-            ->findByFetchInfo($fetchInfo);
+
     }
 
     public function getFeedItemList(): array
