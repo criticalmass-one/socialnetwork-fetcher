@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace App\Criticalmass\SocialNetwork\FeedItemPersister;
+namespace App\FeedItemPersister;
 
 use App\Entity\SocialNetworkFeedItem;
 use JMS\Serializer\SerializerInterface;

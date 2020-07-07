@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace App\Criticalmass\SocialNetwork\FeedFetcher\NetworkFeedFetcher\Homepage;
+namespace App\FeedFetcher\NetworkFeedFetcher\Homepage;
 
 use App\Entity\SocialNetworkFeedItem;
 use App\Entity\SocialNetworkProfile;

@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace App\Criticalmass\SocialNetwork\Consumer;
+namespace App\Consumer;
 
 use App\Entity\SocialNetworkFeedItem;
 use OldSound\RabbitMqBundle\RabbitMq\ConsumerInterface;

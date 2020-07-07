@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace App\Criticalmass\SocialNetwork\FeedFetcher\NetworkFeedFetcher;
+namespace App\FeedFetcher\NetworkFeedFetcher;
 
 use App\Criticalmass\SocialNetwork\FeedFetcher\FetchInfo;
 use App\Entity\SocialNetworkProfile;

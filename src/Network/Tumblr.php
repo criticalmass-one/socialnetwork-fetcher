@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace App\Criticalmass\SocialNetwork\Network;
+namespace App\Network;
 
 class Tumblr extends AbstractNetwork
 {

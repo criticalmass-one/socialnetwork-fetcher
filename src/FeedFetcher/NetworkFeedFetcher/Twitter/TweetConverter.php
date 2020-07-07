@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace App\Criticalmass\SocialNetwork\FeedFetcher\NetworkFeedFetcher\Twitter;
+namespace App\FeedFetcher\NetworkFeedFetcher\Twitter;
 
 use App\Entity\SocialNetworkFeedItem;
 use App\Entity\SocialNetworkProfile;
