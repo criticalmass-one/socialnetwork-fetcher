@@ -56,7 +56,7 @@ class SocialNetworkProfile
     protected ?\DateTime $lastFetchFailureDateTime = null;
 
     /**
-     * @JMS\Type("DateTime")
+     * @JMS\Type("string")
      * @JMS\Expose
      */
     protected ?string $lastFetchFailureError = null;
