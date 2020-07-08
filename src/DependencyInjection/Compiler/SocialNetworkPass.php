@@ -11,11 +11,6 @@ class SocialNetworkPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
     {
-        $this->processNetworkFetcher($container);
-    }
-
-    protected function processNetworkFetcher(ContainerBuilder $container): void
-    {
         if (!$container->has(NetworkManagerInterface::class)) {
             return;
         }

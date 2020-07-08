@@ -1,8 +1,13 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace App;
 
+use App\DependencyInjection\Compiler\SocialNetworkFetcherPass;
+use App\DependencyInjection\Compiler\SocialNetworkPass;
+use App\FeedFetcher\NetworkFeedFetcher\NetworkFeedFetcherInterface;
+use App\Network\NetworkInterface;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
@@ -22,6 +27,15 @@ class Kernel extends BaseKernel
         } elseif (is_file($path = \dirname(__DIR__).'/config/services.php')) {
             (require $path)($container->withPath($path), $this);
         }
+    }
+
+    protected function build(ContainerBuilder $container): void
+    {
+        $container->addCompilerPass(new SocialNetworkPass());
+        $container->registerForAutoconfiguration(NetworkInterface::class)->addTag('social_network.network');
+
+        $container->addCompilerPass(new SocialNetworkFetcherPass());
+        $container->registerForAutoconfiguration(NetworkFeedFetcherInterface::class)->addTag('social_network.network_feed_fetcher');
     }
 
     protected function configureRoutes(RoutingConfigurator $routes): void
