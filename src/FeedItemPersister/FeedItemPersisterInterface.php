@@ -2,7 +2,7 @@
 
 namespace App\FeedItemPersister;
 
-use App\Entity\SocialNetworkFeedItem;
+use App\Model\SocialNetworkFeedItem;
 
 interface FeedItemPersisterInterface
 {

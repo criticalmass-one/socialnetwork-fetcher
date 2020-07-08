@@ -4,8 +4,8 @@ namespace App\Twig;
 
 use App\Network\NetworkInterface;
 use App\NetworkManager\NetworkManagerInterface;
-use App\Entity\SocialNetworkFeedItem;
-use App\Entity\SocialNetworkProfile;
+use App\Model\SocialNetworkFeedItem;
+use App\Model\SocialNetworkProfile;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 

@@ -3,11 +3,11 @@
 namespace App\Helper;
 
 use App\EntityInterface\SocialNetworkProfileAble;
-use App\Entity\City;
-use App\Entity\Ride;
-use App\Entity\SocialNetworkProfile;
-use App\Entity\Subride;
-use App\Entity\User;
+use App\Model\City;
+use App\Model\Ride;
+use App\Model\SocialNetworkProfile;
+use App\Model\Subride;
+use App\Model\User;
 use Symfony\Component\HttpFoundation\Request;
 
 interface SocialNetworkHelperInterface

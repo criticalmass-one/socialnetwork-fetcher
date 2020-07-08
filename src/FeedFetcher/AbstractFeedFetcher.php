@@ -4,7 +4,7 @@ namespace App\FeedFetcher;
 
 use App\FeedFetcher\NetworkFeedFetcher\NetworkFeedFetcherInterface;
 use App\FeedItemPersister\FeedItemPersisterInterface;
-use App\Entity\SocialNetworkProfile;
+use App\Model\SocialNetworkProfile;
 use App\ProfileFetcher\ProfileFetcherInterface;
 use Doctrine\Persistence\ManagerRegistry;
 

@@ -2,8 +2,8 @@
 
 namespace App\FeedFetcher\NetworkFeedFetcher\Instagram;
 
-use App\Entity\SocialNetworkFeedItem;
-use App\Entity\SocialNetworkProfile;
+use App\Model\SocialNetworkFeedItem;
+use App\Model\SocialNetworkProfile;
 use InstagramScraper\Model\Media;
 use JMS\Serializer\SerializerBuilder;
 

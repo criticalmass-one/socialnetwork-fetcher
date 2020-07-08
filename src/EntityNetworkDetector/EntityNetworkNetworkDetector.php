@@ -3,7 +3,7 @@
 namespace App\EntityNetworkDetector;
 
 use App\Network\NetworkInterface;
-use App\Entity\SocialNetworkProfile;
+use App\Model\SocialNetworkProfile;
 
 class EntityNetworkNetworkDetector extends AbstractEntityNetworkDetector
 {

@@ -2,8 +2,8 @@
 
 namespace App\FeedFetcher\NetworkFeedFetcher\Homepage;
 
-use App\Entity\SocialNetworkFeedItem;
-use App\Entity\SocialNetworkProfile;
+use App\Model\SocialNetworkFeedItem;
+use App\Model\SocialNetworkProfile;
 use Zend\Feed\Reader\Entry\EntryInterface;
 
 class EntryConverter

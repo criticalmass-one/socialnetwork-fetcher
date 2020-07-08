@@ -2,7 +2,7 @@
 
 namespace App\Consumer;
 
-use App\Entity\SocialNetworkFeedItem;
+use App\Model\SocialNetworkFeedItem;
 use OldSound\RabbitMqBundle\RabbitMq\BatchConsumerInterface;
 use PhpAmqpLib\Message\AMQPMessage;
 

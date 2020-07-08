@@ -2,8 +2,8 @@
 
 namespace App\FeedFetcher\NetworkFeedFetcher\Twitter;
 
-use App\Entity\SocialNetworkFeedItem;
-use App\Entity\SocialNetworkProfile;
+use App\Model\SocialNetworkFeedItem;
+use App\Model\SocialNetworkProfile;
 
 class TweetConverter
 {

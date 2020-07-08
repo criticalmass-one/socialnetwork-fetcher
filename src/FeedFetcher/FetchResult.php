@@ -2,7 +2,7 @@
 
 namespace App\FeedFetcher;
 
-use App\Entity\SocialNetworkProfile;
+use App\Model\SocialNetworkProfile;
 
 class FetchResult
 {

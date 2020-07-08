@@ -2,7 +2,7 @@
 
 namespace App\FeedFetcher\NetworkFeedFetcher\Homepage;
 
-use App\Entity\SocialNetworkProfile;
+use App\Model\SocialNetworkProfile;
 use Zend\Feed\Reader\Reader;
 
 class FeedUriDetector

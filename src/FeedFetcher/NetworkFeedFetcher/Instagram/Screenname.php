@@ -2,7 +2,7 @@
 
 namespace App\FeedFetcher\NetworkFeedFetcher\Instagram;
 
-use App\Entity\SocialNetworkProfile;
+use App\Model\SocialNetworkProfile;
 
 class Screenname
 {

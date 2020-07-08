@@ -2,7 +2,7 @@
 
 namespace App\FeedFetcher\NetworkFeedFetcher\Twitter;
 
-use App\Entity\SocialNetworkProfile;
+use App\Model\SocialNetworkProfile;
 
 class Screenname
 {

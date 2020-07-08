@@ -3,7 +3,7 @@
 namespace App\FeedFetcher\NetworkFeedFetcher\Twitter;
 
 use App\FeedFetcher\FetchInfo;
-use App\Entity\SocialNetworkProfile;
+use App\Model\SocialNetworkProfile;
 
 class QueryBuilder
 {
