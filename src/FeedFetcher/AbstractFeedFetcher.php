@@ -5,6 +5,7 @@ namespace App\FeedFetcher;
 use App\FeedFetcher\NetworkFeedFetcher\NetworkFeedFetcherInterface;
 use App\FeedItemPersister\FeedItemPersisterInterface;
 use App\Entity\SocialNetworkProfile;
+use App\ProfileFetcher\ProfileFetcherInterface;
 use Doctrine\Persistence\ManagerRegistry;
 
 abstract class AbstractFeedFetcher implements FeedFetcherInterface
@@ -17,9 +18,12 @@ abstract class AbstractFeedFetcher implements FeedFetcherInterface
 
     protected FeedItemPersisterInterface $feedItemPersister;
 
-    public function __construct(FeedItemPersisterInterface $feedItemPersister)
+    protected ProfileFetcherInterface $profileFetcher;
+
+    public function __construct(FeedItemPersisterInterface $feedItemPersister, ProfileFetcherInterface $profileFetcher)
     {
         $this->feedItemPersister = $feedItemPersister;
+        $this->profileFetcher = $profileFetcher;
     }
 
     public function addNetworkFeedFetcher(NetworkFeedFetcherInterface $networkFeedFetcher): FeedFetcherInterface
@@ -43,7 +47,7 @@ abstract class AbstractFeedFetcher implements FeedFetcherInterface
 
     protected function getSocialNetworkProfiles(FetchInfo $fetchInfo): array
     {
-
+        return $this->profileFetcher->fetchByNetworkIdentifiers($fetchInfo->getNetworkList());
     }
 
     public function getFeedItemList(): array

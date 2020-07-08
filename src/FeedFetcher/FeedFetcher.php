@@ -43,7 +43,7 @@ class FeedFetcher extends AbstractFeedFetcher
             }
         }
 
-        $this->doctrine->getManager()->flush(); // call flush here to persist new success or failure datetime of profiles
+        //$this->doctrine->getManager()->flush(); // call flush here to persist new success or failure datetime of profiles
 
         return $this;
     }

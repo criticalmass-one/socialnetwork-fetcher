@@ -35,7 +35,7 @@ class FetchFeedCommand extends Command
             ->addOption('count', 'c', InputOption::VALUE_REQUIRED);
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output): void
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
 
@@ -70,5 +70,7 @@ class FetchFeedCommand extends Command
         $this->feedFetcher
             ->fetch($fetchInfo, $callback)
             ->persist();
+
+        return 0;
     }
 }
