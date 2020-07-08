@@ -30,4 +30,16 @@ class ProfileFetcher implements ProfileFetcherInterface
 
         return $profileList;
     }
+
+
+    public function fetchByNetworkIdentifiers(array $networkIdentifiers = []): array
+    {
+        $profileList = [];
+
+        foreach ($networkIdentifiers as $networkIdentifier) {
+            $profileList += $this->fetchByNetworkIdentifier($networkIdentifier);
+        }
+
+        return $profileList;
+    }
 }
