@@ -3,7 +3,7 @@
 namespace App\FeedFetcher\NetworkFeedFetcher;
 
 use App\FeedFetcher\FetchInfo;
-use App\Entity\SocialNetworkProfile;
+use App\Model\SocialNetworkProfile;
 
 interface NetworkFeedFetcherInterface
 {

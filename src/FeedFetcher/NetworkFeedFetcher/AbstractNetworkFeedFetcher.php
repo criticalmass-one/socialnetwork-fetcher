@@ -2,7 +2,7 @@
 
 namespace App\FeedFetcher\NetworkFeedFetcher;
 
-use App\Entity\SocialNetworkProfile;
+use App\Model\SocialNetworkProfile;
 use Psr\Log\LoggerInterface;
 
 abstract class AbstractNetworkFeedFetcher implements NetworkFeedFetcherInterface

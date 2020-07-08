@@ -4,7 +4,7 @@ namespace App\FeedFetcher\NetworkFeedFetcher\Homepage;
 
 use App\FeedFetcher\FetchInfo;
 use App\FeedFetcher\NetworkFeedFetcher\AbstractNetworkFeedFetcher;
-use App\Entity\SocialNetworkProfile;
+use App\Model\SocialNetworkProfile;
 use Zend\Feed\Reader\Entry\EntryInterface;
 use Zend\Feed\Reader\Reader;
 
@@ -24,7 +24,6 @@ class HomepageFeedFetcher extends AbstractNetworkFeedFetcher
             return [];
         }
     }
-
 
     protected function fetchFeed(SocialNetworkProfile $socialNetworkProfile): array
     {

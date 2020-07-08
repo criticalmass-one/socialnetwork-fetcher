@@ -4,7 +4,7 @@ namespace App\FeedFetcher\NetworkFeedFetcher\Twitter;
 
 use App\FeedFetcher\FetchInfo;
 use App\FeedFetcher\NetworkFeedFetcher\AbstractNetworkFeedFetcher;
-use App\Entity\SocialNetworkProfile;
+use App\Model\SocialNetworkProfile;
 use Codebird\Codebird;
 use Psr\Log\LoggerInterface;
 

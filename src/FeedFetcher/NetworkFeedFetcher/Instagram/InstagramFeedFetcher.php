@@ -4,7 +4,7 @@ namespace App\FeedFetcher\NetworkFeedFetcher\Instagram;
 
 use App\FeedFetcher\FetchInfo;
 use App\FeedFetcher\NetworkFeedFetcher\AbstractNetworkFeedFetcher;
-use App\Entity\SocialNetworkProfile;
+use App\Model\SocialNetworkProfile;
 use InstagramScraper\Exception\InstagramNotFoundException;
 use InstagramScraper\Instagram;
 use InstagramScraper\Model\Media;
