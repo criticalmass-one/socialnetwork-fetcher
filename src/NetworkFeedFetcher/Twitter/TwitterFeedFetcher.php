@@ -49,7 +49,7 @@ class TwitterFeedFetcher extends AbstractNetworkFeedFetcher
 
         $this->logger->info(sprintf('Now quering @%s', $screenname));
 
-        $reply = $this->codebird->statuses_userTimeline(sprintf('screen_name=%s&tweet_mode=extended&trim_user=1&exclude_replies=1&count=%d', $screenname, $fetchInfo->getCount()), true);
+        $reply = $this->codebird->statuses_userTimeline(QueryBuilder::build($socialNetworkProfile, $fetchInfo), true);
         $data = (array)$reply;
 
         $lastTweetId = null;
@@ -85,7 +85,6 @@ class TwitterFeedFetcher extends AbstractNetworkFeedFetcher
         }
 
         $socialNetworkProfile->setLastFetchSuccessDateTime(new \DateTime());
-
 
         return $feedItemList;
     }

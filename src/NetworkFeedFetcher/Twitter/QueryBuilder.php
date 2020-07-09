@@ -2,7 +2,7 @@
 
 namespace App\NetworkFeedFetcher\Twitter;
 
-use App\FetchInfo;
+use App\FeedFetcher\FetchInfo;
 use App\Model\SocialNetworkProfile;
 
 class QueryBuilder
