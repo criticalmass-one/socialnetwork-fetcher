@@ -48,7 +48,7 @@ class FetchFeedCommand extends Command
             }
         }
 
-        if ($input->hasOption('citySlug')) {
+        if ($input->hasOption('citySlug') && !empty($input->getOption('citySlug'))) {
             $fetchInfo->setCitySlug($input->getOption('citySlug'));
         }
 

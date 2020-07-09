@@ -4,7 +4,7 @@ namespace App\FeedFetcher;
 
 use App\NetworkFeedFetcher\NetworkFeedFetcherInterface;
 use App\FeedItemPersister\FeedItemPersisterInterface;
-use App\ProfileFetcher\ProfileFetcherInterface;
+use App\ProfileFetcher\ProfilePersisterInterface;
 
 abstract class AbstractFeedFetcher implements FeedFetcherInterface
 {
@@ -16,9 +16,9 @@ abstract class AbstractFeedFetcher implements FeedFetcherInterface
 
     protected FeedItemPersisterInterface $feedItemPersister;
 
-    protected ProfileFetcherInterface $profileFetcher;
+    protected ProfilePersisterInterface $profileFetcher;
 
-    public function __construct(FeedItemPersisterInterface $feedItemPersister, ProfileFetcherInterface $profileFetcher)
+    public function __construct(FeedItemPersisterInterface $feedItemPersister, ProfilePersisterInterface $profileFetcher)
     {
         $this->feedItemPersister = $feedItemPersister;
         $this->profileFetcher = $profileFetcher;

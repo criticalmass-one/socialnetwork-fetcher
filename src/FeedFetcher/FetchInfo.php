@@ -20,7 +20,7 @@ class FetchInfo
 
     protected int $count = 20;
 
-    protected string $citySlug;
+    protected ?string $citySlug = null;
 
     public function hasNetworkList(): bool
     {
@@ -145,7 +145,7 @@ class FetchInfo
         return $this;
     }
 
-    public function getCitySlug(): string
+    public function getCitySlug(): ?string
     {
         return $this->citySlug;
     }
