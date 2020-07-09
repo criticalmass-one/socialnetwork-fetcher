@@ -71,7 +71,7 @@ class SocialNetworkProfile
 
     /**
      * @JMS\Type("string")
-     * @JMS\Groups({"ride-list"})
+     * @JMS\Expose
      */
     protected $additionalData;
 
