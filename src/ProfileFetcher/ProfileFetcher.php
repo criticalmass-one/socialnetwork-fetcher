@@ -2,6 +2,7 @@
 
 namespace App\ProfileFetcher;
 
+use App\FeedFetcher\FetchInfo;
 use App\Model\SocialNetworkProfile;
 use GuzzleHttp\Client;
 use JMS\Serializer\SerializerInterface;
@@ -20,9 +21,15 @@ class ProfileFetcher implements ProfileFetcherInterface
         $this->serializer = $serializer;
     }
 
-    public function fetchByNetworkIdentifier(string $networkIdentifier): array
+    public function fetchByNetworkIdentifier(string $networkIdentifier, string $citySlug = null): array
     {
-        $result = $this->client->get(sprintf('/api/socialnetwork-profiles?citySlug=hamburg&networkIdentifier=%s', $networkIdentifier));
+        if ($citySlug) {
+            $query = sprintf('/api/socialnetwork-profiles?citySlug=%s&networkIdentifier=%s', $citySlug, $networkIdentifier);
+        } else {
+            $query = sprintf('/api/socialnetwork-profiles?networkIdentifier=%s', $networkIdentifier);
+        }
+
+        $result = $this->client->get($query);
 
         $jsonContent = $result->getBody()->getContents();
 
@@ -31,15 +38,19 @@ class ProfileFetcher implements ProfileFetcherInterface
         return $profileList;
     }
 
-
-    public function fetchByNetworkIdentifiers(array $networkIdentifiers = []): array
+    public function fetchByNetworkIdentifiers(array $networkIdentifiers = [], string $citySlug = null): array
     {
         $profileList = [];
 
         foreach ($networkIdentifiers as $networkIdentifier) {
-            $profileList += $this->fetchByNetworkIdentifier($networkIdentifier);
+            $profileList += $this->fetchByNetworkIdentifier($networkIdentifier, $citySlug);
         }
 
         return $profileList;
+    }
+
+    public function fetchByFetchInfo(FetchInfo $fetchInfo): array
+    {
+        return $this->fetchByNetworkIdentifiers($fetchInfo->getNetworkList(), $fetchInfo->getCitySlug());
     }
 }
