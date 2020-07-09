@@ -16,7 +16,7 @@ class EntryConverter
     public static function convert(SocialNetworkProfile $socialNetworkProfile, EntryInterface $entry): ?SocialNetworkFeedItem
     {
         $feedItem = new SocialNetworkFeedItem();
-        $feedItem->setSocialNetworkProfile($socialNetworkProfile);
+        $feedItem->setSocialNetworkProfileId($socialNetworkProfile->getId());
 
         try {
             $uniqueId = $entry->getId();

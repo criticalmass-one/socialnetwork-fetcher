@@ -15,7 +15,7 @@ class TweetConverter
     public static function convert(SocialNetworkProfile $socialNetworkProfile, \stdClass $tweet): ?SocialNetworkFeedItem
     {
         $feedItem = new SocialNetworkFeedItem();
-        $feedItem->setSocialNetworkProfile($socialNetworkProfile);
+        $feedItem->setSocialNetworkProfileId($socialNetworkProfile->getId());
 
         try {
             $permalink = PermalinkGenerator::generatePermalink($socialNetworkProfile, $tweet);

@@ -16,8 +16,10 @@ class SocialNetworkProfile
     protected int $id;
 
     /**
+     * @JMS\Type("int")
+     * @JMS\Expose()
      */
-    protected ?City $city = null;
+    protected ?int $cityId = null;
 
     /**
      * @JMS\Type("string")
@@ -81,6 +83,18 @@ class SocialNetworkProfile
     public function setId(int $id): SocialNetworkProfile
     {
         $this->id = $id;
+
+        return $this;
+    }
+
+    public function getCityId(): ?int
+    {
+        return $this->cityId;
+    }
+
+    public function setCityId(?int $cityId): SocialNetworkProfile
+    {
+        $this->cityId = $cityId;
 
         return $this;
     }

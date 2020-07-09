@@ -13,6 +13,10 @@ services:
         bind:
             $rabbitmqUrl: '%env(RABBITMQ_URL)%'
             $criticalmassHostname: '%env(CRITICALMASS_HOSTNAME)%'
+            $instagramScraperProxyServerAddress: ''
+            $instagramScraperProxyServerPort: ''
+            $twitterClientId: '%env(TWITTER_CLIENT_ID)%'
+            $twitterSecret: '%env(TWITTER_CLIENT_SECRET)%'
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name

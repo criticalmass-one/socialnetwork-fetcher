@@ -18,7 +18,7 @@ class MediaConverter
     {
         $item = new SocialNetworkFeedItem();
         $item
-            ->setSocialNetworkProfile($socialNetworkProfile)
+            ->setSocialNetworkProfileId($socialNetworkProfile->getId())
             ->setRaw(self::serializeRawMedia($media))
             ->setDateTime(new \DateTime(sprintf('@%d', $media->getCreatedTime())))
             ->setText($media->getCaption())

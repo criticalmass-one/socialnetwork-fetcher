@@ -22,7 +22,7 @@ class TwitterFeedFetcher extends AbstractNetworkFeedFetcher
 
     public function fetch(SocialNetworkProfile $socialNetworkProfile, FetchInfo $fetchInfo): array
     {
-        if (!$socialNetworkProfile->getCity()) {
+        if (!$socialNetworkProfile->getCityId()) {
             return [];
         }
 

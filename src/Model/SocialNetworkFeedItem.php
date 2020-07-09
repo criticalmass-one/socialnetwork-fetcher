@@ -7,64 +7,70 @@ use JMS\Serializer\Annotation as JMS;
 /**
  * @JMS\ExclusionPolicy("all")
  */
-class SocialNetworkFeedItem //implements Crawlable
+class SocialNetworkFeedItem
 {
     /**
+     * @JMS\Type("int")
      * @JMS\Expose
      */
-    protected $id;
+    protected ?int $id = null;
 
     /**
-     * @JMS\Expose
-     * @JMS\Type("Relation<App\Model\SocialNetworkProfile>")
-     */
-    protected $socialNetworkProfile;
-
-    /**
+     * @JMS\Type("int")
      * @JMS\Expose
      */
-    protected $uniqueIdentifier;
+    protected ?int $socialNetworkProfileId = null;
 
     /**
+     * @JMS\Type("string")
      * @JMS\Expose
      */
-    protected $permalink;
+    protected ?string $uniqueIdentifier = null;
 
     /**
+     * @JMS\Type("string")
      * @JMS\Expose
      */
-    protected $title;
+    protected ?string $permalink = null;
 
     /**
+     * @JMS\Type("string")
      * @JMS\Expose
      */
-    protected $text;
+    protected ?string $title = null;
 
     /**
+     * @JMS\Type("string")
      * @JMS\Expose
+     */
+    protected ?string $text = null;
+
+    /**
      * @JMS\Type("DateTime<'U'>")
+     * @JMS\Expose
      */
-    protected $dateTime;
+    protected ?\DateTime $dateTime = null;
 
     /**
-     * @JMS\Expose
      * @JMS\Type("bool")
+     * @JMS\Expose
      */
-    protected $hidden = false;
+    protected ?bool $hidden = false;
 
     /**
-     * @JMS\Expose
      * @JMS\Type("bool")
+     * @JMS\Expose
      */
-    protected $deleted = false;
+    protected ?bool $deleted = false;
 
     /**
-     * @JMS\Expose
      * @JMS\Type("DateTime<'U'>")
+     * @JMS\Expose
      */
-    protected $createdAt;
+    protected ?\DateTime $createdAt = null;
 
     /**
+     * @JMS\Type("string")
      * @JMS\Expose
      */
     protected ?string $raw = null;
@@ -86,14 +92,14 @@ class SocialNetworkFeedItem //implements Crawlable
         return $this;
     }
 
-    public function getSocialNetworkProfile(): SocialNetworkProfile
+    public function getSocialNetworkProfileId(): int
     {
-        return $this->socialNetworkProfile;
+        return $this->socialNetworkProfileId;
     }
 
-    public function setSocialNetworkProfile(SocialNetworkProfile $socialNetworkProfile): SocialNetworkFeedItem
+    public function setSocialNetworkProfileId(int $socialNetworkProfile): SocialNetworkFeedItem
     {
-        $this->socialNetworkProfile = $socialNetworkProfile;
+        $this->socialNetworkProfileId = $socialNetworkProfile;
 
         return $this;
     }
