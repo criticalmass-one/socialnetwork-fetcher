@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace App\FeedFetcher\NetworkFeedFetcher\Instagram;
+namespace App\NetworkFeedFetcher\Instagram;
 
 use App\Model\SocialNetworkFeedItem;
 use App\Model\SocialNetworkProfile;

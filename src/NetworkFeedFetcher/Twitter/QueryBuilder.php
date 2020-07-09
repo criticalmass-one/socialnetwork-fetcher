@@ -1,8 +1,8 @@
 <?php declare(strict_types=1);
 
-namespace App\FeedFetcher\NetworkFeedFetcher\Twitter;
+namespace App\NetworkFeedFetcher\Twitter;
 
-use App\FeedFetcher\FetchInfo;
+use App\FetchInfo;
 use App\Model\SocialNetworkProfile;
 
 class QueryBuilder

@@ -4,8 +4,7 @@ namespace App;
 
 use App\DependencyInjection\Compiler\SocialNetworkFetcherPass;
 use App\DependencyInjection\Compiler\SocialNetworkPass;
-use App\FeedFetcher\NetworkFeedFetcher\NetworkFeedFetcherInterface;
-use App\Network\NetworkInterface;
+use App\NetworkFeedFetcher\NetworkFeedFetcherInterface;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;

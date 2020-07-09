@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace App\FeedFetcher\NetworkFeedFetcher\Twitter;
+namespace App\NetworkFeedFetcher\Twitter;
 
 use App\FeedFetcher\FetchInfo;
-use App\FeedFetcher\NetworkFeedFetcher\AbstractNetworkFeedFetcher;
+use App\NetworkFeedFetcher\AbstractNetworkFeedFetcher;
 use App\Model\SocialNetworkProfile;
 use Codebird\Codebird;
 use Psr\Log\LoggerInterface;

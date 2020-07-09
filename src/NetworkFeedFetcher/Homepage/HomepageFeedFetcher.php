@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace App\FeedFetcher\NetworkFeedFetcher\Homepage;
+namespace App\NetworkFeedFetcher\Homepage;
 
 use App\FeedFetcher\FetchInfo;
-use App\FeedFetcher\NetworkFeedFetcher\AbstractNetworkFeedFetcher;
+use App\NetworkFeedFetcher\AbstractNetworkFeedFetcher;
 use App\Model\SocialNetworkProfile;
 use Zend\Feed\Reader\Entry\EntryInterface;
 use Zend\Feed\Reader\Reader;

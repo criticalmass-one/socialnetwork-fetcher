@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace App\FeedFetcher\NetworkFeedFetcher\Instagram;
+namespace App\NetworkFeedFetcher\Instagram;
 
 use App\FeedFetcher\FetchInfo;
-use App\FeedFetcher\NetworkFeedFetcher\AbstractNetworkFeedFetcher;
+use App\NetworkFeedFetcher\AbstractNetworkFeedFetcher;
 use App\Model\SocialNetworkProfile;
 use InstagramScraper\Exception\InstagramNotFoundException;
 use InstagramScraper\Instagram;

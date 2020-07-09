@@ -2,7 +2,7 @@
 
 namespace App\FeedFetcher;
 
-use App\FeedFetcher\NetworkFeedFetcher\NetworkFeedFetcherInterface;
+use App\NetworkFeedFetcher\NetworkFeedFetcherInterface;
 use App\Model\SocialNetworkProfile;
 
 class FeedFetcher extends AbstractFeedFetcher
