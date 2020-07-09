@@ -2,6 +2,7 @@
 
 namespace App\FeedItemPersister;
 
+use App\FeedFetcher\FetchResult;
 use App\Model\SocialNetworkFeedItem;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
@@ -22,16 +23,16 @@ class ApiPusher implements FeedItemPersisterInterface
         $this->serializer = $serializer;
     }
 
-    public function persistFeedItemList(array $feedItemList): FeedItemPersisterInterface
+    public function persistFeedItemList(array $feedItemList, ?FetchResult $fetchResult): FeedItemPersisterInterface
     {
         foreach ($feedItemList as $feedItem) {
-            $this->persistFeedItem($feedItem);
+            $this->persistFeedItem($feedItem, $fetchResult);
         }
 
         return $this;
     }
 
-    public function persistFeedItem(SocialNetworkFeedItem $feedItem): FeedItemPersisterInterface
+    public function persistFeedItem(SocialNetworkFeedItem $feedItem, ?FetchResult $fetchResult): FeedItemPersisterInterface
     {
         $jsonData = $this->serializer->serialize($feedItem, 'json');
 
@@ -40,11 +41,21 @@ class ApiPusher implements FeedItemPersisterInterface
                 'body' => $jsonData
             ]);
         } catch (ClientException $exception) { // got a 4xx status code response
+            if ($fetchResult) {
+                $fetchResult->incCounterPushed4xx();
+            }
 
+            return $this;
         } catch (ServerException $exception) // got a 5xx status code response
         {
+            if ($fetchResult) {
+                $fetchResult->incCounterPushed5xx();
+            }
 
+            return $this;
         }
+
+        $fetchResult->incCounterPushed200();
 
         return $this;
     }

@@ -33,13 +33,13 @@ class FeedFetcher extends AbstractFeedFetcher
                 $fetchResult = new FetchResult();
                 $fetchResult
                     ->setSocialNetworkProfile($profile)
-                    ->setCounter(count($feedItemList));
-
-                $callback($fetchResult);
+                    ->setCounterFetched(count($feedItemList));
 
                 //$this->feedItemList = array_merge($this->feedItemList, $feedItemList);
 
-                $this->feedItemPersister->persistFeedItemList($feedItemList)->flush();
+                $this->feedItemPersister->persistFeedItemList($feedItemList, $fetchResult)->flush();
+
+                $callback($fetchResult);
             }
         }
 
@@ -66,8 +66,6 @@ class FeedFetcher extends AbstractFeedFetcher
 
     public function persist(): FeedFetcherInterface
     {
-        $this->feedItemPersister->persistFeedItemList($this->feedItemList)->flush();
-
         return $this;
     }
 }
