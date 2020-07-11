@@ -2,7 +2,7 @@
 
 namespace App\DependencyInjection\Compiler;
 
-use App\Criticalmass\SocialNetwork\NetworkManager\NetworkManagerInterface;
+use App\NetworkManager\NetworkManagerInterface;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Reference;
@@ -10,11 +10,6 @@ use Symfony\Component\DependencyInjection\Reference;
 class SocialNetworkPass implements CompilerPassInterface
 {
     public function process(ContainerBuilder $container): void
-    {
-        $this->processNetworkFetcher($container);
-    }
-
-    protected function processNetworkFetcher(ContainerBuilder $container): void
     {
         if (!$container->has(NetworkManagerInterface::class)) {
             return;

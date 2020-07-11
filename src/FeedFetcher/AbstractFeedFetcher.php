@@ -2,10 +2,10 @@
 
 namespace App\FeedFetcher;
 
-use App\Criticalmass\SocialNetwork\FeedFetcher\NetworkFeedFetcher\NetworkFeedFetcherInterface;
-use App\Criticalmass\SocialNetwork\FeedItemPersister\FeedItemPersisterInterface;
-use App\Entity\SocialNetworkProfile;
-use Doctrine\Persistence\ManagerRegistry;
+use App\NetworkFeedFetcher\NetworkFeedFetcherInterface;
+use App\FeedItemPersister\FeedItemPersisterInterface;
+use App\ProfileFetcher\ProfileFetcherInterface;
+use App\ProfilePersister\ProfilePersisterInterface;
 
 abstract class AbstractFeedFetcher implements FeedFetcherInterface
 {
@@ -13,16 +13,19 @@ abstract class AbstractFeedFetcher implements FeedFetcherInterface
 
     protected array $fetchableNetworkList = [];
 
-    protected ManagerRegistry $doctrine;
-
     protected array $feedItemList = [];
 
     protected FeedItemPersisterInterface $feedItemPersister;
 
-    public function __construct(ManagerRegistry $doctrine, FeedItemPersisterInterface $feedItemPersister)
+    protected ProfileFetcherInterface $profileFetcher;
+
+    protected ProfilePersisterInterface $profilePersister;
+
+    public function __construct(FeedItemPersisterInterface $feedItemPersister, ProfileFetcherInterface $profileFetcher, ProfilePersisterInterface $profilePersister)
     {
-        $this->doctrine = $doctrine;
         $this->feedItemPersister = $feedItemPersister;
+        $this->profileFetcher = $profileFetcher;
+        $this->profilePersister = $profilePersister;
     }
 
     public function addNetworkFeedFetcher(NetworkFeedFetcherInterface $networkFeedFetcher): FeedFetcherInterface
@@ -46,10 +49,7 @@ abstract class AbstractFeedFetcher implements FeedFetcherInterface
 
     protected function getSocialNetworkProfiles(FetchInfo $fetchInfo): array
     {
-        return $this
-            ->doctrine
-            ->getRepository(SocialNetworkProfile::class)
-            ->findByFetchInfo($fetchInfo);
+        return $this->profileFetcher->fetchByFetchInfo($fetchInfo);
     }
 
     public function getFeedItemList(): array

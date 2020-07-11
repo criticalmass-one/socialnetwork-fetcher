@@ -2,13 +2,14 @@
 
 namespace App\FeedItemPersister;
 
-use App\Entity\SocialNetworkFeedItem;
+use App\FeedFetcher\FetchResult;
+use App\Model\SocialNetworkFeedItem;
 
 interface FeedItemPersisterInterface
 {
-    public function persistFeedItemList(array $feedItemList): FeedItemPersisterInterface;
+    public function persistFeedItemList(array $feedItemList, ?FetchResult $fetchResult): FeedItemPersisterInterface;
 
-    public function persistFeedItem(SocialNetworkFeedItem $feedItem): FeedItemPersisterInterface;
+    public function persistFeedItem(SocialNetworkFeedItem $feedItem, ?FetchResult $fetchResult): FeedItemPersisterInterface;
 
     public function flush(): FeedItemPersisterInterface;
 }

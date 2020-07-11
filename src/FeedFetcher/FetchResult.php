@@ -2,15 +2,18 @@
 
 namespace App\FeedFetcher;
 
-use App\Entity\SocialNetworkProfile;
+use App\Model\SocialNetworkProfile;
 
 class FetchResult
 {
     protected SocialNetworkProfile $socialNetworkProfile;
-
     protected string $status;
 
-    protected int $counter = 0;
+    protected int $counterFetched = 0;
+    protected int $counterRabbit = 0;
+    protected int $counterPushed200 = 0;
+    protected int $counterPushed4xx = 0;
+    protected int $counterPushed5xx = 0;
 
     public function getSocialNetworkProfile(): SocialNetworkProfile
     {
@@ -36,14 +39,90 @@ class FetchResult
         return $this;
     }
 
-    public function getCounter(): int
+    public function getCounterFetched(): int
     {
-        return $this->counter;
+        return $this->counterFetched;
     }
 
-    public function setCounter(int $counter): FetchResult
+    public function setCounterFetched(int $counterFetched): FetchResult
     {
-        $this->counter = $counter;
+        $this->counterFetched = $counterFetched;
+
+        return $this;
+    }
+
+    public function getCounterPushed200(): int
+    {
+        return $this->counterPushed200;
+    }
+
+    public function setCounterPushed200(int $counterPushed200): FetchResult
+    {
+        $this->counterPushed200 = $counterPushed200;
+
+        return $this;
+    }
+
+    public function incCounterPushed200(): FetchResult
+    {
+        ++$this->counterPushed200;
+
+        return $this;
+    }
+
+    public function getCounterPushed4xx(): int
+    {
+        return $this->counterPushed4xx;
+    }
+
+    public function setCounterPushed4xx(int $counterPushed4xx): FetchResult
+    {
+        $this->counterPushed4xx = $counterPushed4xx;
+
+        return $this;
+    }
+
+    public function incCounterPushed4xx(): FetchResult
+    {
+        ++$this->counterPushed4xx;
+
+        return $this;
+    }
+
+    public function getCounterPushed5xx(): int
+    {
+        return $this->counterPushed5xx;
+    }
+
+    public function setCounterPushed5xx(int $counterPushed5xx): FetchResult
+    {
+        $this->counterPushed5xx = $counterPushed5xx;
+
+        return $this;
+    }
+
+    public function incCounterPushed5xx(): FetchResult
+    {
+        ++$this->counterPushed5xx;
+
+        return $this;
+    }
+
+    public function getCounterRabbit(): int
+    {
+        return $this->counterRabbit;
+    }
+
+    public function setCounterRabbit(int $counterRabbit): FetchResult
+    {
+        $this->counterRabbit = $counterRabbit;
+
+        return $this;
+    }
+
+    public function incCounterRabbit(): FetchResult
+    {
+        ++$this->counterRabbit;
 
         return $this;
     }

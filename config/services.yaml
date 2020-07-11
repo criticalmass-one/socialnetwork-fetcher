@@ -10,6 +10,13 @@ services:
     _defaults:
         autowire: true      # Automatically injects dependencies in your services.
         autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        bind:
+            $rabbitmqUrl: '%env(RABBITMQ_URL)%'
+            $criticalmassHostname: '%env(CRITICALMASS_HOSTNAME)%'
+            $instagramScraperProxyServerAddress: ''
+            $instagramScraperProxyServerPort: ''
+            $twitterClientId: '%env(TWITTER_CLIENT_ID)%'
+            $twitterSecret: '%env(TWITTER_CLIENT_SECRET)%'
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
@@ -17,11 +24,13 @@ services:
         resource: '../src/*'
         exclude: '../src/{DependencyInjection,Entity,Migrations,Tests,Kernel.php}'
 
-    # controllers are imported separately to make sure services can be injected
-    # as action arguments even if you don't extend any base controller class
-    App\Controller\:
-        resource: '../src/Controller'
-        tags: ['controller.service_arguments']
-
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
+
+    App\FeedItemPersister\FeedItemPersisterInterface:
+        #alias: App\FeedItemPersister\RabbitPusher
+        alias: App\FeedItemPersister\ApiPusher
+
+    App\FeedItemPersister\RabbitPusher:
+        arguments:
+            $producer: '@old_sound_rabbit_mq.criticalmass_socialnetworkfeeditem_producer'

@@ -2,10 +2,9 @@
 
 namespace App\Command;
 
-use App\Criticalmass\SocialNetwork\FeedFetcher\FeedFetcher;
-use App\Criticalmass\SocialNetwork\FeedFetcher\FetchInfo;
-use App\Criticalmass\SocialNetwork\FeedFetcher\FetchResult;
-use Doctrine\Persistence\ManagerRegistry;
+use App\FeedFetcher\FeedFetcher;
+use App\FeedFetcher\FetchInfo;
+use App\FeedFetcher\FetchResult;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -16,11 +15,9 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class FetchFeedCommand extends Command
 {
     protected FeedFetcher $feedFetcher;
-    protected ManagerRegistry $doctrine;
 
-    public function __construct(ManagerRegistry $doctrine, FeedFetcher $feedFetcher)
+    public function __construct(FeedFetcher $feedFetcher)
     {
-        $this->doctrine = $doctrine;
         $this->feedFetcher = $feedFetcher;
 
         parent::__construct(null);
@@ -35,10 +32,11 @@ class FetchFeedCommand extends Command
             ->addOption('fromDateTime', 'f', InputOption::VALUE_REQUIRED)
             ->addOption('untilDateTime', 'u', InputOption::VALUE_REQUIRED)
             ->addOption('includeOldItems', 'i', InputOption::VALUE_NONE)
-            ->addOption('count', 'c', InputOption::VALUE_REQUIRED);
+            ->addOption('count', 'c', InputOption::VALUE_REQUIRED)
+            ->addOption('citySlug', null, InputOption::VALUE_REQUIRED);
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output): void
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
 
@@ -48,6 +46,10 @@ class FetchFeedCommand extends Command
             foreach ($input->getArgument('networks') as $networkIdentifier) {
                 $fetchInfo->addNetwork($networkIdentifier);
             }
+        }
+
+        if ($input->hasOption('citySlug') && !empty($input->getOption('citySlug'))) {
+            $fetchInfo->setCitySlug($input->getOption('citySlug'));
         }
 
         if ($input->getOption('count')) {
@@ -67,11 +69,21 @@ class FetchFeedCommand extends Command
         }
 
         $callback = function (FetchResult $fetchResult) use ($io): void {
-            $io->success(sprintf('Fetched %d items from profile %s', $fetchResult->getCounter(), $fetchResult->getSocialNetworkProfile()->getIdentifier()));
+            $io->success(sprintf(
+                'Fetched %d items from profile %s, %d were pushed to rabbit, %d returned 200, %d returned 4xx, %d retured 5xx.',
+                $fetchResult->getCounterFetched(),
+                $fetchResult->getSocialNetworkProfile()->getIdentifier(),
+                $fetchResult->getCounterRabbit(),
+                $fetchResult->getCounterPushed200(),
+                $fetchResult->getCounterPushed4xx(),
+                $fetchResult->getCounterPushed5xx()
+            ));
         };
 
         $this->feedFetcher
             ->fetch($fetchInfo, $callback)
             ->persist();
+
+        return 0;
     }
 }

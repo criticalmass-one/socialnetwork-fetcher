@@ -2,8 +2,8 @@
 
 namespace App\FeedFetcher;
 
-use App\Criticalmass\SocialNetwork\FeedFetcher\NetworkFeedFetcher\NetworkFeedFetcherInterface;
-use App\Entity\SocialNetworkProfile;
+use App\NetworkFeedFetcher\NetworkFeedFetcherInterface;
+use App\Model\SocialNetworkProfile;
 
 class FeedFetcher extends AbstractFeedFetcher
 {
@@ -33,17 +33,17 @@ class FeedFetcher extends AbstractFeedFetcher
                 $fetchResult = new FetchResult();
                 $fetchResult
                     ->setSocialNetworkProfile($profile)
-                    ->setCounter(count($feedItemList));
-
-                $callback($fetchResult);
+                    ->setCounterFetched(count($feedItemList));
 
                 //$this->feedItemList = array_merge($this->feedItemList, $feedItemList);
 
-                $this->feedItemPersister->persistFeedItemList($feedItemList)->flush();
-            }
-        }
+                $this->feedItemPersister->persistFeedItemList($feedItemList, $fetchResult)->flush();
 
-        $this->doctrine->getManager()->flush(); // call flush here to persist new success or failure datetime of profiles
+                $callback($fetchResult);
+            }
+
+            $this->profilePersister->persistProfile($profile);
+        }
 
         return $this;
     }
@@ -66,8 +66,6 @@ class FeedFetcher extends AbstractFeedFetcher
 
     public function persist(): FeedFetcherInterface
     {
-        $this->feedItemPersister->persistFeedItemList($this->feedItemList)->flush();
-
         return $this;
     }
 }
