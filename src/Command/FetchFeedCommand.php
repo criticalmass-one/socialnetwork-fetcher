@@ -84,6 +84,6 @@ class FetchFeedCommand extends Command
             ->fetch($fetchInfo, $callback)
             ->persist();
 
-        return 0;
+        return Command::SUCCESS;
     }
 }
