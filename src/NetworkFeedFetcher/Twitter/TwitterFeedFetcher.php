@@ -49,7 +49,9 @@ class TwitterFeedFetcher extends AbstractNetworkFeedFetcher
 
         $this->logger->info(sprintf('Now quering @%s', $screenname));
 
-        $reply = $this->codebird->statuses_userTimeline(QueryBuilder::build($socialNetworkProfile, $fetchInfo), true);
+        $queryString = QueryBuilder::build($socialNetworkProfile, $fetchInfo);
+
+        $reply = $this->codebird->statuses_userTimeline($queryString, true);
         $data = (array)$reply;
 
         $lastTweetId = null;
