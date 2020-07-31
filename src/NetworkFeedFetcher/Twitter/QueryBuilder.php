@@ -23,7 +23,7 @@ class QueryBuilder
             $queryStringParts['since_id'] = $socialNetworkProfile->getAdditionalData()['lastTweetId'];
         }
 
-        if (!$fetchInfo->includeOldItems() && $fetchInfo->getCount()) {
+        if ($fetchInfo->getCount()) {
             $queryStringParts['count'] = $fetchInfo->getCount();
         }
 
