@@ -23,11 +23,16 @@ class ProfileFetcher implements ProfileFetcherInterface
 
     public function fetchByNetworkIdentifier(string $networkIdentifier, string $citySlug = null): array
     {
+        $parameters = [
+            'networkIdentifier' => $networkIdentifier,
+            'entities' => 'city',
+        ];
+
         if ($citySlug) {
-            $query = sprintf('/api/socialnetwork-profiles?citySlug=%s&networkIdentifier=%s', $citySlug, $networkIdentifier);
-        } else {
-            $query = sprintf('/api/socialnetwork-profiles?networkIdentifier=%s', $networkIdentifier);
+            $parameters['citySlug'] = $citySlug;
         }
+
+        $query = sprintf('/api/socialnetwork-profiles?%s', http_build_query($parameters));
 
         $result = $this->client->get($query);
 
