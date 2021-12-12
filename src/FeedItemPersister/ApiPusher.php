@@ -41,6 +41,7 @@ class ApiPusher implements FeedItemPersisterInterface
                 'body' => $jsonData
             ]);
         } catch (ClientException $exception) { // got a 4xx status code response
+            dd($exception->getMessage());
             if ($fetchResult) {
                 $fetchResult->incCounterPushed4xx();
             }

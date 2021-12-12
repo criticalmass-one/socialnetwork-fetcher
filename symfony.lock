@@ -26,6 +26,9 @@
     "emag-tech-labs/rabbitmq-bundle": {
         "version": "2.2.0"
     },
+    "facebook/graph-sdk": {
+        "version": "5.7.0"
+    },
     "guzzlehttp/guzzle": {
         "version": "7.0.1"
     },
