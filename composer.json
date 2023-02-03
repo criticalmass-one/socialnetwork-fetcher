@@ -8,6 +8,7 @@
         "ext-json": "*",
         "emag-tech-labs/rabbitmq-bundle": "^2.2",
         "guzzlehttp/guzzle": "^7.0",
+        "jms/serializer-bundle": "^5.2",
         "jublonet/codebird-php": "^3.1",
         "raiym/instagram-php-scraper": "^0.9.11",
         "symfony/console": "5.1.*",
