@@ -5,8 +5,8 @@ namespace App\NetworkFeedFetcher\Homepage;
 use App\FeedFetcher\FetchInfo;
 use App\NetworkFeedFetcher\AbstractNetworkFeedFetcher;
 use App\Model\SocialNetworkProfile;
-use Zend\Feed\Reader\Entry\EntryInterface;
-use Zend\Feed\Reader\Reader;
+use Laminas\Feed\Reader\Entry\EntryInterface;
+use Laminas\Feed\Reader\Reader;
 
 class HomepageFeedFetcher extends AbstractNetworkFeedFetcher
 {
