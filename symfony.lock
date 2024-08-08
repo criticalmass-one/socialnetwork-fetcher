@@ -14,17 +14,14 @@
             "config/routes/annotations.yaml"
         ]
     },
-    "jms/serializer-bundle": {
-        "version": "5.2",
-        "recipe": {
-            "repo": "github.com/symfony/recipes-contrib",
-            "branch": "main",
-            "version": "4.0",
-            "ref": "cc04e10cf7171525b50c18b36004edf64cb478be"
-        },
-        "files": [
-            "config/packages/jms_serializer.yaml"
-        ]
+    "guzzlehttp/guzzle": {
+        "version": "7.0.1"
+    },
+    "guzzlehttp/promises": {
+        "version": "v1.3.1"
+    },
+    "guzzlehttp/psr7": {
+        "version": "1.6.1"
     },
     "mashape/unirest-php": {
         "version": "v3.0.4"
@@ -41,6 +38,9 @@
     "psr/event-dispatcher": {
         "version": "1.0.0"
     },
+    "psr/http-client": {
+        "version": "1.0.1"
+    },
     "psr/http-message": {
         "version": "1.0.1"
     },
@@ -52,6 +52,9 @@
     },
     "raiym/instagram-php-scraper": {
         "version": "v0.9.11"
+    },
+    "ralouphie/getallheaders": {
+        "version": "3.0.3"
     },
     "symfony/cache": {
         "version": "v5.1.2"

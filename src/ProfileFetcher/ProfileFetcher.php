@@ -3,8 +3,9 @@
 namespace App\ProfileFetcher;
 
 use App\FeedFetcher\FetchInfo;
-use JMS\Serializer\SerializerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use App\Model\SocialNetworkProfile;
+use App\Serializer\SerializerInterface;
 
 class ProfileFetcher implements ProfileFetcherInterface
 {
@@ -37,7 +38,7 @@ class ProfileFetcher implements ProfileFetcherInterface
 
         $jsonContent = $result->getContent();
 
-        $profileList = $this->serializer->deserialize($jsonContent, 'array<App\Model\SocialNetworkProfile>', 'json');
+        $profileList = $this->serializer->deserialize($jsonContent, sprintf('%s[]', SocialNetworkProfile::class), 'json');
 
         return $profileList;
     }

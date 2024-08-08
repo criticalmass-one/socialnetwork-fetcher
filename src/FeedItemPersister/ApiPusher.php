@@ -4,7 +4,7 @@ namespace App\FeedItemPersister;
 
 use App\FeedFetcher\FetchResult;
 use App\Model\SocialNetworkFeedItem;
-use JMS\Serializer\SerializerInterface;
+use App\Serializer\SerializerInterface;
 use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Component\HttpClient\Exception\ServerException;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -16,8 +16,8 @@ class ApiPusher implements FeedItemPersisterInterface
     public function __construct(
         private readonly SerializerInterface $serializer,
         HttpClientInterface $client,
-        string $criticalmassHostname)
-    {
+        string $criticalmassHostname
+    ) {
         $this->client = $client->withOptions([
             'base_uri' => $criticalmassHostname,
         ]);

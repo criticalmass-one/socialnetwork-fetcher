@@ -3,8 +3,8 @@
 namespace App\ProfilePersister;
 
 use App\Model\SocialNetworkProfile;
-use JMS\Serializer\SerializerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use App\Serializer\SerializerInterface;
 
 class ProfilePersister implements ProfilePersisterInterface
 {

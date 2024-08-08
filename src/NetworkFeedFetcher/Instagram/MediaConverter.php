@@ -5,7 +5,6 @@ namespace App\NetworkFeedFetcher\Instagram;
 use App\Model\SocialNetworkFeedItem;
 use App\Model\SocialNetworkProfile;
 use InstagramScraper\Model\Media;
-use JMS\Serializer\SerializerBuilder;
 
 class MediaConverter
 {
