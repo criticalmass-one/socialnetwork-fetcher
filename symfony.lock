@@ -1,7 +1,4 @@
 {
-    "composer/installers": {
-        "version": "v1.9.0"
-    },
     "container-interop/container-interop": {
         "version": "1.2.0"
     },
@@ -37,9 +34,6 @@
         "files": [
             "config/packages/jms_serializer.yaml"
         ]
-    },
-    "jublonet/codebird-php": {
-        "version": "3.1.0"
     },
     "mashape/unirest-php": {
         "version": "v3.0.4"
