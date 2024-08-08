@@ -4,21 +4,20 @@ namespace App\ProfileFetcher;
 
 use App\FeedFetcher\FetchInfo;
 use App\Model\SocialNetworkProfile;
+use App\Serializer\SerializerInterface;
 use GuzzleHttp\Client;
-use JMS\Serializer\SerializerInterface;
 
 class ProfileFetcher implements ProfileFetcherInterface
 {
     protected Client $client;
-    protected SerializerInterface $serializer;
 
-    public function __construct(SerializerInterface $serializer, string $criticalmassHostname)
-    {
+    public function __construct(
+        private readonly SerializerInterface $serializer,
+        string $criticalmassHostname
+    ) {
         $this->client = new Client([
             'base_uri' => $criticalmassHostname,
         ]);
-
-        $this->serializer = $serializer;
     }
 
     public function fetchByNetworkIdentifier(string $networkIdentifier, string $citySlug = null): array
@@ -38,7 +37,7 @@ class ProfileFetcher implements ProfileFetcherInterface
 
         $jsonContent = $result->getBody()->getContents();
 
-        $profileList = $this->serializer->deserialize($jsonContent, 'array<App\Model\SocialNetworkProfile>', 'json');
+        $profileList = $this->serializer->deserialize($jsonContent, sprintf('%s[]', SocialNetworkProfile::class), 'json');
 
         return $profileList;
     }

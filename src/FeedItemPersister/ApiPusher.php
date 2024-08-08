@@ -4,23 +4,22 @@ namespace App\FeedItemPersister;
 
 use App\FeedFetcher\FetchResult;
 use App\Model\SocialNetworkFeedItem;
+use App\Serializer\SerializerInterface;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ServerException;
-use JMS\Serializer\SerializerInterface;
 
 class ApiPusher implements FeedItemPersisterInterface
 {
     protected Client $client;
-    protected SerializerInterface $serializer;
 
-    public function __construct(SerializerInterface $serializer, string $criticalmassHostname)
-    {
+    public function __construct(
+        private readonly SerializerInterface $serializer,
+        string $criticalmassHostname
+    ) {
         $this->client = new Client([
             'base_uri' => $criticalmassHostname,
         ]);
-
-        $this->serializer = $serializer;
     }
 
     public function persistFeedItemList(array $feedItemList, ?FetchResult $fetchResult): FeedItemPersisterInterface
