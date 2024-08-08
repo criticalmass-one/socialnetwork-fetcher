@@ -3,18 +3,19 @@
 namespace App\ProfilePersister;
 
 use App\Model\SocialNetworkProfile;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 use App\Serializer\SerializerInterface;
-use GuzzleHttp\Client;
 
 class ProfilePersister implements ProfilePersisterInterface
 {
-    protected Client $client;
+    private HttpClientInterface $client;
 
     public function __construct(
         private readonly SerializerInterface $serializer,
+        HttpClientInterface $client,
         string $criticalmassHostname
     ) {
-        $this->client = new Client([
+        $this->client = $client->withOptions([
             'base_uri' => $criticalmassHostname,
         ]);
     }
@@ -25,7 +26,7 @@ class ProfilePersister implements ProfilePersisterInterface
 
         $uri = sprintf('/api/hamburg/socialnetwork-profiles/%d', $socialNetworkProfile->getId());
 
-        $result = $this->client->post($uri, [
+        $result = $this->client->request('POST', $uri, [
             'body' => $jsonData,
         ]);
 

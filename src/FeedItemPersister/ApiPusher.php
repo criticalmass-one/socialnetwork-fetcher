@@ -5,19 +5,20 @@ namespace App\FeedItemPersister;
 use App\FeedFetcher\FetchResult;
 use App\Model\SocialNetworkFeedItem;
 use App\Serializer\SerializerInterface;
-use GuzzleHttp\Client;
-use GuzzleHttp\Exception\ClientException;
-use GuzzleHttp\Exception\ServerException;
+use Symfony\Component\HttpClient\Exception\ClientException;
+use Symfony\Component\HttpClient\Exception\ServerException;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class ApiPusher implements FeedItemPersisterInterface
 {
-    protected Client $client;
+    private HttpClientInterface $client;
 
     public function __construct(
         private readonly SerializerInterface $serializer,
+        HttpClientInterface $client,
         string $criticalmassHostname
     ) {
-        $this->client = new Client([
+        $this->client = $client->withOptions([
             'base_uri' => $criticalmassHostname,
         ]);
     }
@@ -36,7 +37,7 @@ class ApiPusher implements FeedItemPersisterInterface
         $jsonData = $this->serializer->serialize($feedItem, 'json');
 
         try {
-            $response = $this->client->put('/api/hamburg/socialnetwork-feeditems', [
+            $response = $this->client->request('GET', '/api/hamburg/socialnetwork-feeditems', [
                 'body' => $jsonData
             ]);
         } catch (ClientException $exception) { // got a 4xx status code response
