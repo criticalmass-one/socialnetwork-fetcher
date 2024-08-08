@@ -143,14 +143,14 @@ class SocialNetworkProfile
         return $this;
     }
 
-    public function getAdditionalData(): ?array
+    public function getAdditionalData(): ?string
     {
-        return (array)json_decode($this->additionalData ?? '{}');
+        return $this->additionalData;
     }
 
-    public function setAdditionalData(?array $additionalData): self
+    public function setAdditionalData(?string $additionalData): self
     {
-        $this->additionalData = json_encode($additionalData);
+        $this->additionalData = $additionalData;
 
         return $this;
     }
