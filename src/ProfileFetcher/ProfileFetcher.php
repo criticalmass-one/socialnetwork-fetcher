@@ -3,6 +3,7 @@
 namespace App\ProfileFetcher;
 
 use App\FeedFetcher\FetchInfo;
+use App\Model\SocialNetworkProfile;
 use App\Serializer\SerializerInterface;
 use GuzzleHttp\Client;
 
@@ -36,7 +37,7 @@ class ProfileFetcher implements ProfileFetcherInterface
 
         $jsonContent = $result->getBody()->getContents();
 
-        $profileList = $this->serializer->deserialize($jsonContent, 'array<App\Model\SocialNetworkProfile>', 'json');
+        $profileList = $this->serializer->deserialize($jsonContent, sprintf('%s[]', SocialNetworkProfile::class), 'json');
 
         return $profileList;
     }
