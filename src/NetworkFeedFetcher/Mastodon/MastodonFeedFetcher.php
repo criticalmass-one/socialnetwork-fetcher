@@ -7,28 +7,36 @@ use App\Model\SocialNetworkProfile;
 use App\NetworkFeedFetcher\AbstractNetworkFeedFetcher;
 use App\NetworkFeedFetcher\Mastodon\Model\Account;
 use App\NetworkFeedFetcher\Mastodon\Model\AccountInfo;
-use JMS\Serializer\SerializerInterface;
+use App\NetworkFeedFetcher\Mastodon\Model\Status;
+use App\Serializer\SerializerInterface;
+use Psr\Log\LoggerInterface;
 
 class MastodonFeedFetcher extends AbstractNetworkFeedFetcher
 {
     public function __construct(
-        private readonly SerializerInterface $serializer
+        private readonly SerializerInterface $serializer,
+        LoggerInterface $logger
     )
     {
-
+        parent::__construct($logger);
     }
 
     public function fetch(SocialNetworkProfile $socialNetworkProfile, FetchInfo $fetchInfo): array
     {
-        $account = IdentifierParser::parse($socialNetworkProfile);
+        try {
+            $account = IdentifierParser::parse($socialNetworkProfile);
 
-        $accountInfo = $this->getAccountInfo($account);
-        $timeline = $this->fetchTimeline($account, $accountInfo);
+            $accountInfo = $this->getAccountInfo($account);
+            $timeline = $this->fetchTimeline($account, $accountInfo);
 
+            $feedItemList = $this->convertTimeline($socialNetworkProfile, $timeline);
 
+            return $feedItemList;
+        } catch (\Exception $exception) {
+            $this->markAsFailed($socialNetworkProfile, sprintf('Failed to fetch social network profile %d: %s', $socialNetworkProfile->getId(), $exception->getMessage()));
 
-        dd($timeline);
-        return $data;
+            return [];
+        }
     }
 
     private function getAccountInfo(Account $account): ?AccountInfo
@@ -46,6 +54,21 @@ class MastodonFeedFetcher extends AbstractNetworkFeedFetcher
 
         $response = file_get_contents($feedUri);
 
-        return $this->serializer->deserialize($response, 'array<App\NetworkFeedFetcher\Mastodon\Model\Status>', 'json');
+        return $this->serializer->deserialize($response, sprintf('%s[]', Status::class), 'json');
+    }
+
+    private function convertTimeline(SocialNetworkProfile $socialnetworkProfile, array $timeline): array
+    {
+        $feedItemList = [];
+
+        foreach ($timeline as $status) {
+            $feedItem = EntryConverter::convert($socialnetworkProfile, $status);
+
+            if ($feedItem) {
+                $feedItemList[] = $feedItem;
+            }
+        }
+
+        return $feedItemList;
     }
 }

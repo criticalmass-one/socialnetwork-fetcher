@@ -2,15 +2,58 @@
 
 namespace App\NetworkFeedFetcher\Mastodon\Model;
 
-use JMS\Serializer\Annotation as Serializer;
-
 class Status
 {
     private string $id;
-    /**
-     * @Serializer\Type('DateTime<"U">')
-     */
     private \DateTime $createdAt;
-    private string $uri;
+    private string $url;
     private string $content;
+
+    public function getId(): string
+    {
+        return $this->id;
+    }
+
+    public function setId(string $id): Status
+    {
+        $this->id = $id;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): \DateTime
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(\DateTime $createdAt): Status
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function getUrl(): string
+    {
+        return $this->url;
+    }
+
+    public function setUrl(string $url): Status
+    {
+        $this->url = $url;
+
+        return $this;
+    }
+
+    public function getContent(): string
+    {
+        return $this->content;
+    }
+
+    public function setContent(string $content): Status
+    {
+        $this->content = $content;
+
+        return $this;
+    }
 }
