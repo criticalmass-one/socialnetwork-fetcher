@@ -2,77 +2,18 @@
 
 namespace App\Model;
 
-use JMS\Serializer\Annotation as JMS;
-
-/**
- * @JMS\ExclusionPolicy("all")
- */
 class SocialNetworkProfile
 {
-    /**
-     * @JMS\Type("int")
-     * @JMS\Expose()
-     */
     protected int $id;
-
-    /**
-     * @JMS\Type("int")
-     * @JMS\Expose()
-     */
     protected ?int $cityId = null;
-
-    /**
-     * @JMS\Type("string")
-     * @JMS\Expose()
-     */
     protected ?string $identifier = null;
-
-    /**
-     * @JMS\Type("string")
-     * @JMS\Expose()
-     */
     protected string $network;
-
-    /**
-     * @JMS\Type("DateTime")
-     * @JMS\Expose
-     */
     private ?\DateTime $createdAt = null;
-
-    /**
-     * @JMS\Type("bool")
-     * @JMS\Expose
-     */
     protected bool $autoPublish = true;
-
-    /**
-     * @JMS\Type("DateTime")
-     * @JMS\Expose
-     */
     protected ?\DateTime $lastFetchSuccessDateTime = null;
-
-    /**
-     * @JMS\Type("DateTime")
-     * @JMS\Expose
-     */
     protected ?\DateTime $lastFetchFailureDateTime = null;
-
-    /**
-     * @JMS\Type("string")
-     * @JMS\Expose
-     */
     protected ?string $lastFetchFailureError = null;
-
-    /**
-     * @JMS\Type("bool")
-     * @JMS\Expose
-     */
     protected bool $autoFetch = true;
-
-    /**
-     * @JMS\Type("string")
-     * @JMS\Expose
-     */
     protected ?string $additionalData = null;
 
     public function getId(): ?int
