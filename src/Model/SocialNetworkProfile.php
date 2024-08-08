@@ -67,13 +67,13 @@ class SocialNetworkProfile
      * @JMS\Type("bool")
      * @JMS\Expose
      */
-    protected $autoFetch = true;
+    protected bool $autoFetch = true;
 
     /**
      * @JMS\Type("string")
      * @JMS\Expose
      */
-    protected $additionalData;
+    protected ?string $additionalData = null;
 
     public function getId(): ?int
     {

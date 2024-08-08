@@ -3,7 +3,7 @@
 namespace App\NetworkFeedFetcher\Homepage;
 
 use App\Model\SocialNetworkProfile;
-use Zend\Feed\Reader\Reader;
+use Laminas\Feed\Reader\Reader;
 
 class FeedUriDetector
 {
