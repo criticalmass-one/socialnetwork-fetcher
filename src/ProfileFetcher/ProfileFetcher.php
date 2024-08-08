@@ -3,8 +3,8 @@
 namespace App\ProfileFetcher;
 
 use App\FeedFetcher\FetchInfo;
+use App\Serializer\SerializerInterface;
 use GuzzleHttp\Client;
-use Symfony\Component\Serializer\SerializerInterface;
 
 class ProfileFetcher implements ProfileFetcherInterface
 {

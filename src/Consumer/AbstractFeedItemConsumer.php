@@ -2,7 +2,7 @@
 
 namespace App\Consumer;
 
-use Symfony\Component\Serializer\SerializerInterface;
+use App\Serializer\SerializerInterface;
 
 abstract class AbstractFeedItemConsumer
 {

@@ -3,8 +3,8 @@
 namespace App\ProfilePersister;
 
 use App\Model\SocialNetworkProfile;
+use App\Serializer\SerializerInterface;
 use GuzzleHttp\Client;
-use Symfony\Component\Serializer\SerializerInterface;
 
 class ProfilePersister implements ProfilePersisterInterface
 {

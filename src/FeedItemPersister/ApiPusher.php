@@ -4,10 +4,10 @@ namespace App\FeedItemPersister;
 
 use App\FeedFetcher\FetchResult;
 use App\Model\SocialNetworkFeedItem;
+use App\Serializer\SerializerInterface;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\ServerException;
-use Symfony\Component\Serializer\SerializerInterface;
 
 class ApiPusher implements FeedItemPersisterInterface
 {

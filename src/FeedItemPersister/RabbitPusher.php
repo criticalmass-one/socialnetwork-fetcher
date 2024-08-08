@@ -4,8 +4,8 @@ namespace App\FeedItemPersister;
 
 use App\FeedFetcher\FetchResult;
 use App\Model\SocialNetworkFeedItem;
+use App\Serializer\SerializerInterface;
 use OldSound\RabbitMqBundle\RabbitMq\ProducerInterface;
-use Symfony\Component\Serializer\SerializerInterface;
 
 class RabbitPusher implements FeedItemPersisterInterface
 {
