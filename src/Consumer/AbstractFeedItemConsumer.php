@@ -2,15 +2,13 @@
 
 namespace App\Consumer;
 
-use App\FeedItemPersister\NonDuplicatesFeedItemPersister;
-use JMS\Serializer\SerializerInterface;
+use Symfony\Component\Serializer\SerializerInterface;
 
 abstract class AbstractFeedItemConsumer
 {
-    protected SerializerInterface $serializer;
+    public function __construct(
+        protected readonly SerializerInterface $serializer
+    ) {
 
-    public function __construct(SerializerInterface $serializer)
-    {
-        $this->serializer = $serializer;
     }
 }

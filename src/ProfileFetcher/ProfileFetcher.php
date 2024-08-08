@@ -3,22 +3,20 @@
 namespace App\ProfileFetcher;
 
 use App\FeedFetcher\FetchInfo;
-use App\Model\SocialNetworkProfile;
 use GuzzleHttp\Client;
-use JMS\Serializer\SerializerInterface;
+use Symfony\Component\Serializer\SerializerInterface;
 
 class ProfileFetcher implements ProfileFetcherInterface
 {
     protected Client $client;
-    protected SerializerInterface $serializer;
 
-    public function __construct(SerializerInterface $serializer, string $criticalmassHostname)
-    {
+    public function __construct(
+        private readonly SerializerInterface $serializer,
+        string $criticalmassHostname
+    ) {
         $this->client = new Client([
             'base_uri' => $criticalmassHostname,
         ]);
-
-        $this->serializer = $serializer;
     }
 
     public function fetchByNetworkIdentifier(string $networkIdentifier, string $citySlug = null): array

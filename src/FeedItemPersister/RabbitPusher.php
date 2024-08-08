@@ -2,21 +2,17 @@
 
 namespace App\FeedItemPersister;
 
-use App\FeedFetcher\FetchInfo;
 use App\FeedFetcher\FetchResult;
 use App\Model\SocialNetworkFeedItem;
-use JMS\Serializer\SerializerInterface;
 use OldSound\RabbitMqBundle\RabbitMq\ProducerInterface;
+use Symfony\Component\Serializer\SerializerInterface;
 
 class RabbitPusher implements FeedItemPersisterInterface
 {
-    protected ProducerInterface $producer;
-    protected SerializerInterface $serializer;
-
-    public function __construct(ProducerInterface $producer, SerializerInterface $serializer)
-    {
-        $this->producer = $producer;
-        $this->serializer = $serializer;
+    public function __construct(
+        private readonly ProducerInterface $producer,
+        private readonly SerializerInterface $serializer
+    ) {
     }
 
     public function persistFeedItemList(array $feedItemList, ?FetchResult $fetchResult): FeedItemPersisterInterface
