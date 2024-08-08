@@ -3,22 +3,22 @@
 namespace App\ProfileFetcher;
 
 use App\FeedFetcher\FetchInfo;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 use App\Model\SocialNetworkProfile;
-use GuzzleHttp\Client;
-use JMS\Serializer\SerializerInterface;
+use App\Serializer\SerializerInterface;
 
 class ProfileFetcher implements ProfileFetcherInterface
 {
-    protected Client $client;
-    protected SerializerInterface $serializer;
+    private HttpClientInterface $client;
 
-    public function __construct(SerializerInterface $serializer, string $criticalmassHostname)
-    {
-        $this->client = new Client([
+    public function __construct(
+        private readonly SerializerInterface $serializer,
+        HttpClientInterface $client,
+        string $criticalmassHostname
+    ) {
+        $this->client = $client->withOptions([
             'base_uri' => $criticalmassHostname,
         ]);
-
-        $this->serializer = $serializer;
     }
 
     public function fetchByNetworkIdentifier(string $networkIdentifier, string $citySlug = null): array
@@ -34,11 +34,11 @@ class ProfileFetcher implements ProfileFetcherInterface
 
         $query = sprintf('/api/socialnetwork-profiles?%s', http_build_query($parameters));
 
-        $result = $this->client->get($query);
+        $result = $this->client->request('GET', $query);
 
-        $jsonContent = $result->getBody()->getContents();
+        $jsonContent = $result->getContent();
 
-        $profileList = $this->serializer->deserialize($jsonContent, 'array<App\Model\SocialNetworkProfile>', 'json');
+        $profileList = $this->serializer->deserialize($jsonContent, sprintf('%s[]', SocialNetworkProfile::class), 'json');
 
         return $profileList;
     }

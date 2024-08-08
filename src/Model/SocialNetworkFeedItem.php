@@ -2,77 +2,18 @@
 
 namespace App\Model;
 
-use JMS\Serializer\Annotation as JMS;
-
-/**
- * @JMS\ExclusionPolicy("all")
- */
 class SocialNetworkFeedItem
 {
-    /**
-     * @JMS\Type("int")
-     * @JMS\Expose
-     */
     protected ?int $id = null;
-
-    /**
-     * @JMS\Type("int")
-     * @JMS\Expose
-     */
     protected ?int $socialNetworkProfileId = null;
-
-    /**
-     * @JMS\Type("string")
-     * @JMS\Expose
-     */
     protected ?string $uniqueIdentifier = null;
-
-    /**
-     * @JMS\Type("string")
-     * @JMS\Expose
-     */
     protected ?string $permalink = null;
-
-    /**
-     * @JMS\Type("string")
-     * @JMS\Expose
-     */
     protected ?string $title = null;
-
-    /**
-     * @JMS\Type("string")
-     * @JMS\Expose
-     */
     protected ?string $text = null;
-
-    /**
-     * @JMS\Type("DateTime<'U'>")
-     * @JMS\Expose
-     */
     protected ?\DateTime $dateTime = null;
-
-    /**
-     * @JMS\Type("bool")
-     * @JMS\Expose
-     */
     protected ?bool $hidden = false;
-
-    /**
-     * @JMS\Type("bool")
-     * @JMS\Expose
-     */
     protected ?bool $deleted = false;
-
-    /**
-     * @JMS\Type("DateTime<'U'>")
-     * @JMS\Expose
-     */
     protected ?\DateTime $createdAt = null;
-
-    /**
-     * @JMS\Type("string")
-     * @JMS\Expose
-     */
     protected ?string $raw = null;
 
     public function __construct()
