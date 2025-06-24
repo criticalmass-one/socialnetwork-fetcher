@@ -7,6 +7,7 @@ use App\Model\SocialNetworkFeedItem;
 use App\Serializer\SerializerInterface;
 use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Component\HttpClient\Exception\ServerException;
+use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class ApiPusher implements FeedItemPersisterInterface
@@ -34,12 +35,19 @@ class ApiPusher implements FeedItemPersisterInterface
 
     public function persistFeedItem(SocialNetworkFeedItem $feedItem, ?FetchResult $fetchResult): FeedItemPersisterInterface
     {
-        $jsonData = $this->serializer->serialize($feedItem, 'json');
+        $context = [
+            DateTimeNormalizer::FORMAT_KEY => 'U',
+            DateTimeNormalizer::CAST_KEY => 'int',
+        ];
+
+        $jsonData = $this->serializer->serialize($feedItem, 'json', $context);
 
         try {
-            $response = $this->client->request('GET', '/api/hamburg/socialnetwork-feeditems', [
+            $response = $this->client->request('PUT', '/api/hamburg/socialnetwork-feeditems', [
                 'body' => $jsonData
             ]);
+
+            $response->getContent(); // Trigger the request and throw an exception if the response is not successful
         } catch (ClientException $exception) { // got a 4xx status code response
             if ($fetchResult) {
                 $fetchResult->incCounterPushed4xx();
