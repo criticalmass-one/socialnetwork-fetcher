@@ -46,6 +46,8 @@ class ApiPusher implements FeedItemPersisterInterface
             $response = $this->client->request('PUT', '/api/hamburg/socialnetwork-feeditems', [
                 'body' => $jsonData
             ]);
+
+            $response->getContent(); // Trigger the request and throw an exception if the response is not successful
         } catch (ClientException $exception) { // got a 4xx status code response
             if ($fetchResult) {
                 $fetchResult->incCounterPushed4xx();
