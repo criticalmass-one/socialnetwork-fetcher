@@ -14,76 +14,109 @@ class InstagramFeedFetcher extends AbstractNetworkFeedFetcher
 {
     protected Instagram $instagram;
 
-    public function __construct(LoggerInterface $logger, string $instagramScraperProxyServerAddress, string $instagramScraperProxyServerPort)
-    {
-        $this->instagram = new \InstagramScraper\Instagram();
-
-        if ($instagramScraperProxyServerAddress) {
-            Instagram::setProxy([
-                'address' => $instagramScraperProxyServerAddress,
-                'port' => $instagramScraperProxyServerPort,
-                'tunnel' => true,
-                'timeout' => 30,
-            ]);
-        }
-
+    public function __construct(
+        LoggerInterface $logger,
+        private HttpClientInterface $httpClient
+    ) {
         parent::__construct($logger);
     }
 
     public function fetch(SocialNetworkProfile $socialNetworkProfile, FetchInfo $fetchInfo): array
     {
-        $username = Screenname::extractScreenname($socialNetworkProfile);
-
-        if (!$username || !Screenname::isValidScreenname($username)) {
-            $this->markAsFailed($socialNetworkProfile, sprintf('Skipping %s cause it is not a valid instagram username.', $username));
-        }
-
-        $this->logger->info(sprintf('Now quering @%s', $username));
-
-        $additionalData = json_decode($socialNetworkProfile->getAdditionalData(), true);
-
-        /*        if (array_key_exists('lastMediaId', $additionalData)) {
-                    $lastFetchedMediaId = $additionalData['lastMediaId'];
-                } else {
-                    $lastFetchedMediaId = '';
-                }*/
-
-        // @todo fix last media id somehow
-        $lastFetchedMediaId = '';
-        
-        try {
-            $mediaList = $this->instagram->getMedias($username, $fetchInfo->getCount() ?? 100, $lastFetchedMediaId);
-        } catch (InstagramNotFoundException $exception) {
-            $this->markAsFailed($socialNetworkProfile, $exception->getMessage());
-        }
-
-        if (!isset($mediaList) || 0 === count($mediaList)) {
+        $sourceUrl = $socialNetworkProfile->getIdentifier();
+        if (!$sourceUrl) {
+            $this->markAsFailed($socialNetworkProfile, 'Kein identifier (Instagram-URL) vorhanden.');
             return [];
         }
 
-        $lastMediaId = null;
+        $apiKey = $_ENV['RSS_APP_API_KEY'] ?? null;
+        $apiSecret = $_ENV['RSS_APP_API_SECRET'] ?? null;
+        $bearer = 'Bearer ' . $apiKey . ':' . $apiSecret;
 
-        /** @var Media $media */
-        foreach ($mediaList as $media) {
-            if (!$lastMediaId || $lastMediaId < $media->getId()) {
-                $lastMediaId = $media->getId();
-            }
+        $additionalData = json_decode($socialNetworkProfile->getAdditionalData() ?? '{}', true);
 
-            $feedItem = MediaConverter::convert($socialNetworkProfile, $media);
+        $feedId = $additionalData['rss_feed_id'] ?? null;
 
-            if ($feedItem) {
-                $this->logger->info(sprintf('Parsed and added instagram photo #%s', $feedItem->getUniqueIdentifier()));
+        if ($feedId && !$this->feedExists($feedId, $bearer)) {
+            $feedId = null;
+            unset($additionalData['rss_feed_id']);
+        }
 
-                $feedItemList[] = $feedItem;
-
-                if ($lastMediaId) {
-                    $socialNetworkProfile->setAdditionalData(json_encode(['lastMediaId' => $lastMediaId]));
-                }
+        if (!$feedId) {
+            $feedId = $this->findRssAppFeedIdBySourceUrl($sourceUrl, $bearer);
+            if ($feedId) {
+                $additionalData['rss_feed_id'] = $feedId;
+                $socialNetworkProfile->setAdditionalData(json_encode($additionalData, JSON_UNESCAPED_SLASHES));
+                // Wichtig: Entity muss später persistiert werden!
+            } else {
+                $this->markAsFailed($socialNetworkProfile, 'Kein Feed bei RSS.app gefunden für ' . $sourceUrl);
+                return [];
             }
         }
 
-        return $feedItemList;
+        try {
+            $response = $this->httpClient->request('GET', 'https://api.rss.app/v1/feeds/' . $feedId, [
+                'headers' => ['Authorization' => $bearer]
+            ]);
+
+            $data = $response->toArray();
+            $items = $data['items'] ?? [];
+
+            $feedItemList = [];
+
+            foreach ($items as $item) {
+                $feedItem = RssAppMediaConverter::convert($socialNetworkProfile, $item);
+                if ($feedItem) {
+                    $feedItemList[] = $feedItem;
+                }
+            }
+
+            return $feedItemList;
+
+        } catch (\Throwable $e) {
+            $this->markAsFailed($socialNetworkProfile, 'Fehler bei RSS.app: ' . $e->getMessage());
+            return [];
+        }
     }
+
+    private function feedExists(string $feedId, string $bearer): bool
+    {
+        try {
+            $response = $this->httpClient->request('GET', 'https://api.rss.app/v1/feeds/' . $feedId, [
+                'headers' => ['Authorization' => $bearer]
+            ]);
+
+            return $response->getStatusCode() === 200;
+        } catch (\Throwable) {
+            return false;
+        }
+    }
+
+    private function findRssAppFeedIdBySourceUrl(string $sourceUrl, string $bearer): ?string
+    {
+        $offset = 0;
+        $limit = 100;
+
+        do {
+            $response = $this->httpClient->request('GET', "https://api.rss.app/v1/feeds?limit=$limit&offset=$offset", [
+                'headers' => ['Authorization' => $bearer]
+            ]);
+
+            $data = $response->toArray();
+            $feeds = $data['data'] ?? [];
+
+            foreach ($feeds as $feed) {
+                if (($feed['source_url'] ?? '') === $sourceUrl) {
+                    return $feed['id'];
+                }
+            }
+
+            $offset += $limit;
+        } while (($data['total'] ?? 0) > $offset);
+
+        return null;
+    }
+
 
     public function getNetworkIdentifier(): string
     {
