@@ -5,9 +5,9 @@ namespace App\NetworkFeedFetcher\Instagram;
 use App\FeedFetcher\FetchInfo;
 use App\NetworkFeedFetcher\AbstractNetworkFeedFetcher;
 use App\Model\SocialNetworkProfile;
+use App\RssApp\Converter;
 use App\RssApp\RssAppInterface;
 use Psr\Log\LoggerInterface;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class InstagramFeedFetcher extends AbstractNetworkFeedFetcher
 {
@@ -52,7 +52,7 @@ class InstagramFeedFetcher extends AbstractNetworkFeedFetcher
             $feedItemList = [];
 
             foreach ($items as $item) {
-                $feedItem = InstagramConverter::convert($socialNetworkProfile, $item);
+                $feedItem = Converter::convert($socialNetworkProfile, $item);
 
                 if ($feedItem) {
                     $feedItemList[] = $feedItem;

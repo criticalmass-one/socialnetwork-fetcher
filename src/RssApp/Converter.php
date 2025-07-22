@@ -1,11 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace App\NetworkFeedFetcher\Facebook;
+namespace App\RssApp;
 
 use App\Model\SocialNetworkFeedItem;
 use App\Model\SocialNetworkProfile;
 
-class FacebookConverter
+class Converter
 {
     public static function convert(SocialNetworkProfile $profile, array $rssItem): ?SocialNetworkFeedItem
     {
