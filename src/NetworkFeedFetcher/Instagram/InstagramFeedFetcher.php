@@ -5,18 +5,14 @@ namespace App\NetworkFeedFetcher\Instagram;
 use App\FeedFetcher\FetchInfo;
 use App\NetworkFeedFetcher\AbstractNetworkFeedFetcher;
 use App\Model\SocialNetworkProfile;
-use InstagramScraper\Exception\InstagramNotFoundException;
-use InstagramScraper\Instagram;
-use InstagramScraper\Model\Media;
 use Psr\Log\LoggerInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class InstagramFeedFetcher extends AbstractNetworkFeedFetcher
 {
-    protected Instagram $instagram;
-
     public function __construct(
         LoggerInterface $logger,
-        private HttpClientInterface $httpClient
+        private readonly HttpClientInterface $httpClient
     ) {
         parent::__construct($logger);
     }
@@ -47,7 +43,6 @@ class InstagramFeedFetcher extends AbstractNetworkFeedFetcher
             if ($feedId) {
                 $additionalData['rss_feed_id'] = $feedId;
                 $socialNetworkProfile->setAdditionalData(json_encode($additionalData, JSON_UNESCAPED_SLASHES));
-                // Wichtig: Entity muss später persistiert werden!
             } else {
                 $this->markAsFailed($socialNetworkProfile, 'Kein Feed bei RSS.app gefunden für ' . $sourceUrl);
                 return [];
@@ -55,7 +50,7 @@ class InstagramFeedFetcher extends AbstractNetworkFeedFetcher
         }
 
         try {
-            $response = $this->httpClient->request('GET', 'https://api.rss.app/v1/feeds/' . $feedId, [
+            $response = $this->httpClient->request('GET', 'https://api.rss.app/v1/feeds/' . $feedId . '?count=100', [
                 'headers' => ['Authorization' => $bearer]
             ]);
 
@@ -65,7 +60,8 @@ class InstagramFeedFetcher extends AbstractNetworkFeedFetcher
             $feedItemList = [];
 
             foreach ($items as $item) {
-                $feedItem = RssAppMediaConverter::convert($socialNetworkProfile, $item);
+                $feedItem = InstagramConverter::convert($socialNetworkProfile, $item);
+
                 if ($feedItem) {
                     $feedItemList[] = $feedItem;
                 }
