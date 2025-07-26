@@ -40,7 +40,7 @@ class InstagramFeedFetcher extends AbstractNetworkFeedFetcher
 
         $this->logger->info(sprintf('Now quering @%s', $username));
 
-        $additionalData = $socialNetworkProfile->getAdditionalData();
+        $additionalData = json_decode($socialNetworkProfile->getAdditionalData(), true);
 
         /*        if (array_key_exists('lastMediaId', $additionalData)) {
                     $lastFetchedMediaId = $additionalData['lastMediaId'];
@@ -77,7 +77,7 @@ class InstagramFeedFetcher extends AbstractNetworkFeedFetcher
                 $feedItemList[] = $feedItem;
 
                 if ($lastMediaId) {
-                    $socialNetworkProfile->setAdditionalData(['lastMediaId' => $lastMediaId]);
+                    $socialNetworkProfile->setAdditionalData(json_encode(['lastMediaId' => $lastMediaId]));
                 }
             }
         }

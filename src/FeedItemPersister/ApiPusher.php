@@ -4,23 +4,24 @@ namespace App\FeedItemPersister;
 
 use App\FeedFetcher\FetchResult;
 use App\Model\SocialNetworkFeedItem;
-use GuzzleHttp\Client;
-use GuzzleHttp\Exception\ClientException;
-use GuzzleHttp\Exception\ServerException;
-use JMS\Serializer\SerializerInterface;
+use App\Serializer\SerializerInterface;
+use Symfony\Component\HttpClient\Exception\ClientException;
+use Symfony\Component\HttpClient\Exception\ServerException;
+use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class ApiPusher implements FeedItemPersisterInterface
 {
-    protected Client $client;
-    protected SerializerInterface $serializer;
+    private HttpClientInterface $client;
 
-    public function __construct(SerializerInterface $serializer, string $criticalmassHostname)
-    {
-        $this->client = new Client([
+    public function __construct(
+        private readonly SerializerInterface $serializer,
+        HttpClientInterface $client,
+        string $criticalmassHostname
+    ) {
+        $this->client = $client->withOptions([
             'base_uri' => $criticalmassHostname,
         ]);
-
-        $this->serializer = $serializer;
     }
 
     public function persistFeedItemList(array $feedItemList, ?FetchResult $fetchResult): FeedItemPersisterInterface
@@ -34,12 +35,19 @@ class ApiPusher implements FeedItemPersisterInterface
 
     public function persistFeedItem(SocialNetworkFeedItem $feedItem, ?FetchResult $fetchResult): FeedItemPersisterInterface
     {
-        $jsonData = $this->serializer->serialize($feedItem, 'json');
+        $context = [
+            DateTimeNormalizer::FORMAT_KEY => 'U',
+            DateTimeNormalizer::CAST_KEY => 'int',
+        ];
+
+        $jsonData = $this->serializer->serialize($feedItem, 'json', $context);
 
         try {
-            $response = $this->client->put('/api/hamburg/socialnetwork-feeditems', [
+            $response = $this->client->request('PUT', '/api/hamburg/socialnetwork-feeditems', [
                 'body' => $jsonData
             ]);
+
+            $response->getContent(); // Trigger the request and throw an exception if the response is not successful
         } catch (ClientException $exception) { // got a 4xx status code response
             dd($exception->getMessage());
             if ($fetchResult) {

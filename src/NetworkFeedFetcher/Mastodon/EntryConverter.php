@@ -1,42 +1,43 @@
 <?php declare(strict_types=1);
 
-namespace App\NetworkFeedFetcher\Twitter;
+namespace App\NetworkFeedFetcher\Mastodon;
 
 use App\Model\SocialNetworkFeedItem;
 use App\Model\SocialNetworkProfile;
+use App\NetworkFeedFetcher\Mastodon\Model\Status;
 
-class TweetConverter
+class EntryConverter
 {
     private function __construct()
     {
 
     }
 
-    public static function convert(SocialNetworkProfile $socialNetworkProfile, \stdClass $tweet): ?SocialNetworkFeedItem
+    public static function convert(SocialNetworkProfile $socialNetworkProfile, Status $status): ?SocialNetworkFeedItem
     {
         $feedItem = new SocialNetworkFeedItem();
         $feedItem->setSocialNetworkProfileId($socialNetworkProfile->getId());
 
         try {
-            $permalink = PermalinkGenerator::generatePermalink($socialNetworkProfile, $tweet);
+            $uniqueId = $status->getUrl();
+            $permalink = $status->getUrl();
+            $text = $status->getContent();
+            $dateTime = $status->getCreatedAt();
 
-            $text = $tweet->full_text;
-            $dateTime = new \DateTime($tweet->created_at);
-
-            if ($permalink && $text && $dateTime) {
+            if ($uniqueId && $permalink && $text && $dateTime) {
                 $feedItem
-                    ->setUniqueIdentifier($permalink)
+                    ->setUniqueIdentifier($uniqueId)
                     ->setPermalink($permalink)
                     ->setText($text)
                     ->setDateTime($dateTime)
-                    ->setRaw(json_encode((array)$tweet));
+                ;
 
                 return $feedItem;
             }
-
-            return $feedItem;
         } catch (\Exception $e) {
             return null;
         }
+
+        return null;
     }
 }
