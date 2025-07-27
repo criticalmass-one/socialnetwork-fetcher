@@ -49,7 +49,6 @@ class ApiPusher implements FeedItemPersisterInterface
 
             $response->getContent(); // Trigger the request and throw an exception if the response is not successful
         } catch (ClientException $exception) { // got a 4xx status code response
-            dd($exception->getMessage());
             if ($fetchResult) {
                 $fetchResult->incCounterPushed4xx();
             }
