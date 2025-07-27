@@ -1,13 +1,13 @@
 <?php declare(strict_types=1);
 
-namespace App\NetworkFeedFetcher\Instagram;
+namespace App\NetworkFeedFetcher\Facebook;
 
 use App\RssApp\Fetcher;
 
-class InstagramFeedFetcher extends Fetcher
+class FacebookFeedFetcher extends Fetcher
 {
     public function getNetworkIdentifier(): string
     {
-        return 'instagram_profile';
+        return 'facebook_page';
     }
 }
