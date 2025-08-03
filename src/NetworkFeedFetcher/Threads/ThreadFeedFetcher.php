@@ -1,13 +1,13 @@
 <?php declare(strict_types=1);
 
-namespace App\NetworkFeedFetcher\Instagram;
+namespace App\NetworkFeedFetcher\Threads;
 
 use App\RssApp\Fetcher;
 
-class InstagramFeedFetcher extends Fetcher
+class ThreadFeedFetcher extends Fetcher
 {
     public function getNetworkIdentifier(): string
     {
-        return 'instagram_profile';
+        return 'threads_profile';
     }
 }
