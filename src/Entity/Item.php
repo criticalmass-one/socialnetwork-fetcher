@@ -2,48 +2,82 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Table(name: 'item')]
 #[ORM\Index(columns: ['date_time'], name: 'item_date_time_index')]
 #[ORM\Index(columns: ['created_at'], name: 'item_created_at_index')]
-#[ORM\Entity(repositoryClass: ItemRepository::class)]
+#[ORM\Entity(repositoryClass: \App\Repository\ItemRepository::class)]
+#[ApiResource(
+    operations: [
+        new GetCollection(),
+        new Get(),
+        new Post(),
+        new Put(),
+    ],
+    normalizationContext: ['groups' => ['item:read']],
+    denormalizationContext: ['groups' => ['item:write']],
+    order: ['dateTime' => 'DESC'],
+    paginationItemsPerPage: 50,
+)]
+#[ApiFilter(SearchFilter::class, properties: ['profile' => 'exact'])]
+#[ApiFilter(OrderFilter::class, properties: ['dateTime', 'createdAt'])]
 class Item
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
+    #[Groups(['item:read'])]
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Profile::class)]
     #[ORM\JoinColumn(name: 'profile_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
+    #[Groups(['item:read', 'item:write'])]
     private ?Profile $profile = null;
 
     #[ORM\Column(type: 'string', length: 255, nullable: false)]
+    #[Groups(['item:read', 'item:write'])]
     private ?string $uniqueIdentifier = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['item:read', 'item:write'])]
     private ?string $permalink = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['item:read', 'item:write'])]
     private ?string $title = null;
 
     #[ORM\Column(type: 'text', nullable: false)]
+    #[Groups(['item:read', 'item:write'])]
     private ?string $text = null;
 
     #[ORM\Column(name: 'date_time', type: 'datetime_immutable', nullable: false)]
+    #[Groups(['item:read', 'item:write'])]
     private ?\DateTimeImmutable $dateTime = null;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    #[Groups(['item:read', 'item:write'])]
     private bool $hidden = false;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    #[Groups(['item:read', 'item:write'])]
     private bool $deleted = false;
 
     #[ORM\Column(name: 'created_at', type: 'datetime_immutable', nullable: false)]
+    #[Groups(['item:read'])]
     private \DateTimeImmutable $createdAt;
 
     #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['item:read', 'item:write'])]
     private ?string $raw = null;
 
     public function __construct()
