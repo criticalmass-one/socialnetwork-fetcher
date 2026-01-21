@@ -2,9 +2,11 @@
 
 namespace App\ProfilePersister;
 
+use App\Entity\SocialNetwork;
 use App\Entity\SocialNetworkProfile as SocialNetworkProfileEntity;
 use App\Model\SocialNetworkProfile as SocialNetworkProfileModel;
 use App\Repository\SocialNetworkProfileRepository;
+use App\Repository\SocialNetworkRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 class DoctrineProfilePersister implements ProfilePersisterInterface
@@ -12,14 +14,21 @@ class DoctrineProfilePersister implements ProfilePersisterInterface
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly SocialNetworkProfileRepository $repository,
+        private readonly SocialNetworkRepository $socialNetworkRepository,
     ) {
     }
 
     public function persistProfile(SocialNetworkProfileModel $socialNetworkProfile): SocialNetworkProfileModel
     {
         $id = $socialNetworkProfile->getId();
-        $network = (string) $socialNetworkProfile->getNetwork();
+        $networkName = (string) $socialNetworkProfile->getNetwork();
         $identifier = (string) $socialNetworkProfile->getIdentifier();
+
+        $socialNetwork = $this->socialNetworkRepository->findOneByName($networkName);
+
+        if (!$socialNetwork) {
+            throw new \RuntimeException(sprintf('SocialNetwork "%s" not found', $networkName));
+        }
 
         $entity = null;
 
@@ -27,8 +36,8 @@ class DoctrineProfilePersister implements ProfilePersisterInterface
             $entity = $this->repository->find($id);
         }
 
-        if (!$entity && $network && $identifier) {
-            $entity = $this->repository->findOneByNetworkAndIdentifier($network, $identifier);
+        if (!$entity && $socialNetwork && $identifier) {
+            $entity = $this->repository->findOneBySocialNetworkAndIdentifier($socialNetwork, $identifier);
         }
 
         if (!$entity) {
@@ -37,7 +46,7 @@ class DoctrineProfilePersister implements ProfilePersisterInterface
                 $entity->setId($id);
             }
             $entity
-                ->setNetwork($network)
+                ->setSocialNetwork($socialNetwork)
                 ->setIdentifier($identifier)
                 ->setCreatedAt($socialNetworkProfile->getCreatedAt() ? \DateTimeImmutable::createFromInterface($socialNetworkProfile->getCreatedAt()) : new \DateTimeImmutable());
         }
