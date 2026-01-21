@@ -47,7 +47,7 @@ abstract class AbstractFeedFetcher implements FeedFetcherInterface
         return $this->networkFetcherList;
     }
 
-    protected function getSocialNetworkProfiles(FetchInfo $fetchInfo): array
+    protected function getProfiles(FetchInfo $fetchInfo): array
     {
         return $this->profileFetcher->fetchByFetchInfo($fetchInfo);
     }

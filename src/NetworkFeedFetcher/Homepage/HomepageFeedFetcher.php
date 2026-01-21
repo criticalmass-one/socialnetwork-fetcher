@@ -4,28 +4,28 @@ namespace App\NetworkFeedFetcher\Homepage;
 
 use App\FeedFetcher\FetchInfo;
 use App\NetworkFeedFetcher\AbstractNetworkFeedFetcher;
-use App\Model\SocialNetworkProfile;
+use App\Model\Profile;
 use Laminas\Feed\Reader\Entry\EntryInterface;
 use Laminas\Feed\Reader\Reader;
 
 class HomepageFeedFetcher extends AbstractNetworkFeedFetcher
 {
-    public function fetch(SocialNetworkProfile $socialNetworkProfile, FetchInfo $fetchInfo): array
+    public function fetch(Profile $profile, FetchInfo $fetchInfo): array
     {
         try {
-            return $this->fetchFeed($socialNetworkProfile);
+            return $this->fetchFeed($profile);
         } catch (\Exception $exception) {
-            $this->markAsFailed($socialNetworkProfile, sprintf('Failed to fetch social network profile %d: %s', $socialNetworkProfile->getId(), $exception->getMessage()));
+            $this->markAsFailed($profile, sprintf('Failed to fetch social network profile %d: %s', $profile->getId(), $exception->getMessage()));
 
             return [];
         }
     }
 
-    protected function fetchFeed(SocialNetworkProfile $socialNetworkProfile): array
+    protected function fetchFeed(Profile $profile): array
     {
         $feedItemList = [];
 
-        $feedLink = FeedUriDetector::findFeedLink($socialNetworkProfile);
+        $feedLink = FeedUriDetector::findFeedLink($profile);
 
         if (!$feedLink) {
             return [];
@@ -37,7 +37,7 @@ class HomepageFeedFetcher extends AbstractNetworkFeedFetcher
 
         /** @var EntryInterface $entry */
         foreach ($feed as $entry) {
-            $feedItem = EntryConverter::convert($socialNetworkProfile, $entry);
+            $feedItem = EntryConverter::convert($profile, $entry);
 
             if ($feedItem) {
                 $feedItemList[] = $feedItem;
@@ -49,9 +49,9 @@ class HomepageFeedFetcher extends AbstractNetworkFeedFetcher
         return $feedItemList;
     }
 
-    protected function markAsFailed(SocialNetworkProfile $socialNetworkProfile, string $errorMessage): SocialNetworkProfile
+    protected function markAsFailed(Profile $profile, string $errorMessage): Profile
     {
-        $socialNetworkProfile
+        $profile
             ->setLastFetchFailureDateTime(new \DateTime())
             ->setLastFetchFailureError($errorMessage);
 
@@ -59,6 +59,6 @@ class HomepageFeedFetcher extends AbstractNetworkFeedFetcher
             ->logger
             ->notice($errorMessage);
 
-        return $socialNetworkProfile;
+        return $profile;
     }
 }

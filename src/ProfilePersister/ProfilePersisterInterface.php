@@ -2,10 +2,9 @@
 
 namespace App\ProfilePersister;
 
-use App\Model\SocialNetworkProfile;
+use App\Model\Profile;
 
 interface ProfilePersisterInterface
 {
-    public function persistProfile(SocialNetworkProfile $socialNetworkProfile): SocialNetworkProfile;
-
+    public function persistProfile(Profile $profile): Profile;
 }

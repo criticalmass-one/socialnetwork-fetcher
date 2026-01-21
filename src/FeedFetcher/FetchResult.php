@@ -2,11 +2,11 @@
 
 namespace App\FeedFetcher;
 
-use App\Model\SocialNetworkProfile;
+use App\Model\Profile;
 
 class FetchResult
 {
-    protected SocialNetworkProfile $socialNetworkProfile;
+    protected Profile $profile;
     protected string $status;
 
     protected int $counterFetched = 0;
@@ -15,14 +15,14 @@ class FetchResult
     protected int $counterPushed4xx = 0;
     protected int $counterPushed5xx = 0;
 
-    public function getSocialNetworkProfile(): SocialNetworkProfile
+    public function getProfile(): Profile
     {
         return $this->socialNetworkProfile;
     }
 
-    public function setSocialNetworkProfile(SocialNetworkProfile $socialNetworkProfile): FetchResult
+    public function setProfile(Profile $profile): FetchResult
     {
-        $this->socialNetworkProfile = $socialNetworkProfile;
+        $this->socialNetworkProfile = $profile;
 
         return $this;
     }

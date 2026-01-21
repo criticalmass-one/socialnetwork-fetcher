@@ -4,7 +4,7 @@ namespace App\ProfileFetcher;
 
 use App\FeedFetcher\FetchInfo;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
-use App\Model\SocialNetworkProfile;
+use App\Model\Profile;
 use App\Serializer\SerializerInterface;
 
 class ProfileFetcher implements ProfileFetcherInterface
@@ -34,7 +34,7 @@ class ProfileFetcher implements ProfileFetcherInterface
 
         $jsonContent = $result->getContent();
 
-        return $this->serializer->deserialize($jsonContent, sprintf('%s[]', SocialNetworkProfile::class), 'json');
+        return $this->serializer->deserialize($jsonContent, sprintf('%s[]', Profile::class), 'json');
     }
 
     public function fetchByNetworkIdentifiers(array $networkIdentifiers = []): array

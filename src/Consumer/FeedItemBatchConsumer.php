@@ -2,7 +2,7 @@
 
 namespace App\Consumer;
 
-use App\Model\SocialNetworkFeedItem;
+use App\Model\Item;
 use OldSound\RabbitMqBundle\RabbitMq\BatchConsumerInterface;
 use PhpAmqpLib\Message\AMQPMessage;
 
@@ -10,17 +10,17 @@ class FeedItemBatchConsumer extends AbstractFeedItemConsumer implements BatchCon
 {
     public function batchExecute(array $messages): array
     {
-        $socialNetworkFeedItemList = [];
+        $itemList = [];
         $resultList = [];
 
         /** @var AMQPMessage $message */
         foreach ($messages as $message) {
-            $socialNetworkFeedItemList[] = $this->serializer->deserialize($message->getBody(), SocialNetworkFeedItem::class, 'json');
+            $itemList[] = $this->serializer->deserialize($message->getBody(), Item::class, 'json');
 
             $resultList[(int)$message->delivery_info['delivery_tag']] = true;
         }
 
-        $this->feedItemPersister->persistFeedItemList($socialNetworkFeedItemList)->flush();
+        $this->feedItemPersister->persistFeedItemList($itemList)->flush();
 
         return $resultList;
     }

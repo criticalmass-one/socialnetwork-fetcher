@@ -3,7 +3,7 @@
 namespace App\FeedItemPersister;
 
 use App\FeedFetcher\FetchResult;
-use App\Model\SocialNetworkFeedItem;
+use App\Model\Item;
 use App\Serializer\SerializerInterface;
 use OldSound\RabbitMqBundle\RabbitMq\ProducerInterface;
 
@@ -24,9 +24,9 @@ class RabbitPusher implements FeedItemPersisterInterface
         return $this;
     }
 
-    public function persistFeedItem(SocialNetworkFeedItem $socialNetworkFeedItem, ?FetchResult $fetchResult): FeedItemPersisterInterface
+    public function persistFeedItem(Item $item, ?FetchResult $fetchResult): FeedItemPersisterInterface
     {
-        $this->producer->publish($this->serializer->serialize($socialNetworkFeedItem, 'json'));
+        $this->producer->publish($this->serializer->serialize($item, 'json'));
 
         if ($fetchResult) {
             $fetchResult->incCounterRabbit();

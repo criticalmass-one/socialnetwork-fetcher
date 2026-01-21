@@ -2,7 +2,7 @@
 
 namespace App\NetworkFeedFetcher\Mastodon;
 
-use App\Model\SocialNetworkProfile;
+use App\Model\Profile;
 use App\NetworkFeedFetcher\Mastodon\Model\Account;
 
 class IdentifierParser
@@ -12,16 +12,16 @@ class IdentifierParser
 
     }
 
-    public static function parse(SocialNetworkProfile $socialNetworkProfile): ?Account
+    public static function parse(Profile $profile): ?Account
     {
-        preg_match('/@?\b([A-Z0-9._%+-]+)@([A-Z0-9.-]+\.[A-Z]{2,})/U', $socialNetworkProfile->getIdentifier(), $matches);
+        preg_match('/@?\b([A-Z0-9._%+-]+)@([A-Z0-9.-]+\.[A-Z]{2,})/U', $profile->getIdentifier(), $matches);
 
         if (0 !== count($matches)) {
             dd($matches);
         }
 
-        $hostname = parse_url($socialNetworkProfile->getIdentifier(), PHP_URL_HOST);
-        $username = parse_url($socialNetworkProfile->getIdentifier(), PHP_URL_PATH);
+        $hostname = parse_url($profile->getIdentifier(), PHP_URL_HOST);
+        $username = parse_url($profile->getIdentifier(), PHP_URL_PATH);
 
         return new Account($hostname, trim($username, '/'));
     }

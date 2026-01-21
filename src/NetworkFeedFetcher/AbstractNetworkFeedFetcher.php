@@ -2,7 +2,7 @@
 
 namespace App\NetworkFeedFetcher;
 
-use App\Model\SocialNetworkProfile;
+use App\Model\Profile;
 use Psr\Log\LoggerInterface;
 
 abstract class AbstractNetworkFeedFetcher implements NetworkFeedFetcherInterface
@@ -13,9 +13,9 @@ abstract class AbstractNetworkFeedFetcher implements NetworkFeedFetcherInterface
 
     }
 
-    public function supports(SocialNetworkProfile $socialNetworkProfile): bool
+    public function supports(Profile $profile): bool
     {
-        return $this->supportsNetwork($socialNetworkProfile->getNetwork());
+        return $this->supportsNetwork($profile->getNetwork());
     }
 
     public function supportsNetwork(string $network): bool
@@ -33,9 +33,9 @@ abstract class AbstractNetworkFeedFetcher implements NetworkFeedFetcherInterface
         return strtolower($feedFetcherNetwork);
     }
 
-    protected function markAsFailed(SocialNetworkProfile $socialNetworkProfile, string $errorMessage): SocialNetworkProfile
+    protected function markAsFailed(Profile $profile, string $errorMessage): Profile
     {
-        $socialNetworkProfile
+        $profile
             ->setLastFetchFailureDateTime(new \DateTime())
             ->setLastFetchFailureError($errorMessage);
 
@@ -43,6 +43,6 @@ abstract class AbstractNetworkFeedFetcher implements NetworkFeedFetcherInterface
             ->logger
             ->notice($errorMessage);
 
-        return $socialNetworkProfile;
+        return $profile;
     }
 }

@@ -3,13 +3,13 @@
 namespace App\FeedItemPersister;
 
 use App\FeedFetcher\FetchResult;
-use App\Model\SocialNetworkFeedItem;
+use App\Model\Item;
 
 interface FeedItemPersisterInterface
 {
     public function persistFeedItemList(array $feedItemList, ?FetchResult $fetchResult): FeedItemPersisterInterface;
 
-    public function persistFeedItem(SocialNetworkFeedItem $feedItem, ?FetchResult $fetchResult): FeedItemPersisterInterface;
+    public function persistFeedItem(Item $item, ?FetchResult $fetchResult): FeedItemPersisterInterface;
 
     public function flush(): FeedItemPersisterInterface;
 }

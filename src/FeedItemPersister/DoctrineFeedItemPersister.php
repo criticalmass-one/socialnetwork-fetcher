@@ -5,7 +5,7 @@ namespace App\FeedItemPersister;
 use App\Entity\Item as ItemEntity;
 use App\Entity\Profile as ProfileEntity;
 use App\FeedFetcher\FetchResult;
-use App\Model\SocialNetworkFeedItem as SocialNetworkFeedItemModel;
+use App\Model\Item as ItemModel;
 use App\Repository\ItemRepository;
 use App\Repository\ProfileRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -22,7 +22,7 @@ class DoctrineFeedItemPersister implements FeedItemPersisterInterface
     public function persistFeedItemList(array $feedItemList, ?FetchResult $fetchResult): FeedItemPersisterInterface
     {
         foreach ($feedItemList as $feedItem) {
-            if ($feedItem instanceof SocialNetworkFeedItemModel) {
+            if ($feedItem instanceof ItemModel) {
                 $this->persistFeedItem($feedItem, $fetchResult);
             }
         }
@@ -30,7 +30,7 @@ class DoctrineFeedItemPersister implements FeedItemPersisterInterface
         return $this;
     }
 
-    public function persistFeedItem(SocialNetworkFeedItemModel $feedItem, ?FetchResult $fetchResult): FeedItemPersisterInterface
+    public function persistFeedItem(ItemModel $feedItem, ?FetchResult $fetchResult): FeedItemPersisterInterface
     {
         $profileEntity = $this->resolveProfileEntity($feedItem);
         if (!$profileEntity) {
@@ -70,9 +70,9 @@ class DoctrineFeedItemPersister implements FeedItemPersisterInterface
         return $this;
     }
 
-    private function resolveProfileEntity(SocialNetworkFeedItemModel $feedItem): ?ProfileEntity
+    private function resolveProfileEntity(ItemModel $feedItem): ?ProfileEntity
     {
-        $profileId = $feedItem->getSocialNetworkProfileId();
+        $profileId = $feedItem->getProfileId();
         if (!$profileId) {
             return null;
         }

@@ -3,7 +3,7 @@
 namespace App\FeedItemPersister;
 
 use App\FeedFetcher\FetchResult;
-use App\Model\SocialNetworkFeedItem;
+use App\Model\Item;
 use App\Serializer\SerializerInterface;
 use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Component\HttpClient\Exception\ServerException;
@@ -33,7 +33,7 @@ class ApiPusher implements FeedItemPersisterInterface
         return $this;
     }
 
-    public function persistFeedItem(SocialNetworkFeedItem $feedItem, ?FetchResult $fetchResult): FeedItemPersisterInterface
+    public function persistFeedItem(Item $feedItem, ?FetchResult $fetchResult): FeedItemPersisterInterface
     {
         $context = [
             DateTimeNormalizer::FORMAT_KEY => 'U',

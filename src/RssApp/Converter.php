@@ -2,18 +2,18 @@
 
 namespace App\RssApp;
 
-use App\Model\SocialNetworkFeedItem;
-use App\Model\SocialNetworkProfile;
+use App\Model\Item;
+use App\Model\Profile;
 
 class Converter
 {
-    public static function convert(SocialNetworkProfile $profile, array $rssItem): ?SocialNetworkFeedItem
+    public static function convert(Profile $profile, array $rssItem): ?Item
     {
-        $item = new SocialNetworkFeedItem();
+        $item = new Item();
 
         $item
             ->setUniqueIdentifier($rssItem['url'])
-            ->setSocialNetworkProfileId($profile->getId())
+            ->setProfileId($profile->getId())
             ->setPermalink($rssItem['url'])
             ->setTitle($rssItem['title'] ?? '')
             ->setText($rssItem['description_text'] ?? $rssItem['description_html'] ?? '')

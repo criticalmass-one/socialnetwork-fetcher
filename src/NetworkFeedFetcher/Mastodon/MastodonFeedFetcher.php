@@ -3,7 +3,7 @@
 namespace App\NetworkFeedFetcher\Mastodon;
 
 use App\FeedFetcher\FetchInfo;
-use App\Model\SocialNetworkProfile;
+use App\Model\Profile;
 use App\NetworkFeedFetcher\AbstractNetworkFeedFetcher;
 use App\NetworkFeedFetcher\Mastodon\Model\Account;
 use App\NetworkFeedFetcher\Mastodon\Model\AccountInfo;
@@ -21,19 +21,19 @@ class MastodonFeedFetcher extends AbstractNetworkFeedFetcher
         parent::__construct($logger);
     }
 
-    public function fetch(SocialNetworkProfile $socialNetworkProfile, FetchInfo $fetchInfo): array
+    public function fetch(Profile $profile, FetchInfo $fetchInfo): array
     {
         try {
-            $account = IdentifierParser::parse($socialNetworkProfile);
+            $account = IdentifierParser::parse($profile);
 
             $accountInfo = $this->getAccountInfo($account);
             $timeline = $this->fetchTimeline($account, $accountInfo);
 
-            $feedItemList = $this->convertTimeline($socialNetworkProfile, $timeline);
+            $feedItemList = $this->convertTimeline($profile, $timeline);
 
             return $feedItemList;
         } catch (\Exception $exception) {
-            $this->markAsFailed($socialNetworkProfile, sprintf('Failed to fetch social network profile %d: %s', $socialNetworkProfile->getId(), $exception->getMessage()));
+            $this->markAsFailed($profile, sprintf('Failed to fetch social network profile %d: %s', $profile->getId(), $exception->getMessage()));
 
             return [];
         }
@@ -57,12 +57,12 @@ class MastodonFeedFetcher extends AbstractNetworkFeedFetcher
         return $this->serializer->deserialize($response, sprintf('%s[]', Status::class), 'json');
     }
 
-    private function convertTimeline(SocialNetworkProfile $socialnetworkProfile, array $timeline): array
+    private function convertTimeline(Profile $profile, array $timeline): array
     {
         $feedItemList = [];
 
         foreach ($timeline as $status) {
-            $feedItem = EntryConverter::convert($socialnetworkProfile, $status);
+            $feedItem = EntryConverter::convert($profile, $status);
 
             if ($feedItem) {
                 $feedItemList[] = $feedItem;

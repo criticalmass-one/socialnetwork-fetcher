@@ -2,7 +2,7 @@
 
 namespace App\Model;
 
-class SocialNetworkProfile
+class Profile
 {
     protected int $id;
     protected ?string $identifier = null;
@@ -20,7 +20,7 @@ class SocialNetworkProfile
         return $this->id;
     }
 
-    public function setId(int $id): SocialNetworkProfile
+    public function setId(int $id): Profile
     {
         $this->id = $id;
 
@@ -32,7 +32,7 @@ class SocialNetworkProfile
         return $this->identifier;
     }
 
-    public function setIdentifier(string $identifier): SocialNetworkProfile
+    public function setIdentifier(string $identifier): Profile
     {
         $this->identifier = $identifier;
 
@@ -44,14 +44,14 @@ class SocialNetworkProfile
         return $this->network;
     }
 
-    public function setNetwork($network): SocialNetworkProfile
+    public function setNetwork($network): Profile
     {
         $this->network = $network;
 
         return $this;
     }
 
-    public function setMainNetwork(bool $mainNetwork): SocialNetworkProfile
+    public function setMainNetwork(bool $mainNetwork): Profile
     {
         $this->mainNetwork = $mainNetwork;
 
@@ -75,7 +75,7 @@ class SocialNetworkProfile
         return $this->autoPublish;
     }
 
-    public function setAutoPublish(bool $autoPublish): SocialNetworkProfile
+    public function setAutoPublish(bool $autoPublish): Profile
     {
         $this->autoPublish = $autoPublish;
 
