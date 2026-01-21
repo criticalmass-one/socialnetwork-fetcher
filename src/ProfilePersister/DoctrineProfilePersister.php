@@ -2,19 +2,19 @@
 
 namespace App\ProfilePersister;
 
-use App\Entity\SocialNetwork;
-use App\Entity\SocialNetworkProfile as SocialNetworkProfileEntity;
+use App\Entity\Network;
+use App\Entity\Profile as ProfileEntity;
 use App\Model\SocialNetworkProfile as SocialNetworkProfileModel;
-use App\Repository\SocialNetworkProfileRepository;
-use App\Repository\SocialNetworkRepository;
+use App\Repository\ProfileRepository;
+use App\Repository\NetworkRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 class DoctrineProfilePersister implements ProfilePersisterInterface
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
-        private readonly SocialNetworkProfileRepository $repository,
-        private readonly SocialNetworkRepository $socialNetworkRepository,
+        private readonly ProfileRepository $repository,
+        private readonly NetworkRepository $networkRepository,
     ) {
     }
 
@@ -24,10 +24,10 @@ class DoctrineProfilePersister implements ProfilePersisterInterface
         $networkName = (string) $socialNetworkProfile->getNetwork();
         $identifier = (string) $socialNetworkProfile->getIdentifier();
 
-        $socialNetwork = $this->socialNetworkRepository->findOneByName($networkName);
+        $network = $this->networkRepository->findOneByName($networkName);
 
-        if (!$socialNetwork) {
-            throw new \RuntimeException(sprintf('SocialNetwork "%s" not found', $networkName));
+        if (!$network) {
+            throw new \RuntimeException(sprintf('Network "%s" not found', $networkName));
         }
 
         $entity = null;
@@ -36,17 +36,17 @@ class DoctrineProfilePersister implements ProfilePersisterInterface
             $entity = $this->repository->find($id);
         }
 
-        if (!$entity && $socialNetwork && $identifier) {
-            $entity = $this->repository->findOneBySocialNetworkAndIdentifier($socialNetwork, $identifier);
+        if (!$entity && $network && $identifier) {
+            $entity = $this->repository->findOneByNetworkAndIdentifier($network, $identifier);
         }
 
         if (!$entity) {
-            $entity = new SocialNetworkProfileEntity();
+            $entity = new ProfileEntity();
             if ($id) {
                 $entity->setId($id);
             }
             $entity
-                ->setSocialNetwork($socialNetwork)
+                ->setNetwork($network)
                 ->setIdentifier($identifier)
                 ->setCreatedAt($socialNetworkProfile->getCreatedAt() ? \DateTimeImmutable::createFromInterface($socialNetworkProfile->getCreatedAt()) : new \DateTimeImmutable());
         }
