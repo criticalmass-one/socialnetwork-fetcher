@@ -25,24 +25,23 @@ class FeedFetcher extends AbstractFeedFetcher
 
         /** @var SocialNetworkProfile $profile */
         foreach ($profileList as $profile) {
+            // Erst Profil upserten, damit es für FK-Lookups durch FeedItems existiert.
+            $this->profilePersister->persistProfile($profile);
+
             $fetcher = $this->getFeedFetcherForNetworkProfile($profile);
 
             if ($fetcher) {
                 $feedItemList = $fetcher->fetch($profile, $fetchInfo);
-                
+
                 $fetchResult = new FetchResult();
                 $fetchResult
                     ->setSocialNetworkProfile($profile)
                     ->setCounterFetched(count($feedItemList));
 
-                //$this->feedItemList = array_merge($this->feedItemList, $feedItemList);
-
                 $this->feedItemPersister->persistFeedItemList($feedItemList, $fetchResult)->flush();
 
                 $callback($fetchResult);
             }
-
-            $this->profilePersister->persistProfile($profile);
         }
 
         return $this;

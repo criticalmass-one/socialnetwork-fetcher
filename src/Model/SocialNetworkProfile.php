@@ -5,7 +5,6 @@ namespace App\Model;
 class SocialNetworkProfile
 {
     protected int $id;
-    protected ?int $cityId = null;
     protected ?string $identifier = null;
     protected string $network;
     private ?\DateTime $createdAt = null;
@@ -24,18 +23,6 @@ class SocialNetworkProfile
     public function setId(int $id): SocialNetworkProfile
     {
         $this->id = $id;
-
-        return $this;
-    }
-
-    public function getCityId(): ?int
-    {
-        return $this->cityId;
-    }
-
-    public function setCityId(?int $cityId): SocialNetworkProfile
-    {
-        $this->cityId = $cityId;
 
         return $this;
     }
