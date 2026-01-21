@@ -43,11 +43,11 @@ class Network
     #[Groups(['network:read', 'network:write'])]
     private ?string $icon = null;
 
-    #[ORM\Column(type: 'string', length: 7)]
+    #[ORM\Column(type: 'string', length: 32)]
     #[Groups(['network:read', 'network:write'])]
     private ?string $backgroundColor = null;
 
-    #[ORM\Column(type: 'string', length: 7)]
+    #[ORM\Column(type: 'string', length: 32)]
     #[Groups(['network:read', 'network:write'])]
     private ?string $textColor = null;
 
