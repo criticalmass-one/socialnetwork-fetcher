@@ -2,7 +2,7 @@
 
 namespace App\NetworkFeedFetcher\Homepage;
 
-use App\Model\SocialNetworkProfile;
+use App\Model\Profile;
 use Laminas\Feed\Reader\Reader;
 
 class FeedUriDetector
@@ -12,9 +12,9 @@ class FeedUriDetector
 
     }
 
-    public static function findFeedLink(SocialNetworkProfile $socialNetworkProfile): ?string
+    public static function findFeedLink(Profile $profile): ?string
     {
-        $homepageAddress = $socialNetworkProfile->getIdentifier();
+        $homepageAddress = $profile->getIdentifier();
 
         $links = Reader::findFeedLinks($homepageAddress);
 

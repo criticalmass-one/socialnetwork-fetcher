@@ -2,7 +2,7 @@
 
 namespace App\ProfilePersister;
 
-use App\Model\SocialNetworkProfile;
+use App\Model\Profile;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use App\Serializer\SerializerInterface;
 
@@ -20,16 +20,16 @@ class ProfilePersister implements ProfilePersisterInterface
         ]);
     }
 
-    public function persistProfile(SocialNetworkProfile $socialNetworkProfile): SocialNetworkProfile
+    public function persistProfile(Profile $profile): Profile
     {
-        $jsonData = $this->serializer->serialize($socialNetworkProfile, 'json');
+        $jsonData = $this->serializer->serialize($profile, 'json');
 
-        $uri = sprintf('/api/hamburg/socialnetwork-profiles/%d', $socialNetworkProfile->getId());
+        $uri = sprintf('/api/hamburg/socialnetwork-profiles/%d', $profile->getId());
 
         $result = $this->client->request('POST', $uri, [
             'body' => $jsonData,
         ]);
 
-        return $socialNetworkProfile;
+        return $profile;
     }
 }

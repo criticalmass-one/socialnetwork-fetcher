@@ -3,13 +3,13 @@
 namespace App\NetworkFeedFetcher;
 
 use App\FeedFetcher\FetchInfo;
-use App\Model\SocialNetworkProfile;
+use App\Model\Profile;
 
 interface NetworkFeedFetcherInterface
 {
-    public function fetch(SocialNetworkProfile $socialNetworkProfile, FetchInfo $fetchInfo): array;
+    public function fetch(Profile $profile, FetchInfo $fetchInfo): array;
 
-    public function supports(SocialNetworkProfile $socialNetworkProfile): bool;
+    public function supports(Profile $profile): bool;
 
     public function supportsNetwork(string $network): bool;
 

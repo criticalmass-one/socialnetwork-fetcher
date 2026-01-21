@@ -67,7 +67,7 @@ class FetchFeedCommand extends Command
             $io->success(sprintf(
                 'Fetched %d items from profile %s and persisted them locally.',
                 $fetchResult->getCounterFetched(),
-                $fetchResult->getSocialNetworkProfile()->getIdentifier(),
+                $fetchResult->getProfile()->getIdentifier(),
             ));
         };
 

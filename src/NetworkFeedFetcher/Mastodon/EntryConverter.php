@@ -2,8 +2,8 @@
 
 namespace App\NetworkFeedFetcher\Mastodon;
 
-use App\Model\SocialNetworkFeedItem;
-use App\Model\SocialNetworkProfile;
+use App\Model\Item;
+use App\Model\Profile;
 use App\NetworkFeedFetcher\Mastodon\Model\Status;
 
 class EntryConverter
@@ -13,10 +13,10 @@ class EntryConverter
 
     }
 
-    public static function convert(SocialNetworkProfile $socialNetworkProfile, Status $status): ?SocialNetworkFeedItem
+    public static function convert(Profile $profile, Status $status): ?Item
     {
-        $feedItem = new SocialNetworkFeedItem();
-        $feedItem->setSocialNetworkProfileId($socialNetworkProfile->getId());
+        $feedItem = new Item();
+        $feedItem->setProfileId($profile->getId());
 
         try {
             $uniqueId = $status->getUrl();

@@ -4,7 +4,7 @@ namespace App\ProfilePersister;
 
 use App\Entity\Network;
 use App\Entity\Profile as ProfileEntity;
-use App\Model\SocialNetworkProfile as SocialNetworkProfileModel;
+use App\Model\Profile as ProfileModel;
 use App\Repository\ProfileRepository;
 use App\Repository\NetworkRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -18,11 +18,11 @@ class DoctrineProfilePersister implements ProfilePersisterInterface
     ) {
     }
 
-    public function persistProfile(SocialNetworkProfileModel $socialNetworkProfile): SocialNetworkProfileModel
+    public function persistProfile(ProfileModel $profile): ProfileModel
     {
-        $id = $socialNetworkProfile->getId();
-        $networkName = (string) $socialNetworkProfile->getNetwork();
-        $identifier = (string) $socialNetworkProfile->getIdentifier();
+        $id = $profile->getId();
+        $networkName = (string) $profile->getNetwork();
+        $identifier = (string) $profile->getIdentifier();
 
         $network = $this->networkRepository->findOneByName($networkName);
 
@@ -48,22 +48,22 @@ class DoctrineProfilePersister implements ProfilePersisterInterface
             $entity
                 ->setNetwork($network)
                 ->setIdentifier($identifier)
-                ->setCreatedAt($socialNetworkProfile->getCreatedAt() ? \DateTimeImmutable::createFromInterface($socialNetworkProfile->getCreatedAt()) : new \DateTimeImmutable());
+                ->setCreatedAt($profile->getCreatedAt() ? \DateTimeImmutable::createFromInterface($profile->getCreatedAt()) : new \DateTimeImmutable());
         }
 
-        $additionalData = $socialNetworkProfile->getAdditionalData();
+        $additionalData = $profile->getAdditionalData();
 
         $entity
-            ->setAutoPublish($socialNetworkProfile->isAutoPublish())
-            ->setAutoFetch((bool) $socialNetworkProfile->getAutoFetch())
-            ->setLastFetchSuccessDateTime($socialNetworkProfile->getLastFetchSuccessDateTime() ? \DateTimeImmutable::createFromInterface($socialNetworkProfile->getLastFetchSuccessDateTime()) : null)
-            ->setLastFetchFailureDateTime($socialNetworkProfile->getLastFetchFailureDateTime() ? \DateTimeImmutable::createFromInterface($socialNetworkProfile->getLastFetchFailureDateTime()) : null)
-            ->setLastFetchFailureError($socialNetworkProfile->getLastFetchFailureError())
+            ->setAutoPublish($profile->isAutoPublish())
+            ->setAutoFetch((bool) $profile->getAutoFetch())
+            ->setLastFetchSuccessDateTime($profile->getLastFetchSuccessDateTime() ? \DateTimeImmutable::createFromInterface($profile->getLastFetchSuccessDateTime()) : null)
+            ->setLastFetchFailureDateTime($profile->getLastFetchFailureDateTime() ? \DateTimeImmutable::createFromInterface($profile->getLastFetchFailureDateTime()) : null)
+            ->setLastFetchFailureError($profile->getLastFetchFailureError())
             ->setAdditionalData($additionalData ? (array) json_decode($additionalData, true) : null);
 
         $this->entityManager->persist($entity);
         $this->entityManager->flush();
 
-        return $socialNetworkProfile;
+        return $profile;
     }
 }

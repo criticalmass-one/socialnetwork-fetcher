@@ -3,15 +3,15 @@
 namespace App\FeedFetcher;
 
 use App\NetworkFeedFetcher\NetworkFeedFetcherInterface;
-use App\Model\SocialNetworkProfile;
+use App\Model\Profile;
 
 class FeedFetcher extends AbstractFeedFetcher
 {
-    protected function getFeedFetcherForNetworkProfile(SocialNetworkProfile $socialNetworkProfile): ?NetworkFeedFetcherInterface
+    protected function getFeedFetcherForProfile(Profile $profile): ?NetworkFeedFetcherInterface
     {
         /** @var NetworkFeedFetcherInterface $fetcher */
         foreach ($this->networkFetcherList as $fetcher) {
-            if ($fetcher->supports($socialNetworkProfile)) {
+            if ($fetcher->supports($profile)) {
                 return $fetcher;
             }
         }
@@ -21,21 +21,21 @@ class FeedFetcher extends AbstractFeedFetcher
 
     public function fetch(FetchInfo $fetchInfo, callable $callback): FeedFetcherInterface
     {
-        $profileList = $this->getSocialNetworkProfiles($fetchInfo);
+        $profileList = $this->getProfiles($fetchInfo);
 
-        /** @var SocialNetworkProfile $profile */
+        /** @var Profile $profile */
         foreach ($profileList as $profile) {
             // Erst Profil upserten, damit es für FK-Lookups durch FeedItems existiert.
             $this->profilePersister->persistProfile($profile);
 
-            $fetcher = $this->getFeedFetcherForNetworkProfile($profile);
+            $fetcher = $this->getFeedFetcherForProfile($profile);
 
             if ($fetcher) {
                 $feedItemList = $fetcher->fetch($profile, $fetchInfo);
 
                 $fetchResult = new FetchResult();
                 $fetchResult
-                    ->setSocialNetworkProfile($profile)
+                    ->setProfile($profile)
                     ->setCounterFetched(count($feedItemList));
 
                 $this->feedItemPersister->persistFeedItemList($feedItemList, $fetchResult)->flush();

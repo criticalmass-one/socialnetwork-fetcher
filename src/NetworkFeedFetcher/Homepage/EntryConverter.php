@@ -2,8 +2,8 @@
 
 namespace App\NetworkFeedFetcher\Homepage;
 
-use App\Model\SocialNetworkFeedItem;
-use App\Model\SocialNetworkProfile;
+use App\Model\Item;
+use App\Model\Profile;
 use Laminas\Feed\Reader\Entry\EntryInterface;
 
 class EntryConverter
@@ -13,10 +13,10 @@ class EntryConverter
 
     }
 
-    public static function convert(SocialNetworkProfile $socialNetworkProfile, EntryInterface $entry): ?SocialNetworkFeedItem
+    public static function convert(Profile $profile, EntryInterface $entry): ?Item
     {
-        $feedItem = new SocialNetworkFeedItem();
-        $feedItem->setSocialNetworkProfileId($socialNetworkProfile->getId());
+        $feedItem = new Item();
+        $feedItem->setProfileId($profile->getId());
 
         try {
             $uniqueId = $entry->getId();
