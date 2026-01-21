@@ -14,14 +14,8 @@ class SocialNetworkProfileRepository extends ServiceEntityRepository
         parent::__construct($registry, SocialNetworkProfile::class);
     }
 
-    public function findOneByNetworkAndIdentifier(string $network, string $identifier, ?int $cityId = null): ?SocialNetworkProfile
+    public function findOneByNetworkAndIdentifier(string $network, string $identifier): ?SocialNetworkProfile
     {
-        $criteria = ['network' => $network, 'identifier' => $identifier];
-
-        if ($cityId !== null) {
-            $criteria['cityId'] = $cityId;
-        }
-
-        return $this->findOneBy($criteria);
+        return $this->findOneBy(['network' => $network, 'identifier' => $identifier]);
     }
 }

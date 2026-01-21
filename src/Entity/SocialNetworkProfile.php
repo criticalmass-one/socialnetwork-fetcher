@@ -6,16 +6,12 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Table(name: 'social_network_profile')]
 #[ORM\UniqueConstraint(name: 'uniq_social_network_profile_network_identifier', columns: ['network', 'identifier'])]
-#[ORM\Index(columns: ['city_id'], name: 'idx_social_network_profile_city_id')]
 #[ORM\Entity(repositoryClass: \App\Repository\SocialNetworkProfileRepository::class)]
 class SocialNetworkProfile
 {
     #[ORM\Id]
     #[ORM\Column(type: 'integer')]
     private ?int $id = null;
-
-    #[ORM\Column(name: 'city_id', type: 'integer', nullable: true)]
-    private ?int $cityId = null;
 
     #[ORM\Column(type: 'string', length: 255)]
     private ?string $identifier = null;
@@ -52,18 +48,6 @@ class SocialNetworkProfile
     public function setId(int $id): self
     {
         $this->id = $id;
-
-        return $this;
-    }
-
-    public function getCityId(): ?int
-    {
-        return $this->cityId;
-    }
-
-    public function setCityId(?int $cityId): self
-    {
-        $this->cityId = $cityId;
 
         return $this;
     }
@@ -176,4 +160,3 @@ class SocialNetworkProfile
         return $this;
     }
 }
-

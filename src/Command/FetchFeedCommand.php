@@ -32,8 +32,7 @@ class FetchFeedCommand extends Command
             ->addOption('fromDateTime', 'f', InputOption::VALUE_REQUIRED)
             ->addOption('untilDateTime', 'u', InputOption::VALUE_REQUIRED)
             ->addOption('includeOldItems', 'i', InputOption::VALUE_NONE)
-            ->addOption('count', 'c', InputOption::VALUE_REQUIRED)
-            ->addOption('citySlug', null, InputOption::VALUE_REQUIRED);
+            ->addOption('count', 'c', InputOption::VALUE_REQUIRED);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -46,10 +45,6 @@ class FetchFeedCommand extends Command
             foreach ($input->getArgument('networks') as $networkIdentifier) {
                 $fetchInfo->addNetwork($networkIdentifier);
             }
-        }
-
-        if ($input->hasOption('citySlug') && !empty($input->getOption('citySlug'))) {
-            $fetchInfo->setCitySlug($input->getOption('citySlug'));
         }
 
         if ($input->getOption('count')) {
@@ -70,13 +65,9 @@ class FetchFeedCommand extends Command
 
         $callback = function (FetchResult $fetchResult) use ($io): void {
             $io->success(sprintf(
-                'Fetched %d items from profile %s, %d were pushed to rabbit, %d returned 200, %d returned 4xx, %d retured 5xx.',
+                'Fetched %d items from profile %s and persisted them locally.',
                 $fetchResult->getCounterFetched(),
                 $fetchResult->getSocialNetworkProfile()->getIdentifier(),
-                $fetchResult->getCounterRabbit(),
-                $fetchResult->getCounterPushed200(),
-                $fetchResult->getCounterPushed4xx(),
-                $fetchResult->getCounterPushed5xx()
             ));
         };
 

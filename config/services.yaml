@@ -23,9 +23,7 @@ services:
     # please note that last definitions always *replace* previous ones
 
     App\FeedItemPersister\FeedItemPersisterInterface:
-        #alias: App\FeedItemPersister\RabbitPusher
-        alias: App\FeedItemPersister\ApiPusher
+        alias: App\FeedItemPersister\DoctrineFeedItemPersister
 
-    App\FeedItemPersister\RabbitPusher:
-        arguments:
-            $producer: '@old_sound_rabbit_mq.criticalmass_socialnetworkfeeditem_producer'
+    App\ProfilePersister\ProfilePersisterInterface:
+        alias: App\ProfilePersister\DoctrineProfilePersister

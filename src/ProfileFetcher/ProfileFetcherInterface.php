@@ -6,7 +6,7 @@ use App\FeedFetcher\FetchInfo;
 
 interface ProfileFetcherInterface
 {
-    public function fetchByNetworkIdentifier(string $networkIdentifier, string $citySlug = null): array;
-    public function fetchByNetworkIdentifiers(array $networkIdentifiers = [], string $citySlug = null): array;
+    public function fetchByNetworkIdentifier(string $networkIdentifier): array;
+    public function fetchByNetworkIdentifiers(array $networkIdentifiers = []): array;
     public function fetchByFetchInfo(FetchInfo $fetchInfo): array;
 }

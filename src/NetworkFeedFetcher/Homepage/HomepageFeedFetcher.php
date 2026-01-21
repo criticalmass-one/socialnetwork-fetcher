@@ -12,10 +12,6 @@ class HomepageFeedFetcher extends AbstractNetworkFeedFetcher
 {
     public function fetch(SocialNetworkProfile $socialNetworkProfile, FetchInfo $fetchInfo): array
     {
-        if (!$socialNetworkProfile->getCityId()) {
-            return [];
-        }
-
         try {
             return $this->fetchFeed($socialNetworkProfile);
         } catch (\Exception $exception) {
