@@ -2,12 +2,12 @@
 
 namespace App\Entity;
 
-use App\Repository\SocialNetworkRepository;
+use App\Repository\NetworkRepository;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Table(name: 'social_network')]
-#[ORM\Entity(repositoryClass: SocialNetworkRepository::class)]
-class SocialNetwork
+#[ORM\Table(name: 'network')]
+#[ORM\Entity(repositoryClass: NetworkRepository::class)]
+class Network
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]

@@ -2,20 +2,20 @@
 
 namespace App\FeedItemPersister;
 
-use App\Entity\SocialNetworkFeedItem as SocialNetworkFeedItemEntity;
-use App\Entity\SocialNetworkProfile as SocialNetworkProfileEntity;
+use App\Entity\Item as ItemEntity;
+use App\Entity\Profile as ProfileEntity;
 use App\FeedFetcher\FetchResult;
 use App\Model\SocialNetworkFeedItem as SocialNetworkFeedItemModel;
-use App\Repository\SocialNetworkFeedItemRepository;
-use App\Repository\SocialNetworkProfileRepository;
+use App\Repository\ItemRepository;
+use App\Repository\ProfileRepository;
 use Doctrine\ORM\EntityManagerInterface;
 
 class DoctrineFeedItemPersister implements FeedItemPersisterInterface
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
-        private readonly SocialNetworkProfileRepository $profileRepository,
-        private readonly SocialNetworkFeedItemRepository $feedItemRepository,
+        private readonly ProfileRepository $profileRepository,
+        private readonly ItemRepository $itemRepository,
     ) {
     }
 
@@ -34,18 +34,17 @@ class DoctrineFeedItemPersister implements FeedItemPersisterInterface
     {
         $profileEntity = $this->resolveProfileEntity($feedItem);
         if (!$profileEntity) {
-            // Ohne Profil können wir das Item nicht sinnvoll persistieren.
             return $this;
         }
 
         $uniqueIdentifier = (string) $feedItem->getUniqueIdentifier();
 
-        $entity = $this->feedItemRepository->findOneByProfileAndUniqueIdentifier($profileEntity, $uniqueIdentifier);
+        $entity = $this->itemRepository->findOneByProfileAndUniqueIdentifier($profileEntity, $uniqueIdentifier);
 
         if (!$entity) {
-            $entity = new SocialNetworkFeedItemEntity();
+            $entity = new ItemEntity();
             $entity
-                ->setSocialNetworkProfile($profileEntity)
+                ->setProfile($profileEntity)
                 ->setUniqueIdentifier($uniqueIdentifier);
         }
 
@@ -71,16 +70,14 @@ class DoctrineFeedItemPersister implements FeedItemPersisterInterface
         return $this;
     }
 
-    private function resolveProfileEntity(SocialNetworkFeedItemModel $feedItem): ?SocialNetworkProfileEntity
+    private function resolveProfileEntity(SocialNetworkFeedItemModel $feedItem): ?ProfileEntity
     {
         $profileId = $feedItem->getSocialNetworkProfileId();
         if (!$profileId) {
             return null;
         }
 
-        // Wir kennen aktuell nur die externe ID; Profile werden separat über DoctrineProfilePersister upserted.
-        // Daher versuchen wir hier den direkten PK-Lookup.
-        /** @var SocialNetworkProfileEntity|null $entity */
+        /** @var ProfileEntity|null $entity */
         $entity = $this->profileRepository->find($profileId);
 
         return $entity;

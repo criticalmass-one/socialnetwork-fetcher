@@ -4,20 +4,20 @@ namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Table(name: 'social_network_feed_item')]
-#[ORM\Index(columns: ['date_time'], name: 'social_network_feed_item_date_time_index')]
-#[ORM\Index(columns: ['created_at'], name: 'social_network_feed_item_created_at_index')]
-#[ORM\Entity(repositoryClass: \App\Repository\SocialNetworkFeedItemRepository::class)]
-class SocialNetworkFeedItem
+#[ORM\Table(name: 'item')]
+#[ORM\Index(columns: ['date_time'], name: 'item_date_time_index')]
+#[ORM\Index(columns: ['created_at'], name: 'item_created_at_index')]
+#[ORM\Entity(repositoryClass: ItemRepository::class)]
+class Item
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
     private ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: SocialNetworkProfile::class)]
-    #[ORM\JoinColumn(name: 'social_network_profile_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
-    private ?SocialNetworkProfile $socialNetworkProfile = null;
+    #[ORM\ManyToOne(targetEntity: Profile::class)]
+    #[ORM\JoinColumn(name: 'profile_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
+    private ?Profile $profile = null;
 
     #[ORM\Column(type: 'string', length: 255, nullable: false)]
     private ?string $uniqueIdentifier = null;
@@ -56,14 +56,14 @@ class SocialNetworkFeedItem
         return $this->id;
     }
 
-    public function getSocialNetworkProfile(): ?SocialNetworkProfile
+    public function getProfile(): ?Profile
     {
-        return $this->socialNetworkProfile;
+        return $this->profile;
     }
 
-    public function setSocialNetworkProfile(SocialNetworkProfile $socialNetworkProfile): self
+    public function setProfile(Profile $profile): self
     {
-        $this->socialNetworkProfile = $socialNetworkProfile;
+        $this->profile = $profile;
 
         return $this;
     }
@@ -176,4 +176,3 @@ class SocialNetworkFeedItem
         return $this;
     }
 }
-
