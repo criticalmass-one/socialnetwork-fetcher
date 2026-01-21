@@ -31,7 +31,11 @@ class Network
     #[Groups(['network:read', 'profile:read'])]
     private ?int $id = null;
 
-    #[ORM\Column(type: 'string', length: 64, unique: true)]
+    #[ORM\Column(type: 'string', length: 32, unique: true)]
+    #[Groups(['network:read', 'network:write', 'profile:read'])]
+    private ?string $identifier = null;
+
+    #[ORM\Column(type: 'string', length: 64)]
     #[Groups(['network:read', 'network:write', 'profile:read'])]
     private ?string $name = null;
 
@@ -54,6 +58,18 @@ class Network
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getIdentifier(): ?string
+    {
+        return $this->identifier;
+    }
+
+    public function setIdentifier(string $identifier): self
+    {
+        $this->identifier = $identifier;
+
+        return $this;
     }
 
     public function getName(): ?string
