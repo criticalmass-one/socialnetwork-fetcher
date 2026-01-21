@@ -26,7 +26,7 @@ class FetchFeedCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('feeds:fetch')
+            ->setName('fetch-feed')
             ->setDescription('Fetch feeds')
             ->addArgument('networks', InputArgument::IS_ARRAY)
             ->addOption('fromDateTime', 'f', InputOption::VALUE_REQUIRED)

@@ -12,6 +12,7 @@
         "doctrine/orm": "^3.6",
         "laminas/laminas-feed": "^2.12",
         "laminas/laminas-http": "^2.11",
+        "symfony/asset": "^8.0",
         "symfony/console": "^8.0",
         "symfony/dependency-injection": "^8.0",
         "symfony/doctrine-messenger": "^8.0",
@@ -21,6 +22,7 @@
         "symfony/http-client": "^8.0",
         "symfony/property-access": "^8.0",
         "symfony/serializer": "^8.0",
+        "symfony/twig-bundle": "^8.0",
         "symfony/yaml": "^8.0"
     },
     "config": {
