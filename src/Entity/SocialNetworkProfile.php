@@ -5,7 +5,7 @@ namespace App\Entity;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Table(name: 'social_network_profile')]
-#[ORM\UniqueConstraint(name: 'uniq_social_network_profile_network_identifier', columns: ['network', 'identifier'])]
+#[ORM\UniqueConstraint(name: 'uniq_social_network_profile_network_identifier', columns: ['social_network_id', 'identifier'])]
 #[ORM\Entity(repositoryClass: \App\Repository\SocialNetworkProfileRepository::class)]
 class SocialNetworkProfile
 {
@@ -16,8 +16,9 @@ class SocialNetworkProfile
     #[ORM\Column(type: 'string', length: 255)]
     private ?string $identifier = null;
 
-    #[ORM\Column(type: 'string', length: 64)]
-    private ?string $network = null;
+    #[ORM\ManyToOne(targetEntity: SocialNetwork::class)]
+    #[ORM\JoinColumn(name: 'social_network_id', referencedColumnName: 'id', nullable: false)]
+    private ?SocialNetwork $socialNetwork = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $createdAt = null;
@@ -64,14 +65,14 @@ class SocialNetworkProfile
         return $this;
     }
 
-    public function getNetwork(): ?string
+    public function getSocialNetwork(): ?SocialNetwork
     {
-        return $this->network;
+        return $this->socialNetwork;
     }
 
-    public function setNetwork(?string $network): self
+    public function setSocialNetwork(SocialNetwork $socialNetwork): self
     {
-        $this->network = $network;
+        $this->socialNetwork = $socialNetwork;
 
         return $this;
     }

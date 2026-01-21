@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\SocialNetwork;
 use App\Entity\SocialNetworkProfile;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -14,8 +15,8 @@ class SocialNetworkProfileRepository extends ServiceEntityRepository
         parent::__construct($registry, SocialNetworkProfile::class);
     }
 
-    public function findOneByNetworkAndIdentifier(string $network, string $identifier): ?SocialNetworkProfile
+    public function findOneBySocialNetworkAndIdentifier(SocialNetwork $socialNetwork, string $identifier): ?SocialNetworkProfile
     {
-        return $this->findOneBy(['network' => $network, 'identifier' => $identifier]);
+        return $this->findOneBy(['socialNetwork' => $socialNetwork, 'identifier' => $identifier]);
     }
 }
