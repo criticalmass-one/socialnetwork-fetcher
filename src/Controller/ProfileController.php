@@ -6,6 +6,7 @@ use App\Entity\Profile;
 use App\Form\ProfileType;
 use App\Repository\ItemRepository;
 use App\Repository\ProfileRepository;
+use App\Service\RssAppService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -88,5 +89,44 @@ class ProfileController extends AbstractController
         }
 
         return $this->redirectToRoute('app_profile_index');
+    }
+
+    #[Route('/{id}/rssapp-register', name: 'app_profile_rssapp_register', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function rssappRegister(Request $request, Profile $profile, RssAppService $rssAppService, EntityManagerInterface $em): Response
+    {
+        if ($this->isCsrfTokenValid('rssapp-' . $profile->getId(), $request->request->getString('_token'))) {
+            $feedData = $rssAppService->createFeed($profile->getIdentifier());
+
+            $additionalData = $profile->getAdditionalData();
+            $additionalData['rssAppFeedId'] = $feedData['id'];
+            $profile->setAdditionalData($additionalData);
+
+            $em->flush();
+
+            $this->addFlash('success', 'Feed wurde bei RSS.app registriert.');
+        }
+
+        return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
+    }
+
+    #[Route('/{id}/rssapp-delete', name: 'app_profile_rssapp_delete', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function rssappDelete(Request $request, Profile $profile, RssAppService $rssAppService, EntityManagerInterface $em): Response
+    {
+        if ($this->isCsrfTokenValid('rssapp-' . $profile->getId(), $request->request->getString('_token'))) {
+            $additionalData = $profile->getAdditionalData();
+
+            if (isset($additionalData['rssAppFeedId'])) {
+                $rssAppService->deleteFeed($additionalData['rssAppFeedId']);
+
+                unset($additionalData['rssAppFeedId']);
+                $profile->setAdditionalData($additionalData);
+
+                $em->flush();
+
+                $this->addFlash('success', 'Feed wurde von RSS.app entfernt.');
+            }
+        }
+
+        return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
     }
 }

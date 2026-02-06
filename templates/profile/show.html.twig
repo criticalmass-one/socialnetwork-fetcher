@@ -134,6 +134,24 @@
                     <a href="{{ path('app_profile_edit', {id: profile.id}) }}" class="btn btn-outline-primary">
                         <i class="fas fa-edit me-1"></i>Bearbeiten
                     </a>
+                    {% set rssAppFeedId = profile.additionalData.rssAppFeedId|default(null) %}
+                    {% if rssAppFeedId %}
+                        <form method="post" action="{{ path('app_profile_rssapp_delete', {id: profile.id}) }}"
+                              data-controller="confirm"
+                              data-confirm-message-value="Feed wirklich von RSS.app entfernen?">
+                            <input type="hidden" name="_token" value="{{ csrf_token('rssapp-' ~ profile.id) }}">
+                            <button type="submit" class="btn btn-outline-danger w-100">
+                                <i class="fas fa-rss me-1"></i>Von RSS.app entfernen
+                            </button>
+                        </form>
+                    {% else %}
+                        <form method="post" action="{{ path('app_profile_rssapp_register', {id: profile.id}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('rssapp-' ~ profile.id) }}">
+                            <button type="submit" class="btn btn-outline-success w-100">
+                                <i class="fas fa-rss me-1"></i>Bei RSS.app registrieren
+                            </button>
+                        </form>
+                    {% endif %}
                     <form method="post" action="{{ path('app_profile_delete', {id: profile.id}) }}"
                           data-controller="confirm"
                           data-confirm-message-value="Profil &quot;{{ profile.identifier }}&quot; wirklich löschen?">
