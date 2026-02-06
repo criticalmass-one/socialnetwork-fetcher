@@ -1,0 +1,23 @@
+.network-card {
+    transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+.network-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+.table-row-deleted {
+    opacity: 0.5;
+}
+.table-row-hidden {
+    background-color: #f8f9fa;
+}
+.badge-network {
+    font-size: 0.8em;
+}
+pre.raw-data {
+    max-height: 400px;
+    overflow-y: auto;
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 0.375rem;
+}

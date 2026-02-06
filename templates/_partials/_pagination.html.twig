@@ -1,0 +1,27 @@
+{% if pages > 1 %}
+<nav aria-label="Seitennavigation">
+    <ul class="pagination justify-content-center">
+        <li class="page-item {% if page <= 1 %}disabled{% endif %}">
+            <a class="page-link" href="{{ path(app.request.attributes.get('_route'), app.request.query.all|merge({page: page - 1})) }}">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        </li>
+        {% for p in 1..pages %}
+            {% if p == page %}
+                <li class="page-item active"><span class="page-link">{{ p }}</span></li>
+            {% elseif p <= 3 or p > pages - 2 or (p >= page - 1 and p <= page + 1) %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ path(app.request.attributes.get('_route'), app.request.query.all|merge({page: p})) }}">{{ p }}</a>
+                </li>
+            {% elseif p == 4 or p == pages - 2 %}
+                <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+            {% endif %}
+        {% endfor %}
+        <li class="page-item {% if page >= pages %}disabled{% endif %}">
+            <a class="page-link" href="{{ path(app.request.attributes.get('_route'), app.request.query.all|merge({page: page + 1})) }}">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </li>
+    </ul>
+</nav>
+{% endif %}

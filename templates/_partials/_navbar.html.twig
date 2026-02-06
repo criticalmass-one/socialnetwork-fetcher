@@ -1,0 +1,29 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+        <a class="navbar-brand" href="{{ path('app_dashboard') }}">
+            <i class="fas fa-globe me-2"></i>SN-Fetcher
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link {% if app.request.attributes.get('_route') == 'app_dashboard' %}active{% endif %}" href="{{ path('app_dashboard') }}">
+                        <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if app.request.attributes.get('_route') starts with 'app_profile' %}active{% endif %}" href="{{ path('app_profile_index') }}">
+                        <i class="fas fa-users me-1"></i>Profiles
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if app.request.attributes.get('_route') starts with 'app_item' %}active{% endif %}" href="{{ path('app_item_index') }}">
+                        <i class="fas fa-list me-1"></i>Items
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>

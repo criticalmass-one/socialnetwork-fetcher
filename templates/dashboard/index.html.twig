@@ -1,0 +1,83 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Dashboard - Social Network Fetcher{% endblock %}
+
+{% block body %}
+    <h1 class="mb-4">Dashboard</h1>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-bg-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Networks</h6>
+                            <h2 class="mb-0">{{ networkCount }}</h2>
+                        </div>
+                        <i class="fas fa-globe fa-2x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-bg-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Profiles</h6>
+                            <h2 class="mb-0">{{ profileCount }}</h2>
+                        </div>
+                        <i class="fas fa-users fa-2x opacity-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0">
+                    <a href="{{ path('app_profile_index') }}" class="text-white text-decoration-none">
+                        Alle anzeigen <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-bg-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title mb-0">Items</h6>
+                            <h2 class="mb-0">{{ itemCount }}</h2>
+                        </div>
+                        <i class="fas fa-list fa-2x opacity-50"></i>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent border-0">
+                    <a href="{{ path('app_item_index') }}" class="text-white text-decoration-none">
+                        Alle anzeigen <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h2 class="mb-3">Networks</h2>
+    <div class="row">
+        {% for stat in networkStats %}
+            <div class="col-md-4 col-lg-3 mb-3">
+                <div class="card network-card h-100">
+                    <div class="card-body text-center" style="background-color: {{ stat.network.backgroundColor }}; color: {{ stat.network.textColor }};">
+                        <i class="{{ stat.network.icon }} fa-2x mb-2"></i>
+                        <h6 class="card-title">{{ stat.network.name }}</h6>
+                    </div>
+                    <div class="card-footer bg-white">
+                        <div class="d-flex justify-content-between small">
+                            <span>
+                                <a href="{{ path('app_profile_index', {network: stat.network.id}) }}">
+                                    {{ stat.profileCount }} Profile{{ stat.profileCount != 1 ? 's' : '' }}
+                                </a>
+                            </span>
+                            <span class="text-muted">{{ stat.itemCount }} Items</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Items{% if profile %} - {{ profile.identifier }}{% endif %} - Social Network Fetcher{% endblock %}
+
+{% block body %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>
+            Items
+            {% if profile %}
+                <small class="text-muted">
+                    {% if profile.network %}
+                        <span class="badge badge-network" style="background-color: {{ profile.network.backgroundColor }}; color: {{ profile.network.textColor }};">
+                            <i class="{{ profile.network.icon }}"></i>
+                        </span>
+                    {% endif %}
+                    {{ profile.identifier }}
+                </small>
+            {% endif %}
+        </h1>
+        <span class="badge text-bg-secondary fs-6">{{ total }} Items</span>
+    </div>
+
+    <div class="mb-3">
+        <form class="row g-2 align-items-center" method="get">
+            <div class="col-auto">
+                <select name="profile" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">Alle Profile</option>
+                    {% for p in profiles %}
+                        <option value="{{ p.id }}" {% if profile and profile.id == p.id %}selected{% endif %}>
+                            {{ p.network ? p.network.name ~ ': ' : '' }}{{ p.identifier }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </form>
+    </div>
+
+    {% if items is empty %}
+        <div class="alert alert-info">Keine Items gefunden.</div>
+    {% else %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Profil</th>
+                        <th>Text</th>
+                        <th>Datum</th>
+                        <th>Status</th>
+                        <th>Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                        <tr id="item-row-{{ item.id }}"
+                            class="{% if item.deleted %}table-row-deleted{% elseif item.hidden %}table-row-hidden{% endif %}"
+                            data-controller="toggle"
+                            data-toggle-id-value="{{ item.id }}"
+                            data-toggle-token-value="{{ csrf_token('toggle-item-' ~ item.id) }}">
+                            <td>{{ item.id }}</td>
+                            <td>
+                                {% if item.profile and item.profile.network %}
+                                    <span class="badge badge-network" style="background-color: {{ item.profile.network.backgroundColor }}; color: {{ item.profile.network.textColor }};">
+                                        <i class="{{ item.profile.network.icon }}"></i>
+                                    </span>
+                                {% endif %}
+                                {% if item.profile %}
+                                    <a href="{{ path('app_profile_show', {id: item.profile.id}) }}">
+                                        {{ item.profile.identifier|length > 30 ? item.profile.identifier|slice(0, 30) ~ '...' : item.profile.identifier }}
+                                    </a>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ path('app_item_show', {id: item.id}) }}">
+                                    {{ item.text|length > 80 ? item.text|slice(0, 80) ~ '...' : item.text }}
+                                </a>
+                            </td>
+                            <td>{{ item.dateTime|date('d.m.Y H:i') }}</td>
+                            <td>
+                                <button class="btn btn-sm {{ item.hidden ? 'btn-warning' : 'btn-outline-warning' }}"
+                                        data-action="toggle#toggleHidden"
+                                        data-toggle-target="hiddenBtn"
+                                        title="Versteckt">
+                                    <i class="fas fa-eye-slash"></i>
+                                </button>
+                                <button class="btn btn-sm {{ item.deleted ? 'btn-danger' : 'btn-outline-danger' }}"
+                                        data-action="toggle#toggleDeleted"
+                                        data-toggle-target="deletedBtn"
+                                        title="Gelöscht">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ path('app_item_show', {id: item.id}) }}" class="btn btn-outline-primary" title="Anzeigen">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ path('app_item_edit', {id: item.id}) }}" class="btn btn-outline-secondary" title="Bearbeiten">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% include '_partials/_pagination.html.twig' %}
+    {% endif %}
+{% endblock %}

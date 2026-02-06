@@ -13,16 +13,21 @@
         "laminas/laminas-feed": "^2.12",
         "laminas/laminas-http": "^2.11",
         "symfony/asset": "^8.0",
+        "symfony/asset-mapper": "*",
         "symfony/console": "^8.0",
         "symfony/dependency-injection": "^8.0",
         "symfony/doctrine-messenger": "^8.0",
         "symfony/dotenv": "^8.0",
         "symfony/flex": "^2.4",
+        "symfony/form": "*",
         "symfony/framework-bundle": "^8.0",
         "symfony/http-client": "^8.0",
         "symfony/property-access": "^8.0",
+        "symfony/security-csrf": "^8.0",
         "symfony/serializer": "^8.0",
+        "symfony/stimulus-bundle": "*",
         "symfony/twig-bundle": "^8.0",
+        "symfony/validator": "*",
         "symfony/yaml": "^8.0"
     },
     "config": {
@@ -58,7 +63,8 @@
     "scripts": {
         "auto-scripts": {
             "cache:clear": "symfony-cmd",
-            "assets:install %PUBLIC_DIR%": "symfony-cmd"
+            "assets:install %PUBLIC_DIR%": "symfony-cmd",
+            "importmap:install": "symfony-cmd"
         },
         "post-install-cmd": [
             "@auto-scripts"
