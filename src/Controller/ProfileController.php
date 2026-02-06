@@ -4,9 +4,14 @@ namespace App\Controller;
 
 use App\Entity\Profile;
 use App\Form\ProfileType;
+use App\FeedFetcher\FeedFetcher;
+use App\FeedFetcher\FetchInfo;
+use App\FeedFetcher\FetchResult;
+use App\FeedItemPersister\FeedItemPersisterInterface;
+use App\Model\Profile as ModelProfile;
 use App\Repository\ItemRepository;
 use App\Repository\ProfileRepository;
-use App\Service\RssAppService;
+use App\RssApp\RssAppInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -92,13 +97,13 @@ class ProfileController extends AbstractController
     }
 
     #[Route('/{id}/rssapp-register', name: 'app_profile_rssapp_register', requirements: ['id' => '\d+'], methods: ['POST'])]
-    public function rssappRegister(Request $request, Profile $profile, RssAppService $rssAppService, EntityManagerInterface $em): Response
+    public function rssappRegister(Request $request, Profile $profile, RssAppInterface $rssApp, EntityManagerInterface $em): Response
     {
         if ($this->isCsrfTokenValid('rssapp-' . $profile->getId(), $request->request->getString('_token'))) {
-            $feedData = $rssAppService->createFeed($profile->getIdentifier());
+            $feedData = $rssApp->createFeed($profile->getIdentifier());
 
-            $additionalData = $profile->getAdditionalData();
-            $additionalData['rssAppFeedId'] = $feedData['id'];
+            $additionalData = $profile->getAdditionalData() ?? [];
+            $additionalData['rss_feed_id'] = $feedData['id'];
             $profile->setAdditionalData($additionalData);
 
             $em->flush();
@@ -110,15 +115,15 @@ class ProfileController extends AbstractController
     }
 
     #[Route('/{id}/rssapp-delete', name: 'app_profile_rssapp_delete', requirements: ['id' => '\d+'], methods: ['POST'])]
-    public function rssappDelete(Request $request, Profile $profile, RssAppService $rssAppService, EntityManagerInterface $em): Response
+    public function rssappDelete(Request $request, Profile $profile, RssAppInterface $rssApp, EntityManagerInterface $em): Response
     {
         if ($this->isCsrfTokenValid('rssapp-' . $profile->getId(), $request->request->getString('_token'))) {
-            $additionalData = $profile->getAdditionalData();
+            $additionalData = $profile->getAdditionalData() ?? [];
 
-            if (isset($additionalData['rssAppFeedId'])) {
-                $rssAppService->deleteFeed($additionalData['rssAppFeedId']);
+            if (isset($additionalData['rss_feed_id'])) {
+                $rssApp->deleteFeed($additionalData['rss_feed_id']);
 
-                unset($additionalData['rssAppFeedId']);
+                unset($additionalData['rss_feed_id']);
                 $profile->setAdditionalData($additionalData);
 
                 $em->flush();
@@ -126,6 +131,50 @@ class ProfileController extends AbstractController
                 $this->addFlash('success', 'Feed wurde von RSS.app entfernt.');
             }
         }
+
+        return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
+    }
+
+    #[Route('/{id}/fetch', name: 'app_profile_fetch', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function fetch(Request $request, Profile $profile, FeedFetcher $feedFetcher, FeedItemPersisterInterface $feedItemPersister, EntityManagerInterface $em): Response
+    {
+        if (!$this->isCsrfTokenValid('fetch-profile-' . $profile->getId(), $request->request->getString('_token'))) {
+            return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
+        }
+
+        $modelProfile = new ModelProfile();
+        $modelProfile->setId($profile->getId());
+        $modelProfile->setIdentifier($profile->getIdentifier());
+        $modelProfile->setNetwork($profile->getNetwork()->getIdentifier());
+
+        $fetcher = null;
+        foreach ($feedFetcher->getNetworkFetcherList() as $networkFetcher) {
+            if ($networkFetcher->supports($modelProfile)) {
+                $fetcher = $networkFetcher;
+                break;
+            }
+        }
+
+        if (!$fetcher) {
+            $this->addFlash('warning', sprintf('Kein Fetcher für Netzwerk "%s" verfügbar.', $profile->getNetwork()->getIdentifier()));
+
+            return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
+        }
+
+        $fetchInfo = new FetchInfo();
+        $feedItemList = $fetcher->fetch($modelProfile, $fetchInfo);
+
+        $fetchResult = new FetchResult();
+        $fetchResult->setProfile($modelProfile)->setCounterFetched(count($feedItemList));
+
+        $feedItemPersister->persistFeedItemList($feedItemList, $fetchResult)->flush();
+
+        $profile->setLastFetchSuccessDateTime(new \DateTimeImmutable());
+        $profile->setLastFetchFailureDateTime(null);
+        $profile->setLastFetchFailureError(null);
+        $em->flush();
+
+        $this->addFlash('success', sprintf('%d Items wurden importiert.', count($feedItemList)));
 
         return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
     }

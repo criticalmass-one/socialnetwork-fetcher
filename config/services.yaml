@@ -29,3 +29,6 @@ services:
 
     App\ProfilePersister\ProfilePersisterInterface:
         alias: App\ProfilePersister\DoctrineProfilePersister
+
+    App\RssApp\RssAppInterface:
+        alias: App\RssApp\RssApp
