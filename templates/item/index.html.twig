@@ -39,10 +39,11 @@
         <div class="alert alert-info">Keine Items gefunden.</div>
     {% else %}
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover table-striped">
                 <thead>
                     <tr>
                         <th>ID</th>
+                        <th>Netzwerk</th>
                         <th>Profil</th>
                         <th>Text</th>
                         <th>Datum</th>
@@ -51,19 +52,22 @@
                     </tr>
                 </thead>
                 <tbody>
+                    {% set toggleToken = csrf_token('toggle-item') %}
                     {% for item in items %}
                         <tr id="item-row-{{ item.id }}"
                             class="{% if item.deleted %}table-row-deleted{% elseif item.hidden %}table-row-hidden{% endif %}"
                             data-controller="toggle"
                             data-toggle-id-value="{{ item.id }}"
-                            data-toggle-token-value="{{ csrf_token('toggle-item-' ~ item.id) }}">
+                            data-toggle-token-value="{{ toggleToken }}">
                             <td>{{ item.id }}</td>
                             <td>
                                 {% if item.profile and item.profile.network %}
                                     <span class="badge badge-network" style="background-color: {{ item.profile.network.backgroundColor }}; color: {{ item.profile.network.textColor }};">
-                                        <i class="{{ item.profile.network.icon }}"></i>
+                                        <i class="{{ item.profile.network.icon }} me-1"></i>{{ item.profile.network.name }}
                                     </span>
                                 {% endif %}
+                            </td>
+                            <td>
                                 {% if item.profile %}
                                     <a href="{{ path('app_profile_show', {id: item.profile.id}) }}">
                                         {{ item.profile.identifier|length > 30 ? item.profile.identifier|slice(0, 30) ~ '...' : item.profile.identifier }}
