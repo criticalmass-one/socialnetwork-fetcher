@@ -17,7 +17,7 @@ class ProfileFetcher implements ProfileFetcherInterface
         string $criticalmassHostname
     ) {
         $this->client = $client->withOptions([
-            'base_uri' => $criticalmassHostname,
+            'base_uri' => sprintf('https://%s', $criticalmassHostname),
         ]);
     }
 

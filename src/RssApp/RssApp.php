@@ -44,8 +44,9 @@ class RssApp implements RssAppInterface
         }
     }
 
-    public function findRssAppFeedIdBySourceUrl(string $sourceUrl): ?string
+    public function listFeeds(): array
     {
+        $allFeeds = [];
         $offset = 0;
         $limit = 100;
 
@@ -58,13 +59,22 @@ class RssApp implements RssAppInterface
             $feeds = $data['data'] ?? [];
 
             foreach ($feeds as $feed) {
-                if (($feed['source_url'] ?? '') === $sourceUrl) {
-                    return $feed['id'];
-                }
+                $allFeeds[] = $feed;
             }
 
             $offset += $limit;
         } while (($data['total'] ?? 0) > $offset);
+
+        return $allFeeds;
+    }
+
+    public function findRssAppFeedIdBySourceUrl(string $sourceUrl): ?string
+    {
+        foreach ($this->listFeeds() as $feed) {
+            if (($feed['source_url'] ?? '') === $sourceUrl) {
+                return $feed['id'];
+            }
+        }
 
         return null;
     }

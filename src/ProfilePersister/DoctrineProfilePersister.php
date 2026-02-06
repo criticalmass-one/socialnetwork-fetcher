@@ -24,7 +24,7 @@ class DoctrineProfilePersister implements ProfilePersisterInterface
         $networkName = (string) $profile->getNetwork();
         $identifier = (string) $profile->getIdentifier();
 
-        $network = $this->networkRepository->findOneByName($networkName);
+        $network = $this->networkRepository->findOneBy(['identifier' => $networkName]);
 
         if (!$network) {
             throw new \RuntimeException(sprintf('Network "%s" not found', $networkName));
