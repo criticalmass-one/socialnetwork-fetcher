@@ -9,6 +9,7 @@ use Symfony\Component\Serializer\Mapping\Loader\AttributeLoader;
 use Symfony\Component\Serializer\NameConverter\CamelCaseToSnakeCaseNameConverter;
 use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
 use Symfony\Component\Serializer\Normalizer\ArrayDenormalizer;
+use App\Serializer\Normalizer\FlexibleDateTimeNormalizer;
 use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
 use Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
@@ -47,7 +48,7 @@ class Serializer implements SerializerInterface
         $classMetadataFactory = new ClassMetadataFactory(new AttributeLoader());
 
         $normalizers = [
-            new DateTimeNormalizer($dateTimeNormalizerOptions),
+            new FlexibleDateTimeNormalizer($dateTimeNormalizerOptions),
             new ObjectNormalizer(
                 classMetadataFactory: $classMetadataFactory,
                 nameConverter: new CamelCaseToSnakeCaseNameConverter(),

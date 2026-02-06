@@ -135,8 +135,12 @@ class Profile
         return $this->additionalData;
     }
 
-    public function setAdditionalData(?string $additionalData): self
+    public function setAdditionalData(null|string|array $additionalData): self
     {
+        if (is_array($additionalData)) {
+            $additionalData = json_encode($additionalData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        }
+
         $this->additionalData = $additionalData;
 
         return $this;
