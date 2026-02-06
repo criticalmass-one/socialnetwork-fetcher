@@ -81,7 +81,7 @@ class ItemController extends AbstractController
     #[Route('/{id}/toggle-hidden', name: 'app_item_toggle_hidden', requirements: ['id' => '\d+'], methods: ['POST'])]
     public function toggleHidden(Request $request, Item $item, EntityManagerInterface $em): Response
     {
-        if (!$this->isCsrfTokenValid('toggle-item-' . $item->getId(), $request->request->getString('_token'))) {
+        if (!$this->isCsrfTokenValid('toggle-item', $request->request->getString('_token'))) {
             return new JsonResponse(['error' => 'Invalid CSRF token'], Response::HTTP_FORBIDDEN);
         }
 
@@ -96,7 +96,7 @@ class ItemController extends AbstractController
     #[Route('/{id}/toggle-deleted', name: 'app_item_toggle_deleted', requirements: ['id' => '\d+'], methods: ['POST'])]
     public function toggleDeleted(Request $request, Item $item, EntityManagerInterface $em): Response
     {
-        if (!$this->isCsrfTokenValid('toggle-item-' . $item->getId(), $request->request->getString('_token'))) {
+        if (!$this->isCsrfTokenValid('toggle-item', $request->request->getString('_token'))) {
             return new JsonResponse(['error' => 'Invalid CSRF token'], Response::HTTP_FORBIDDEN);
         }
 

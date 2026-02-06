@@ -10,6 +10,10 @@ export default class extends Controller {
     };
 
     connect() {
+        if (DataTable.isDataTable(this.element)) {
+            return;
+        }
+
         this._dt = new DataTable(this.element, {
             pageLength: this.pageLengthValue,
             order: this.orderValue,
