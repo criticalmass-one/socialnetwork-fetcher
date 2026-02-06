@@ -32,4 +32,17 @@ return [
     '@symfony/stimulus-bundle' => [
         'path' => './vendor/symfony/stimulus-bundle/assets/dist/loader.js',
     ],
+    'datatables.net-bs5' => [
+        'version' => '2.3.7',
+    ],
+    'jquery' => [
+        'version' => '4.0.0',
+    ],
+    'datatables.net' => [
+        'version' => '2.3.7',
+    ],
+    'datatables.net-bs5/css/dataTables.bootstrap5.min.css' => [
+        'version' => '2.3.7',
+        'type' => 'css',
+    ],
 ];

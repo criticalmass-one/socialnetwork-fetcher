@@ -5,7 +5,6 @@ namespace App\Controller;
 use App\Entity\Profile;
 use App\Form\ProfileType;
 use App\Repository\ItemRepository;
-use App\Repository\NetworkRepository;
 use App\Repository\ProfileRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -17,22 +16,10 @@ use Symfony\Component\Routing\Attribute\Route;
 class ProfileController extends AbstractController
 {
     #[Route('', name: 'app_profile_index')]
-    public function index(
-        Request $request,
-        ProfileRepository $profileRepository,
-        NetworkRepository $networkRepository,
-    ): Response {
-        $networkId = $request->query->getInt('network');
-        $network = $networkId ? $networkRepository->find($networkId) : null;
-
-        $profiles = $network
-            ? $profileRepository->findBy(['network' => $network], ['identifier' => 'ASC'])
-            : $profileRepository->findBy([], ['identifier' => 'ASC']);
-
+    public function index(ProfileRepository $profileRepository): Response
+    {
         return $this->render('profile/index.html.twig', [
-            'profiles' => $profiles,
-            'networks' => $networkRepository->findAll(),
-            'currentNetwork' => $network,
+            'profiles' => $profileRepository->findBy([], ['identifier' => 'ASC']),
         ]);
     }
 
