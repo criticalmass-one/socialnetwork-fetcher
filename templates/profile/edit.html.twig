@@ -1,0 +1,17 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Profil bearbeiten - Social Network Fetcher{% endblock %}
+
+{% block body %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ path('app_profile_index') }}">Profiles</a></li>
+            <li class="breadcrumb-item"><a href="{{ path('app_profile_show', {id: profile.id}) }}">{{ profile.identifier }}</a></li>
+            <li class="breadcrumb-item active">Bearbeiten</li>
+        </ol>
+    </nav>
+
+    <h1 class="mb-4">Profil bearbeiten</h1>
+
+    {% include 'profile/_form.html.twig' with {cancel_url: path('app_profile_show', {id: profile.id})} %}
+{% endblock %}

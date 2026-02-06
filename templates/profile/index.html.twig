@@ -1,0 +1,117 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Profiles - Social Network Fetcher{% endblock %}
+
+{% block body %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Profiles</h1>
+        <a href="{{ path('app_profile_new') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>Neues Profil
+        </a>
+    </div>
+
+    <div class="mb-3">
+        <div class="btn-group flex-wrap" role="group">
+            <a href="{{ path('app_profile_index') }}"
+               class="btn btn-sm {{ currentNetwork is null ? 'btn-dark' : 'btn-outline-dark' }}">
+                Alle
+            </a>
+            {% for network in networks %}
+                <a href="{{ path('app_profile_index', {network: network.id}) }}"
+                   class="btn btn-sm {{ currentNetwork and currentNetwork.id == network.id ? 'btn-dark' : 'btn-outline-dark' }}">
+                    <i class="{{ network.icon }} me-1"></i>{{ network.name }}
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if profiles is empty %}
+        <div class="alert alert-info">
+            Keine Profile gefunden.
+            <a href="{{ path('app_profile_new') }}">Erstes Profil anlegen?</a>
+        </div>
+    {% else %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Netzwerk</th>
+                        <th>Identifier</th>
+                        <th>Auto-Fetch</th>
+                        <th>Auto-Publish</th>
+                        <th>Letzter Fetch</th>
+                        <th>Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for profile in profiles %}
+                        <tr>
+                            <td>{{ profile.id }}</td>
+                            <td>
+                                {% if profile.network %}
+                                    <span class="badge badge-network" style="background-color: {{ profile.network.backgroundColor }}; color: {{ profile.network.textColor }};">
+                                        <i class="{{ profile.network.icon }} me-1"></i>{{ profile.network.name }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ path('app_profile_show', {id: profile.id}) }}">
+                                    {{ profile.identifier }}
+                                </a>
+                            </td>
+                            <td>
+                                {% if profile.autoFetch %}
+                                    <span class="badge text-bg-success">Ja</span>
+                                {% else %}
+                                    <span class="badge text-bg-secondary">Nein</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if profile.autoPublish %}
+                                    <span class="badge text-bg-success">Ja</span>
+                                {% else %}
+                                    <span class="badge text-bg-secondary">Nein</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if profile.lastFetchSuccessDateTime %}
+                                    <span class="text-success" title="{{ profile.lastFetchSuccessDateTime|date('d.m.Y H:i:s') }}">
+                                        <i class="fas fa-check me-1"></i>{{ profile.lastFetchSuccessDateTime|date('d.m.Y H:i') }}
+                                    </span>
+                                {% elseif profile.lastFetchFailureDateTime %}
+                                    <span class="text-danger" title="{{ profile.lastFetchFailureError }}">
+                                        <i class="fas fa-times me-1"></i>{{ profile.lastFetchFailureDateTime|date('d.m.Y H:i') }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-muted">Noch nicht abgerufen</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{{ path('app_profile_show', {id: profile.id}) }}" class="btn btn-outline-primary" title="Anzeigen">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ path('app_profile_edit', {id: profile.id}) }}" class="btn btn-outline-secondary" title="Bearbeiten">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <form method="post" action="{{ path('app_profile_delete', {id: profile.id}) }}"
+                                          class="d-inline"
+                                          data-controller="confirm"
+                                          data-confirm-message-value="Profil &quot;{{ profile.identifier }}&quot; wirklich löschen?">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete-profile-' ~ profile.id) }}">
+                                        <button type="submit" class="btn btn-outline-danger" title="Löschen">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+
+    {% include '_partials/_delete_modal.html.twig' %}
+{% endblock %}
