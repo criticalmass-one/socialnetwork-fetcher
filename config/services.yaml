@@ -30,5 +30,8 @@ services:
     App\ProfilePersister\ProfilePersisterInterface:
         alias: App\ProfilePersister\DoctrineProfilePersister
 
+    App\ProfileFetcher\ProfileFetcherInterface:
+        alias: App\ProfileFetcher\DoctrineProfileFetcher
+
     App\RssApp\RssAppInterface:
         alias: App\RssApp\RssApp
