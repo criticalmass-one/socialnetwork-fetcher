@@ -14,6 +14,7 @@ class Profile
     protected ?string $lastFetchFailureError = null;
     protected bool $autoFetch = true;
     protected ?string $additionalData = null;
+    protected bool $fetchSource = false;
 
     public function getId(): ?int
     {
@@ -142,6 +143,18 @@ class Profile
         }
 
         $this->additionalData = $additionalData;
+
+        return $this;
+    }
+
+    public function isFetchSource(): bool
+    {
+        return $this->fetchSource;
+    }
+
+    public function setFetchSource(bool $fetchSource): self
+    {
+        $this->fetchSource = $fetchSource;
 
         return $this;
     }
