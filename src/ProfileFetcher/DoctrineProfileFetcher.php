@@ -69,6 +69,7 @@ class DoctrineProfileFetcher implements ProfileFetcherInterface
         }
 
         $model->setLastFetchFailureError($entity->getLastFetchFailureError());
+        $model->setFetchSource($entity->isFetchSource());
 
         $additionalData = $entity->getAdditionalData();
         if ($additionalData) {
