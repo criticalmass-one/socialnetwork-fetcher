@@ -4,80 +4,83 @@ namespace App\Tests\NetworkFeedFetcher\Mastodon;
 
 use App\Model\SocialNetworkProfile;
 use App\NetworkFeedFetcher\Mastodon\IdentifierParser;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class IdentifierParserTest extends TestCase
 {
-    public function testParseHandleFormat(): void
+    #[DataProvider('handleFormatProvider')]
+    public function testParseHandleFormat(string $identifier, string $expectedHostname, string $expectedUsername): void
     {
-        $profile = (new SocialNetworkProfile())->setIdentifier('@criticalmass@mastodon.social');
+        $profile = (new SocialNetworkProfile())->setIdentifier($identifier);
 
         $account = IdentifierParser::parse($profile);
 
-        $this->assertNotNull($account);
-        $this->assertSame('mastodon.social', $account->getHostname());
-        $this->assertSame('criticalmass', $account->getUsername());
+        $this->assertNotNull($account, sprintf('Expected Account for identifier "%s", got null', $identifier));
+        $this->assertSame($expectedHostname, $account->getHostname());
+        $this->assertSame($expectedUsername, $account->getUsername());
     }
 
-    public function testParseHandleFormatWithoutLeadingAt(): void
+    public static function handleFormatProvider(): array
     {
-        $profile = (new SocialNetworkProfile())->setIdentifier('criticalmass@mastodon.social');
-
-        $account = IdentifierParser::parse($profile);
-
-        $this->assertNotNull($account);
-        $this->assertSame('mastodon.social', $account->getHostname());
-        $this->assertSame('criticalmass', $account->getUsername());
+        return [
+            'standard handle' => ['@criticalmass@mastodon.social', 'mastodon.social', 'criticalmass'],
+            'without leading @' => ['criticalmass@mastodon.social', 'mastodon.social', 'criticalmass'],
+            'subdomain instance' => ['@user@social.example.org', 'social.example.org', 'user'],
+            'dots in username' => ['@critical.mass@mastodon.social', 'mastodon.social', 'critical.mass'],
+            'numbers in username' => ['@cm2023@mastodon.social', 'mastodon.social', 'cm2023'],
+            'long TLD' => ['@user@mastodon.technology', 'mastodon.technology', 'user'],
+            'short TLD' => ['@user@mas.to', 'mas.to', 'user'],
+            'country TLD' => ['@radfahren@social.dev.de', 'social.dev.de', 'radfahren'],
+            'uppercase handle' => ['@CriticalMass@Mastodon.Social', 'Mastodon.Social', 'CriticalMass'],
+            'mixed case' => ['@CM_Hamburg@chaos.social', 'chaos.social', 'CM_Hamburg'],
+            'hyphen in username' => ['@critical-mass@mastodon.social', 'mastodon.social', 'critical-mass'],
+            'plus in username' => ['@user+tag@mastodon.social', 'mastodon.social', 'user+tag'],
+            'percent in username' => ['@user%40@mastodon.social', 'mastodon.social', 'user%40'],
+        ];
     }
 
-    public function testParseUrlFormat(): void
+    #[DataProvider('urlFormatProvider')]
+    public function testParseUrlFormat(string $identifier, string $expectedHostname, string $expectedUsername): void
     {
-        $profile = (new SocialNetworkProfile())->setIdentifier('https://mastodon.social/@criticalmass');
+        $profile = (new SocialNetworkProfile())->setIdentifier($identifier);
 
         $account = IdentifierParser::parse($profile);
 
-        $this->assertNotNull($account);
-        $this->assertSame('mastodon.social', $account->getHostname());
-        $this->assertSame('criticalmass', $account->getUsername());
+        $this->assertNotNull($account, sprintf('Expected Account for identifier "%s", got null', $identifier));
+        $this->assertSame($expectedHostname, $account->getHostname());
+        $this->assertSame($expectedUsername, $account->getUsername());
     }
 
-    public function testParseUrlFormatWithTrailingSlash(): void
+    public static function urlFormatProvider(): array
     {
-        $profile = (new SocialNetworkProfile())->setIdentifier('https://chaos.social/@cm_hamburg/');
-
-        $account = IdentifierParser::parse($profile);
-
-        $this->assertNotNull($account);
-        $this->assertSame('chaos.social', $account->getHostname());
-        $this->assertSame('cm_hamburg', $account->getUsername());
+        return [
+            'https with @' => ['https://mastodon.social/@criticalmass', 'mastodon.social', 'criticalmass'],
+            'https with trailing slash' => ['https://chaos.social/@cm_hamburg/', 'chaos.social', 'cm_hamburg'],
+            'http scheme' => ['http://mastodon.social/@user', 'mastodon.social', 'user'],
+            'subdomain URL' => ['https://social.example.org/@user', 'social.example.org', 'user'],
+            'without @ in path' => ['https://mastodon.social/criticalmass', 'mastodon.social', 'criticalmass'],
+        ];
     }
 
-    public function testParseHandleWithSubdomain(): void
+    #[DataProvider('invalidIdentifierProvider')]
+    public function testParseReturnsNullForInvalidIdentifier(string $identifier): void
     {
-        $profile = (new SocialNetworkProfile())->setIdentifier('@user@social.example.org');
+        $profile = (new SocialNetworkProfile())->setIdentifier($identifier);
 
         $account = IdentifierParser::parse($profile);
 
-        $this->assertNotNull($account);
-        $this->assertSame('social.example.org', $account->getHostname());
-        $this->assertSame('user', $account->getUsername());
+        $this->assertNull($account, sprintf('Expected null for identifier "%s"', $identifier));
     }
 
-    public function testParseReturnsNullForInvalidIdentifier(): void
+    public static function invalidIdentifierProvider(): array
     {
-        $profile = (new SocialNetworkProfile())->setIdentifier('not-a-valid-identifier');
-
-        $account = IdentifierParser::parse($profile);
-
-        $this->assertNull($account);
-    }
-
-    public function testParseReturnsNullForEmptyString(): void
-    {
-        $profile = (new SocialNetworkProfile())->setIdentifier('');
-
-        $account = IdentifierParser::parse($profile);
-
-        $this->assertNull($account);
+        return [
+            'empty string' => [''],
+            'plain text' => ['not-a-valid-identifier'],
+            'just a username' => ['criticalmass'],
+            'single @' => ['@criticalmass'],
+            'just a domain' => ['mastodon.social'],
+        ];
     }
 }
