@@ -19,7 +19,7 @@ class RssApp implements RssAppInterface
 
     public function getItems(string $feedId, int $count = 100): array
     {
-        $url = sprintf('https://api.rss.app/v1/feeds/%s?count=%d', $feedId, $count);
+        $url = sprintf('https://api.rss.app/v1/feeds/%s?limit=%d', $feedId, $count);
 
         $response = $this->httpClient->request('GET', $url, [
             'headers' => ['Authorization' => $this->bearer]

@@ -45,7 +45,7 @@ class Fetcher extends AbstractNetworkFeedFetcher
         }
 
         try {
-            $items = $this->rssApp->getItems($feedId);
+            $items = $this->rssApp->getItems($feedId, $fetchInfo->getCount());
 
             $feedItemList = [];
 
