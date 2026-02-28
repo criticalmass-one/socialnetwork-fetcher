@@ -7,7 +7,7 @@ use App\Model\SocialNetworkProfile;
 use App\NetworkFeedFetcher\AbstractNetworkFeedFetcher;
 use Psr\Log\LoggerInterface;
 
-class Fetcher extends AbstractNetworkFeedFetcher
+abstract class Fetcher extends AbstractNetworkFeedFetcher
 {
     public function __construct(
         LoggerInterface $logger,
