@@ -2,7 +2,7 @@
 
 namespace App\Command;
 
-use App\FeedFetcher\FeedFetcher;
+use App\FeedFetcher\FeedFetcherInterface;
 use App\Model\SocialNetworkProfile;
 use App\NetworkFeedFetcher\NetworkFeedFetcherInterface;
 use App\ProfileFetcher\ProfileFetcherInterface;
@@ -16,7 +16,7 @@ class FeedListCommand extends Command
 {
     public function __construct(
         private readonly ProfileFetcherInterface $profileFetcher,
-        private readonly FeedFetcher $feedFetcher
+        private readonly FeedFetcherInterface $feedFetcher
     ) {
         parent::__construct();
     }

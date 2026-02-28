@@ -2,7 +2,7 @@
 
 namespace App\Command;
 
-use App\FeedFetcher\FeedFetcher;
+use App\FeedFetcher\FeedFetcherInterface;
 use App\NetworkFeedFetcher\NetworkFeedFetcherInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -12,7 +12,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class NetworkListCommand extends Command
 {
     public function __construct(
-        private readonly FeedFetcher $feedFetcher
+        private readonly FeedFetcherInterface $feedFetcher
     ) {
         parent::__construct();
     }
