@@ -14,7 +14,7 @@ class IdentifierParser
 
     public static function parse(SocialNetworkProfile $socialNetworkProfile): ?Account
     {
-        preg_match('/@?\b([A-Z0-9._%+-]+)@([A-Z0-9.-]+\.[A-Z]{2,})/Ui', $socialNetworkProfile->getIdentifier(), $matches);
+        preg_match('/@?\b([A-Z0-9._%+-]+)@([A-Z0-9.-]+\.[A-Z]{2,})/i', $socialNetworkProfile->getIdentifier(), $matches);
 
         if (3 === count($matches)) {
             return new Account($matches[2], $matches[1]);
