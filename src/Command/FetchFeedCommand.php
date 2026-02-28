@@ -2,7 +2,7 @@
 
 namespace App\Command;
 
-use App\FeedFetcher\FeedFetcher;
+use App\FeedFetcher\FeedFetcherInterface;
 use App\FeedFetcher\FetchInfo;
 use App\FeedFetcher\FetchResult;
 use Symfony\Component\Console\Command\Command;
@@ -14,9 +14,9 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 
 class FetchFeedCommand extends Command
 {
-    protected FeedFetcher $feedFetcher;
+    protected FeedFetcherInterface $feedFetcher;
 
-    public function __construct(FeedFetcher $feedFetcher)
+    public function __construct(FeedFetcherInterface $feedFetcher)
     {
         $this->feedFetcher = $feedFetcher;
 
@@ -26,7 +26,7 @@ class FetchFeedCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('criticalmass:social-network:fetch-feed')
+            ->setName('feeds:fetch')
             ->setDescription('Fetch feeds')
             ->addArgument('networks', InputArgument::IS_ARRAY)
             ->addOption('fromDateTime', 'f', InputOption::VALUE_REQUIRED)

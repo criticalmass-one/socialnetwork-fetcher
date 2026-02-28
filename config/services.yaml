@@ -24,3 +24,6 @@ services:
 
     App\FeedItemPersister\FeedItemPersisterInterface:
         alias: App\FeedItemPersister\ApiPusher
+
+    App\FeedFetcher\FeedFetcherInterface:
+        alias: App\FeedFetcher\FeedFetcher
