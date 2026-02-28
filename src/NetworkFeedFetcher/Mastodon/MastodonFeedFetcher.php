@@ -10,14 +10,15 @@ use App\NetworkFeedFetcher\Mastodon\Model\AccountInfo;
 use App\NetworkFeedFetcher\Mastodon\Model\Status;
 use App\Serializer\SerializerInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class MastodonFeedFetcher extends AbstractNetworkFeedFetcher
 {
     public function __construct(
         private readonly SerializerInterface $serializer,
+        private readonly HttpClientInterface $httpClient,
         LoggerInterface $logger
-    )
-    {
+    ) {
         parent::__construct($logger);
     }
 
@@ -27,11 +28,9 @@ class MastodonFeedFetcher extends AbstractNetworkFeedFetcher
             $account = IdentifierParser::parse($socialNetworkProfile);
 
             $accountInfo = $this->getAccountInfo($account);
-            $timeline = $this->fetchTimeline($account, $accountInfo);
+            $timeline = $this->fetchTimeline($account, $accountInfo, $fetchInfo->getCount());
 
-            $feedItemList = $this->convertTimeline($socialNetworkProfile, $timeline);
-
-            return $feedItemList;
+            return $this->convertTimeline($socialNetworkProfile, $timeline);
         } catch (\Exception $exception) {
             $this->markAsFailed($socialNetworkProfile, sprintf('Failed to fetch social network profile %d: %s', $socialNetworkProfile->getId(), $exception->getMessage()));
 
@@ -39,20 +38,20 @@ class MastodonFeedFetcher extends AbstractNetworkFeedFetcher
         }
     }
 
-    private function getAccountInfo(Account $account): ?AccountInfo
+    private function getAccountInfo(Account $account): AccountInfo
     {
-        $accountInfoUri = sprintf('https://%s/api/v1/accounts/lookup?acct=%s', $account->getHostname(), $account->getUsername());
+        $url = sprintf('https://%s/api/v1/accounts/lookup?acct=%s', $account->getHostname(), $account->getUsername());
 
-        $response = file_get_contents($accountInfoUri);
+        $response = $this->httpClient->request('GET', $url)->getContent();
 
         return $this->serializer->deserialize($response, AccountInfo::class, 'json');
     }
 
-    private function fetchTimeline(Account $account, AccountInfo $accountInfo): array
+    private function fetchTimeline(Account $account, AccountInfo $accountInfo, int $count): array
     {
-        $feedUri = sprintf('https://%s/api/v1/accounts/%s/statuses', $account->getHostname(), $accountInfo->getId());
+        $url = sprintf('https://%s/api/v1/accounts/%s/statuses?limit=%d', $account->getHostname(), $accountInfo->getId(), $count);
 
-        $response = file_get_contents($feedUri);
+        $response = $this->httpClient->request('GET', $url)->getContent();
 
         return $this->serializer->deserialize($response, sprintf('%s[]', Status::class), 'json');
     }
