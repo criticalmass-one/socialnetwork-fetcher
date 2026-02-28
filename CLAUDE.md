@@ -67,6 +67,10 @@ No service registration needed — autoconfiguration handles it.
 - PRs may only be merged after all tests have passed (`bin/phpunit`).
 - Delete remote branches after merging.
 
+## Documentation
+
+Keep `README.md` up to date when adding new networks, commands, or changing project structure.
+
 ## Environment Variables
 
 Key vars in `.env`: `CRITICALMASS_HOSTNAME` (API base URL), `RSS_APP_API_KEY`, `RSS_APP_API_SECRET`. The `$criticalmassHostname` binding in `services.yaml` injects into `ProfileFetcher`, `ApiPusher`, and `ProfilePersister`.
