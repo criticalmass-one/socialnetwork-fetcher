@@ -40,6 +40,14 @@ class NullableDateTimeNormalizerTest extends TestCase
         $this->assertEquals('2025-01-15', $result->format('Y-m-d'));
     }
 
+    public function testDenormalizeUnixTimestamp(): void
+    {
+        $result = $this->normalizer->denormalize(1753138551, \DateTime::class);
+
+        $this->assertInstanceOf(\DateTime::class, $result);
+        $this->assertEquals('2025-07-21', $result->format('Y-m-d'));
+    }
+
     public function testSupportsDenormalization(): void
     {
         $this->assertTrue($this->normalizer->supportsDenormalization('2025-01-01', \DateTime::class));

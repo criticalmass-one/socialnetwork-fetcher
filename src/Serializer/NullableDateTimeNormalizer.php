@@ -41,6 +41,12 @@ class NullableDateTimeNormalizer implements NormalizerInterface, DenormalizerInt
             return null;
         }
 
+        if (is_int($data) || is_float($data)) {
+            $context[DateTimeNormalizer::FORMAT_KEY] = 'U';
+
+            return $this->inner->denormalize($data, $type, $format, $context);
+        }
+
         return $this->inner->denormalize($data, $type, $format, $context);
     }
 }
