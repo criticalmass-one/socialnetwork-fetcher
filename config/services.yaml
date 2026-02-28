@@ -11,7 +11,6 @@ services:
         autowire: true      # Automatically injects dependencies in your services.
         autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
         bind:
-            $rabbitmqUrl: '%env(RABBITMQ_URL)%'
             $criticalmassHostname: '%env(CRITICALMASS_HOSTNAME)%'
             $instagramScraperProxyServerAddress: ''
             $instagramScraperProxyServerPort: ''
