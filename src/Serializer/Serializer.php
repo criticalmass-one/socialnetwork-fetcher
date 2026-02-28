@@ -47,7 +47,7 @@ class Serializer implements SerializerInterface
         $classMetadataFactory = new ClassMetadataFactory(new AttributeLoader());
 
         $normalizers = [
-            new DateTimeNormalizer($dateTimeNormalizerOptions),
+            new NullableDateTimeNormalizer($dateTimeNormalizerOptions),
             new ObjectNormalizer(
                 classMetadataFactory: $classMetadataFactory,
                 nameConverter: new CamelCaseToSnakeCaseNameConverter(),
