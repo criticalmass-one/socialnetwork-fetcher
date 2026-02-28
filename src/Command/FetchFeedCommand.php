@@ -26,7 +26,7 @@ class FetchFeedCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('criticalmass:social-network:fetch-feed')
+            ->setName('feeds:fetch')
             ->setDescription('Fetch feeds')
             ->addArgument('networks', InputArgument::IS_ARRAY)
             ->addOption('fromDateTime', 'f', InputOption::VALUE_REQUIRED)
