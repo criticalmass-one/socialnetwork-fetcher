@@ -26,10 +26,10 @@ class BlueskyFeedFetcher extends AbstractNetworkFeedFetcher
 
     public function fetch(SocialNetworkProfile $socialNetworkProfile, FetchInfo $fetchInfo): array
     {
-        $handle = $socialNetworkProfile->getIdentifier();
+        $handle = IdentifierParser::parse($socialNetworkProfile);
 
         if (!$handle) {
-            $this->markAsFailed($socialNetworkProfile, 'Kein Identifier vorhanden.');
+            $this->markAsFailed($socialNetworkProfile, 'Bluesky-Handle konnte nicht aus Identifier ermittelt werden: ' . $socialNetworkProfile->getIdentifier());
             return [];
         }
 
