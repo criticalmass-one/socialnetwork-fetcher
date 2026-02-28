@@ -10,7 +10,6 @@ class FetchResult
     protected string $status;
 
     protected int $counterFetched = 0;
-    protected int $counterRabbit = 0;
     protected int $counterPushed200 = 0;
     protected int $counterPushed4xx = 0;
     protected int $counterPushed5xx = 0;
@@ -108,22 +107,4 @@ class FetchResult
         return $this;
     }
 
-    public function getCounterRabbit(): int
-    {
-        return $this->counterRabbit;
-    }
-
-    public function setCounterRabbit(int $counterRabbit): FetchResult
-    {
-        $this->counterRabbit = $counterRabbit;
-
-        return $this;
-    }
-
-    public function incCounterRabbit(): FetchResult
-    {
-        ++$this->counterRabbit;
-
-        return $this;
-    }
 }
