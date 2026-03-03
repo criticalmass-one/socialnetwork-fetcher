@@ -56,21 +56,19 @@
                         <tr>
                             <th>Auto-Fetch</th>
                             <td>
-                                {% if profile.autoFetch %}
-                                    <span class="badge text-bg-success">Aktiv</span>
-                                {% else %}
-                                    <span class="badge text-bg-secondary">Inaktiv</span>
-                                {% endif %}
+                                {% include '_partials/_profile_toggle.html.twig' with { profile: profile, field: 'autoFetch', state: profile.autoFetch } %}
                             </td>
                         </tr>
                         <tr>
                             <th>Auto-Publish</th>
                             <td>
-                                {% if profile.autoPublish %}
-                                    <span class="badge text-bg-success">Aktiv</span>
-                                {% else %}
-                                    <span class="badge text-bg-secondary">Inaktiv</span>
-                                {% endif %}
+                                {% include '_partials/_profile_toggle.html.twig' with { profile: profile, field: 'autoPublish', state: profile.autoPublish } %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Quelltext laden</th>
+                            <td>
+                                {% include '_partials/_profile_toggle.html.twig' with { profile: profile, field: 'fetchSource', state: profile.fetchSource } %}
                             </td>
                         </tr>
                         <tr>

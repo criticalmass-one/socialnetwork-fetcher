@@ -1,0 +1,11 @@
+{# Usage: include '_partials/_profile_toggle.html.twig' with { profile: profile, field: 'autoFetch', state: profile.autoFetch } #}
+<label class="toggle-switch"
+       data-controller="profile-toggle"
+       data-profile-toggle-id-value="{{ profile.id }}"
+       data-profile-toggle-field-value="{{ field }}"
+       data-profile-toggle-token-value="{{ csrf_token('toggle-profile-' ~ profile.id) }}"
+       data-profile-toggle-state-value="{{ state ? 'true' : 'false' }}"
+       data-action="change->profile-toggle#toggle">
+    <input type="checkbox" {{ state ? 'checked' : '' }}>
+    <span class="toggle-track"></span>
+</label>

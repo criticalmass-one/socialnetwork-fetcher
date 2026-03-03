@@ -50,18 +50,10 @@
                             </a>
                         </td>
                         <td>
-                            {% if profile.autoFetch %}
-                                <span class="badge text-bg-success">Ja</span>
-                            {% else %}
-                                <span class="badge text-bg-secondary">Nein</span>
-                            {% endif %}
+                            {% include '_partials/_profile_toggle.html.twig' with { profile: profile, field: 'autoFetch', state: profile.autoFetch } %}
                         </td>
                         <td>
-                            {% if profile.autoPublish %}
-                                <span class="badge text-bg-success">Ja</span>
-                            {% else %}
-                                <span class="badge text-bg-secondary">Nein</span>
-                            {% endif %}
+                            {% include '_partials/_profile_toggle.html.twig' with { profile: profile, field: 'autoPublish', state: profile.autoPublish } %}
                         </td>
                         <td>
                             {% if profile.lastFetchSuccessDateTime %}

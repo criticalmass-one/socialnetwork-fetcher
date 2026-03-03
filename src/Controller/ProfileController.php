@@ -14,6 +14,7 @@ use App\Repository\ProfileRepository;
 use App\RssApp\RssAppInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -133,6 +134,27 @@ class ProfileController extends AbstractController
         }
 
         return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
+    }
+
+    #[Route('/{id}/toggle-{field}', name: 'app_profile_toggle', requirements: ['id' => '\d+', 'field' => 'autoFetch|autoPublish|fetchSource'], methods: ['POST'])]
+    public function toggle(Request $request, Profile $profile, string $field, EntityManagerInterface $em): JsonResponse
+    {
+        if (!$this->isCsrfTokenValid('toggle-profile-' . $profile->getId(), $request->request->getString('_token'))) {
+            return new JsonResponse(['error' => 'Invalid CSRF token'], Response::HTTP_FORBIDDEN);
+        }
+
+        $setter = 'set' . ucfirst($field);
+        $getter = match ($field) {
+            'autoFetch' => 'isAutoFetch',
+            'autoPublish' => 'isAutoPublish',
+            'fetchSource' => 'isFetchSource',
+        };
+
+        $newValue = !$profile->$getter();
+        $profile->$setter($newValue);
+        $em->flush();
+
+        return new JsonResponse([$field => $newValue]);
     }
 
     #[Route('/{id}/fetch', name: 'app_profile_fetch', requirements: ['id' => '\d+'], methods: ['POST'])]
