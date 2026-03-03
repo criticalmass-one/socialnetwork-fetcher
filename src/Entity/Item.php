@@ -86,7 +86,7 @@ class Item
 
     #[ORM\Column(type: 'text', nullable: true)]
     #[Groups(['item:read', 'item:write'])]
-    private ?string $parsedSource = null;
+    private ?string $source = null;
 
     public function __construct()
     {
@@ -230,14 +230,14 @@ class Item
         return $this;
     }
 
-    public function getParsedSource(): ?string
+    public function getSource(): ?string
     {
-        return $this->parsedSource;
+        return $this->source;
     }
 
-    public function setParsedSource(?string $parsedSource): self
+    public function setSource(?string $source): self
     {
-        $this->parsedSource = $parsedSource;
+        $this->source = $source;
 
         return $this;
     }

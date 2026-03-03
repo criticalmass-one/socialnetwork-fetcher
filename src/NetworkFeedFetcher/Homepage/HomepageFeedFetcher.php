@@ -7,9 +7,17 @@ use App\NetworkFeedFetcher\AbstractNetworkFeedFetcher;
 use App\Model\Profile;
 use Laminas\Feed\Reader\Entry\EntryInterface;
 use Laminas\Feed\Reader\Reader;
+use Psr\Log\LoggerInterface;
 
 class HomepageFeedFetcher extends AbstractNetworkFeedFetcher
 {
+    public function __construct(
+        LoggerInterface $logger,
+        private readonly EntryConverter $entryConverter,
+    ) {
+        parent::__construct($logger);
+    }
+
     public function fetch(Profile $profile, FetchInfo $fetchInfo): array
     {
         try {
@@ -35,9 +43,11 @@ class HomepageFeedFetcher extends AbstractNetworkFeedFetcher
 
         $feed = Reader::import($feedLink);
 
+        $fetchSource = $profile->isFetchSource();
+
         /** @var EntryInterface $entry */
         foreach ($feed as $entry) {
-            $feedItem = EntryConverter::convert($profile, $entry);
+            $feedItem = $this->entryConverter->convert($profile, $entry, $fetchSource);
 
             if ($feedItem) {
                 $feedItemList[] = $feedItem;

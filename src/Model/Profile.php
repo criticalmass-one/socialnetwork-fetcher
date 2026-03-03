@@ -13,6 +13,7 @@ class Profile
     protected ?\DateTime $lastFetchFailureDateTime = null;
     protected ?string $lastFetchFailureError = null;
     protected bool $autoFetch = true;
+    protected bool $fetchSource = false;
     protected ?string $additionalData = null;
     protected bool $fetchSource = false;
 
@@ -127,6 +128,18 @@ class Profile
     public function setAutoFetch(bool $autoFetch): self
     {
         $this->autoFetch = $autoFetch;
+
+        return $this;
+    }
+
+    public function isFetchSource(): bool
+    {
+        return $this->fetchSource;
+    }
+
+    public function setFetchSource(bool $fetchSource): self
+    {
+        $this->fetchSource = $fetchSource;
 
         return $this;
     }

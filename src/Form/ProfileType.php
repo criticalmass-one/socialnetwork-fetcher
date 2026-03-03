@@ -45,7 +45,7 @@ class ProfileType extends AbstractType
                 'required' => false,
             ])
             ->add('fetchSource', CheckboxType::class, [
-                'label' => 'Quellcode einlesen',
+                'label' => 'Quelltext laden',
                 'required' => false,
             ])
             ->add('additionalData', TextareaType::class, [

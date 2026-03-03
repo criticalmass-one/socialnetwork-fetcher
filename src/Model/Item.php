@@ -16,7 +16,7 @@ class Item
     protected ?\DateTime $createdAt = null;
     protected ?string $raw = null;
     protected ?string $rawSource = null;
-    protected ?string $parsedSource = null;
+    protected ?string $source = null;
 
     public function __construct()
     {
@@ -167,14 +167,14 @@ class Item
         return $this;
     }
 
-    public function getParsedSource(): ?string
+    public function getSource(): ?string
     {
-        return $this->parsedSource;
+        return $this->source;
     }
 
-    public function setParsedSource(?string $parsedSource): Item
+    public function setSource(?string $source): Item
     {
-        $this->parsedSource = $parsedSource;
+        $this->source = $source;
 
         return $this;
     }

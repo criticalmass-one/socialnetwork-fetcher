@@ -66,6 +66,10 @@ class Profile
     #[Groups(['profile:read', 'profile:write'])]
     private bool $autoFetch = true;
 
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    #[Groups(['profile:read', 'profile:write'])]
+    private bool $fetchSource = false;
+
     #[ORM\Column(type: 'text', nullable: true)]
     #[Groups(['profile:read', 'profile:write'])]
     private ?string $additionalData = null;
@@ -178,6 +182,18 @@ class Profile
     public function setAutoFetch(bool $autoFetch): self
     {
         $this->autoFetch = $autoFetch;
+
+        return $this;
+    }
+
+    public function isFetchSource(): bool
+    {
+        return $this->fetchSource;
+    }
+
+    public function setFetchSource(bool $fetchSource): self
+    {
+        $this->fetchSource = $fetchSource;
 
         return $this;
     }
