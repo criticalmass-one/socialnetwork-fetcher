@@ -28,6 +28,7 @@
                     <th>Netzwerk</th>
                     <th>Identifier</th>
                     <th>Auto-Fetch</th>
+                    <th>Quelltext</th>
                     <th>Letzter Fetch</th>
                     <th class="no-sort">Aktionen</th>
                 </tr>
@@ -50,6 +51,9 @@
                         </td>
                         <td>
                             {% include '_partials/_profile_toggle.html.twig' with { profile: profile, field: 'autoFetch', state: profile.autoFetch } %}
+                        </td>
+                        <td>
+                            {% include '_partials/_profile_toggle.html.twig' with { profile: profile, field: 'fetchSource', state: profile.fetchSource } %}
                         </td>
                         <td>
                             {% if profile.lastFetchSuccessDateTime %}
