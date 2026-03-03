@@ -136,7 +136,7 @@ class ProfileController extends AbstractController
         return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
     }
 
-    #[Route('/{id}/toggle-{field}', name: 'app_profile_toggle', requirements: ['id' => '\d+', 'field' => 'autoFetch|autoPublish|fetchSource'], methods: ['POST'])]
+    #[Route('/{id}/toggle-{field}', name: 'app_profile_toggle', requirements: ['id' => '\d+', 'field' => 'autoFetch|fetchSource'], methods: ['POST'])]
     public function toggle(Request $request, Profile $profile, string $field, EntityManagerInterface $em): JsonResponse
     {
         if (!$this->isCsrfTokenValid('toggle-profile-' . $profile->getId(), $request->request->getString('_token'))) {
@@ -146,7 +146,6 @@ class ProfileController extends AbstractController
         $setter = 'set' . ucfirst($field);
         $getter = match ($field) {
             'autoFetch' => 'isAutoFetch',
-            'autoPublish' => 'isAutoPublish',
             'fetchSource' => 'isFetchSource',
         };
 

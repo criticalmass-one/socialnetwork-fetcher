@@ -46,10 +46,6 @@ class Profile
     #[Groups(['profile:read'])]
     private ?\DateTimeImmutable $createdAt = null;
 
-    #[ORM\Column(type: 'boolean', options: ['default' => true])]
-    #[Groups(['profile:read', 'profile:write'])]
-    private bool $autoPublish = true;
-
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     #[Groups(['profile:read'])]
     private ?\DateTimeImmutable $lastFetchSuccessDateTime = null;
@@ -118,18 +114,6 @@ class Profile
     public function setCreatedAt(?\DateTimeImmutable $createdAt): self
     {
         $this->createdAt = $createdAt;
-
-        return $this;
-    }
-
-    public function isAutoPublish(): bool
-    {
-        return $this->autoPublish;
-    }
-
-    public function setAutoPublish(bool $autoPublish): self
-    {
-        $this->autoPublish = $autoPublish;
 
         return $this;
     }

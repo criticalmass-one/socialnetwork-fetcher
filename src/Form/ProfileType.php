@@ -36,10 +36,6 @@ class ProfileType extends AbstractType
                 'label' => 'Identifier',
                 'help' => 'URL oder Benutzername im Netzwerk',
             ])
-            ->add('autoPublish', CheckboxType::class, [
-                'label' => 'Auto-Publish',
-                'required' => false,
-            ])
             ->add('autoFetch', CheckboxType::class, [
                 'label' => 'Auto-Fetch',
                 'required' => false,

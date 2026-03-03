@@ -8,7 +8,6 @@ class Profile
     protected ?string $identifier = null;
     protected string $network;
     private ?\DateTime $createdAt = null;
-    protected bool $autoPublish = true;
     protected ?\DateTime $lastFetchSuccessDateTime = null;
     protected ?\DateTime $lastFetchFailureDateTime = null;
     protected ?string $lastFetchFailureError = null;
@@ -67,18 +66,6 @@ class Profile
     public function setCreatedAt(?\DateTimeInterface $createdAt): self
     {
         $this->createdAt = $createdAt;
-
-        return $this;
-    }
-
-    public function isAutoPublish(): bool
-    {
-        return $this->autoPublish;
-    }
-
-    public function setAutoPublish(bool $autoPublish): Profile
-    {
-        $this->autoPublish = $autoPublish;
 
         return $this;
     }

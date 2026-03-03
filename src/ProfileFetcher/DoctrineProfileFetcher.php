@@ -57,7 +57,6 @@ class DoctrineProfileFetcher implements ProfileFetcherInterface
         $model->setId($entity->getId());
         $model->setIdentifier($entity->getIdentifier());
         $model->setNetwork($entity->getNetwork()->getIdentifier());
-        $model->setAutoPublish($entity->isAutoPublish());
         $model->setAutoFetch($entity->isAutoFetch());
 
         if ($entity->getLastFetchSuccessDateTime()) {

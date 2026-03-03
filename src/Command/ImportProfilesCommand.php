@@ -93,7 +93,6 @@ class ImportProfilesCommand extends Command
 
             $profile->setNetwork($network);
             $profile->setIdentifier($data['identifier']);
-            $profile->setAutoPublish($data['auto_publish'] ?? true);
             $profile->setAutoFetch($data['auto_fetch'] ?? true);
 
             $additionalData = $data['additional_data'] ?? null;
