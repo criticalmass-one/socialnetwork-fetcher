@@ -31,6 +31,7 @@ export default class extends Controller {
 
             if (response.ok && data.success) {
                 body.innerHTML = this._renderSuccess(data);
+                this._updateFetchStatus(data);
             } else {
                 body.innerHTML = this._renderError(data.error || 'Unbekannter Fehler');
             }
@@ -88,6 +89,33 @@ export default class extends Controller {
                 </div>
             </div>
         `;
+    }
+
+    _updateFetchStatus(data) {
+        const row = this.element.closest('tr');
+
+        if (row) {
+            const cell = row.querySelector('[data-fetch-status]');
+            if (cell) {
+                cell.innerHTML = `
+                    <span class="text-success" title="${this._escapeHtml(data.lastFetchDateTimeFull)}">
+                        <i class="fas fa-check me-1"></i>${this._escapeHtml(data.lastFetchDateTime)}
+                    </span>
+                `;
+            }
+        } else {
+            const card = document.querySelector('[data-fetch-status]');
+            if (card) {
+                card.innerHTML = `
+                    <div class="mb-3">
+                        <small class="text-muted d-block">Letzter erfolgreicher Fetch</small>
+                        <span class="text-success">
+                            <i class="fas fa-check me-1"></i>${this._escapeHtml(data.lastFetchDateTimeFull)}
+                        </span>
+                    </div>
+                `;
+            }
+        }
     }
 
     _escapeHtml(text) {

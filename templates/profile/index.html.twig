@@ -55,7 +55,7 @@
                         <td>
                             {% include '_partials/_profile_toggle.html.twig' with { profile: profile, field: 'fetchSource', state: profile.fetchSource } %}
                         </td>
-                        <td>
+                        <td data-fetch-status>
                             {% if profile.lastFetchSuccessDateTime %}
                                 <span class="text-success" title="{{ profile.lastFetchSuccessDateTime|date('d.m.Y H:i:s') }}">
                                     <i class="fas fa-check me-1"></i>{{ profile.lastFetchSuccessDateTime|date('d.m.Y H:i') }}

@@ -230,6 +230,8 @@ class ProfileController extends AbstractController
                     'fetched' => count($feedItemList),
                     'new' => $newCount,
                     'duplicates' => $duplicateCount,
+                    'lastFetchDateTime' => $profile->getLastFetchSuccessDateTime()->format('d.m.Y H:i'),
+                    'lastFetchDateTimeFull' => $profile->getLastFetchSuccessDateTime()->format('d.m.Y H:i:s'),
                 ]);
             }
 
