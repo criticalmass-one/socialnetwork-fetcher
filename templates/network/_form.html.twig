@@ -1,0 +1,24 @@
+{{ form_start(form) }}
+    <div class="card">
+        <div class="card-body">
+            {{ form_row(form.identifier) }}
+            {{ form_row(form.name) }}
+            {{ form_row(form.icon) }}
+            <div class="row">
+                <div class="col-md-6">
+                    {{ form_row(form.backgroundColor) }}
+                </div>
+                <div class="col-md-6">
+                    {{ form_row(form.textColor) }}
+                </div>
+            </div>
+            {{ form_row(form.profileUrlPattern) }}
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-1"></i>Speichern
+            </button>
+            <a href="{{ cancel_url }}" class="btn btn-secondary">Abbrechen</a>
+        </div>
+    </div>
+{{ form_end(form) }}
