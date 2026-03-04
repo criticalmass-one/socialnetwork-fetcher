@@ -2,17 +2,17 @@
 
 namespace App\Tests\NetworkFeedFetcher\Bluesky;
 
-use App\Model\SocialNetworkProfile;
+use App\Model\Profile;
 use App\NetworkFeedFetcher\Bluesky\EntryConverter;
 use PHPUnit\Framework\TestCase;
 
 class EntryConverterTest extends TestCase
 {
-    private SocialNetworkProfile $profile;
+    private Profile $profile;
 
     protected function setUp(): void
     {
-        $this->profile = new SocialNetworkProfile();
+        $this->profile = new Profile();
         $this->profile->setId(42);
     }
 
@@ -34,7 +34,7 @@ class EntryConverterTest extends TestCase
         $feedItem = EntryConverter::convert($this->profile, $entry);
 
         $this->assertNotNull($feedItem);
-        $this->assertEquals(42, $feedItem->getSocialNetworkProfileId());
+        $this->assertEquals(42, $feedItem->getProfileId());
         $this->assertEquals('at://did:plc:abc123/app.bsky.feed.post/xyz789', $feedItem->getUniqueIdentifier());
         $this->assertEquals('https://bsky.app/profile/testuser.bsky.social/post/xyz789', $feedItem->getPermalink());
         $this->assertEquals('Hello Bluesky!', $feedItem->getText());

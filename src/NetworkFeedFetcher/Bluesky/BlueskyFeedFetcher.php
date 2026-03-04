@@ -3,7 +3,7 @@
 namespace App\NetworkFeedFetcher\Bluesky;
 
 use App\FeedFetcher\FetchInfo;
-use App\Model\SocialNetworkProfile;
+use App\Model\Profile;
 use App\NetworkFeedFetcher\AbstractNetworkFeedFetcher;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
@@ -24,21 +24,21 @@ class BlueskyFeedFetcher extends AbstractNetworkFeedFetcher
         return 'bluesky';
     }
 
-    public function fetch(SocialNetworkProfile $socialNetworkProfile, FetchInfo $fetchInfo): array
+    public function fetch(Profile $profile, FetchInfo $fetchInfo): array
     {
-        $handle = IdentifierParser::parse($socialNetworkProfile);
+        $handle = IdentifierParser::parse($profile);
 
         if (!$handle) {
-            $this->markAsFailed($socialNetworkProfile, 'Bluesky-Handle konnte nicht aus Identifier ermittelt werden: ' . $socialNetworkProfile->getIdentifier());
+            $this->markAsFailed($profile, 'Bluesky-Handle konnte nicht aus Identifier ermittelt werden: ' . $profile->getIdentifier());
             return [];
         }
 
         try {
             $feedData = $this->fetchFeed($handle, $fetchInfo->getCount());
 
-            return $this->convertFeed($socialNetworkProfile, $feedData);
+            return $this->convertFeed($profile, $feedData);
         } catch (\Exception $exception) {
-            $this->markAsFailed($socialNetworkProfile, sprintf('Failed to fetch Bluesky profile %d: %s', $socialNetworkProfile->getId(), $exception->getMessage()));
+            $this->markAsFailed($profile, sprintf('Failed to fetch Bluesky profile %d: %s', $profile->getId(), $exception->getMessage()));
 
             return [];
         }
@@ -53,12 +53,12 @@ class BlueskyFeedFetcher extends AbstractNetworkFeedFetcher
         return $response['feed'] ?? [];
     }
 
-    private function convertFeed(SocialNetworkProfile $socialNetworkProfile, array $feedData): array
+    private function convertFeed(Profile $profile, array $feedData): array
     {
         $feedItemList = [];
 
         foreach ($feedData as $entry) {
-            $feedItem = EntryConverter::convert($socialNetworkProfile, $entry);
+            $feedItem = EntryConverter::convert($profile, $entry);
 
             if ($feedItem) {
                 $feedItemList[] = $feedItem;

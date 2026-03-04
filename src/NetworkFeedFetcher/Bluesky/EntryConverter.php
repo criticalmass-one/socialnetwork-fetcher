@@ -2,8 +2,8 @@
 
 namespace App\NetworkFeedFetcher\Bluesky;
 
-use App\Model\SocialNetworkFeedItem;
-use App\Model\SocialNetworkProfile;
+use App\Model\Item;
+use App\Model\Profile;
 
 class EntryConverter
 {
@@ -11,7 +11,7 @@ class EntryConverter
     {
     }
 
-    public static function convert(SocialNetworkProfile $socialNetworkProfile, array $entry): ?SocialNetworkFeedItem
+    public static function convert(Profile $profile, array $entry): ?Item
     {
         try {
             $post = $entry['post'] ?? null;
@@ -34,9 +34,9 @@ class EntryConverter
 
             $permalink = self::buildPermalink($handle, $uri);
 
-            $feedItem = new SocialNetworkFeedItem();
+            $feedItem = new Item();
             $feedItem
-                ->setSocialNetworkProfileId($socialNetworkProfile->getId())
+                ->setProfileId($profile->getId())
                 ->setUniqueIdentifier($uri)
                 ->setPermalink($permalink)
                 ->setText($text)

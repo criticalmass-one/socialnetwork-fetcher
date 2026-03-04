@@ -2,7 +2,7 @@
 
 namespace App\Tests\NetworkFeedFetcher\Mastodon;
 
-use App\Model\SocialNetworkProfile;
+use App\Model\Profile;
 use App\NetworkFeedFetcher\Mastodon\IdentifierParser;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -12,7 +12,7 @@ class IdentifierParserTest extends TestCase
     #[DataProvider('handleFormatProvider')]
     public function testParseHandleFormat(string $identifier, string $expectedHostname, string $expectedUsername): void
     {
-        $profile = (new SocialNetworkProfile())->setIdentifier($identifier);
+        $profile = (new Profile())->setIdentifier($identifier);
 
         $account = IdentifierParser::parse($profile);
 
@@ -43,7 +43,7 @@ class IdentifierParserTest extends TestCase
     #[DataProvider('urlFormatProvider')]
     public function testParseUrlFormat(string $identifier, string $expectedHostname, string $expectedUsername): void
     {
-        $profile = (new SocialNetworkProfile())->setIdentifier($identifier);
+        $profile = (new Profile())->setIdentifier($identifier);
 
         $account = IdentifierParser::parse($profile);
 
@@ -66,7 +66,7 @@ class IdentifierParserTest extends TestCase
     #[DataProvider('invalidIdentifierProvider')]
     public function testParseReturnsNullForInvalidIdentifier(string $identifier): void
     {
-        $profile = (new SocialNetworkProfile())->setIdentifier($identifier);
+        $profile = (new Profile())->setIdentifier($identifier);
 
         $account = IdentifierParser::parse($profile);
 
