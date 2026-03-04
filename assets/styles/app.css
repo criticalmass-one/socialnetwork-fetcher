@@ -22,6 +22,11 @@ pre.raw-data {
     border-radius: 0.375rem;
 }
 
+/* btn-group with inline forms */
+.btn-group > form {
+    display: contents;
+}
+
 /* Toggle Switch */
 .toggle-switch {
     display: inline-flex;
