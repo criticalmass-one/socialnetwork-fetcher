@@ -33,11 +33,14 @@ class DashboardController extends AbstractController
             ];
         }
 
+        $latestItems = $itemRepository->findBy([], ['createdAt' => 'DESC'], 10);
+
         return $this->render('dashboard/index.html.twig', [
             'networkCount' => count($networks),
             'profileCount' => $profileRepository->count([]),
             'itemCount' => $itemRepository->count([]),
             'networkStats' => $networkStats,
+            'latestItems' => $latestItems,
         ]);
     }
 }
