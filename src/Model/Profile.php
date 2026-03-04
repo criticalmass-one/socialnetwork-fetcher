@@ -15,7 +15,6 @@ class Profile
     protected bool $autoFetch = true;
     protected bool $fetchSource = false;
     protected ?string $additionalData = null;
-    protected bool $fetchSource = false;
 
     public function getId(): ?int
     {
@@ -160,15 +159,4 @@ class Profile
         return $this;
     }
 
-    public function isFetchSource(): bool
-    {
-        return $this->fetchSource;
-    }
-
-    public function setFetchSource(bool $fetchSource): self
-    {
-        $this->fetchSource = $fetchSource;
-
-        return $this;
-    }
 }

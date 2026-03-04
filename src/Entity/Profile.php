@@ -74,10 +74,6 @@ class Profile
     #[Groups(['profile:read', 'profile:write'])]
     private ?string $additionalData = null;
 
-    #[ORM\Column(type: 'boolean', options: ['default' => false])]
-    #[Groups(['profile:read', 'profile:write'])]
-    private bool $fetchSource = false;
-
     public function getId(): ?int
     {
         return $this->id;
@@ -210,15 +206,4 @@ class Profile
         return $this;
     }
 
-    public function isFetchSource(): bool
-    {
-        return $this->fetchSource;
-    }
-
-    public function setFetchSource(bool $fetchSource): self
-    {
-        $this->fetchSource = $fetchSource;
-
-        return $this;
-    }
 }
