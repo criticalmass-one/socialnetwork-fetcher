@@ -72,7 +72,7 @@ class ImportProfilesCommand extends Command
             }
 
             $network = $networkMap[$networkIdentifier];
-            $constraintKey = $network->getId() . '::' . $data['identifier'];
+            $constraintKey = $network->getId() . '::' . mb_strtolower($data['identifier']);
             $apiId = $data['id'];
 
             if (isset($uniqueProfiles[$constraintKey]) || isset($seenIds[$apiId])) {
