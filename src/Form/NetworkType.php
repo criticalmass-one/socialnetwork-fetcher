@@ -37,6 +37,11 @@ class NetworkType extends AbstractType
                 'label' => 'Profil-URL-Pattern',
                 'help' => 'Regulärer Ausdruck zur Validierung von Profil-URLs',
             ])
+            ->add('cronExpression', TextType::class, [
+                'label' => 'Cron-Expression',
+                'help' => 'Crontab-Notation für den Fetch-Zeitplan (z.B. */15 * * * * = alle 15 Minuten). Leer = kein automatischer Fetch.',
+                'required' => false,
+            ])
         ;
     }
 

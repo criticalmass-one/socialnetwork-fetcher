@@ -286,6 +286,7 @@ class NetworkFixtures extends Fixture
             $network->setBackgroundColor($data['backgroundColor']);
             $network->setTextColor($data['textColor']);
             $network->setProfileUrlPattern($data['profileUrlPattern']);
+            $network->setCronExpression($data['cronExpression'] ?? null);
 
             $manager->persist($network);
             $this->addReference($reference, $network);
