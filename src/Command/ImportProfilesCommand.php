@@ -20,6 +20,8 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 )]
 class ImportProfilesCommand extends Command
 {
+    private const BATCH_SIZE = 50;
+
     public function __construct(
         private readonly HttpClientInterface $httpClient,
         private readonly EntityManagerInterface $entityManager,
@@ -56,8 +58,9 @@ class ImportProfilesCommand extends Command
             $networkMap[$network->getIdentifier()] = $network;
         }
 
-        // Deduplicate API data upfront: keep first occurrence per network+identifier
+        // Deduplicate API data: by network+identifier (DB constraint) AND by API id (Doctrine identity map)
         $uniqueProfiles = [];
+        $seenIds = [];
         $duplicatesRemoved = 0;
 
         foreach ($apiProfiles as $data) {
@@ -68,23 +71,28 @@ class ImportProfilesCommand extends Command
                 continue;
             }
 
-            $uniqueKey = $networkIdentifier . '::' . $data['identifier'];
+            $network = $networkMap[$networkIdentifier];
+            $constraintKey = $network->getId() . '::' . $data['identifier'];
+            $apiId = $data['id'];
 
-            if (isset($uniqueProfiles[$uniqueKey])) {
+            if (isset($uniqueProfiles[$constraintKey]) || isset($seenIds[$apiId])) {
                 $duplicatesRemoved++;
                 continue;
             }
 
-            $uniqueProfiles[$uniqueKey] = $data;
+            $uniqueProfiles[$constraintKey] = $data;
+            $seenIds[$apiId] = true;
         }
 
         if ($duplicatesRemoved > 0) {
             $io->note(sprintf('%d Duplikate in API-Daten entfernt.', $duplicatesRemoved));
         }
 
+        $io->info(sprintf('%d eindeutige Profile zum Import.', count($uniqueProfiles)));
+
         $created = 0;
         $updated = 0;
-        $skipped = 0;
+        $batchCount = 0;
 
         foreach ($uniqueProfiles as $data) {
             $network = $networkMap[$data['network']];
@@ -138,6 +146,13 @@ class ImportProfilesCommand extends Command
             } else {
                 $updated++;
             }
+
+            $batchCount++;
+            if (!$dryRun && $batchCount >= self::BATCH_SIZE) {
+                $this->entityManager->flush();
+                $this->entityManager->clear();
+                $batchCount = 0;
+            }
         }
 
         if (!$dryRun) {
@@ -145,11 +160,10 @@ class ImportProfilesCommand extends Command
         }
 
         $io->success(sprintf(
-            '%s%d erstellt, %d aktualisiert, %d übersprungen.',
+            '%s%d erstellt, %d aktualisiert.',
             $dryRun ? '[Dry-Run] ' : '',
             $created,
             $updated,
-            $skipped,
         ));
 
         return Command::SUCCESS;
