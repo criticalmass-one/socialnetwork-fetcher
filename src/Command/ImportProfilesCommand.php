@@ -56,29 +56,39 @@ class ImportProfilesCommand extends Command
             $networkMap[$network->getIdentifier()] = $network;
         }
 
-        $created = 0;
-        $updated = 0;
-        $skipped = 0;
-        $seen = [];       // networkId::identifier → Profile entity (tracks persisted-but-unflushed)
+        // Deduplicate API data upfront: keep first occurrence per network+identifier
+        $uniqueProfiles = [];
+        $duplicatesRemoved = 0;
 
         foreach ($apiProfiles as $data) {
             $networkIdentifier = $data['network'] ?? null;
 
             if (!$networkIdentifier || !isset($networkMap[$networkIdentifier])) {
                 $io->warning(sprintf('Netzwerk "%s" nicht gefunden, überspringe Profil #%d (%s)', $networkIdentifier, $data['id'], $data['identifier'] ?? ''));
-                $skipped++;
                 continue;
             }
 
-            $network = $networkMap[$networkIdentifier];
-            $uniqueKey = $network->getId() . '::' . $data['identifier'];
+            $uniqueKey = $networkIdentifier . '::' . $data['identifier'];
 
-            if (isset($seen[$uniqueKey])) {
-                $skipped++;
+            if (isset($uniqueProfiles[$uniqueKey])) {
+                $duplicatesRemoved++;
                 continue;
             }
 
-            // Priority: match by unique constraint (network+identifier), then by API id
+            $uniqueProfiles[$uniqueKey] = $data;
+        }
+
+        if ($duplicatesRemoved > 0) {
+            $io->note(sprintf('%d Duplikate in API-Daten entfernt.', $duplicatesRemoved));
+        }
+
+        $created = 0;
+        $updated = 0;
+        $skipped = 0;
+
+        foreach ($uniqueProfiles as $data) {
+            $network = $networkMap[$data['network']];
+
             $existing = $this->profileRepository->findOneByNetworkAndIdentifier($network, $data['identifier'])
                 ?? $this->profileRepository->find($data['id']);
 
@@ -90,8 +100,6 @@ class ImportProfilesCommand extends Command
                 $profile->setId($data['id']);
                 $isNew = true;
             }
-
-            $seen[$uniqueKey] = $profile;
 
             $profile->setNetwork($network);
             $profile->setIdentifier($data['identifier']);
@@ -134,12 +142,7 @@ class ImportProfilesCommand extends Command
         }
 
         if (!$dryRun) {
-            try {
-                $this->entityManager->flush();
-            } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $e) {
-                $io->error(sprintf('Unique-Constraint-Verletzung: %s', $e->getMessage()));
-                return Command::FAILURE;
-            }
+            $this->entityManager->flush();
         }
 
         $io->success(sprintf(
