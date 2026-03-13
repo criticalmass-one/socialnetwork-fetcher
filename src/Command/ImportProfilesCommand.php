@@ -88,11 +88,14 @@ class ImportProfilesCommand extends Command
             $io->note(sprintf('%d Duplikate in API-Daten entfernt.', $duplicatesRemoved));
         }
 
-        $io->info(sprintf('%d eindeutige Profile zum Import.', count($uniqueProfiles)));
+        $total = count($uniqueProfiles);
+        $io->info(sprintf('%d eindeutige Profile zum Import.', $total));
 
         $created = 0;
         $updated = 0;
         $batchCount = 0;
+
+        $io->progressStart($total);
 
         foreach ($uniqueProfiles as $data) {
             $network = $networkMap[$data['network']];
@@ -148,11 +151,15 @@ class ImportProfilesCommand extends Command
             }
 
             $batchCount++;
+            $io->progressAdvance();
+
             if (!$dryRun && $batchCount >= self::BATCH_SIZE) {
                 $this->entityManager->flush();
                 $batchCount = 0;
             }
         }
+
+        $io->progressFinish();
 
         if (!$dryRun) {
             $this->entityManager->flush();

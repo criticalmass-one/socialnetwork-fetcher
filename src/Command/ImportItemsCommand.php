@@ -79,23 +79,29 @@ class ImportItemsCommand extends Command
         }
         $this->entityManager->clear();
 
-        // 4. Iterate cities and import items
+        // 4. Filter and count cities to process
+        $citiesToProcess = [];
+        foreach ($profilesByCityAndNetwork as $cityId => $networkGroups) {
+            $slug = $cityMap[$cityId] ?? null;
+            if (!$slug) {
+                continue;
+            }
+            if ($cityFilter && $slug !== $cityFilter) {
+                continue;
+            }
+            $citiesToProcess[$cityId] = $networkGroups;
+        }
+
         $totalCreated = 0;
         $totalUpdated = 0;
         $totalSkipped = 0;
         $batchCount = 0;
         $citiesProcessed = 0;
 
-        foreach ($profilesByCityAndNetwork as $cityId => $networkGroups) {
-            $slug = $cityMap[$cityId] ?? null;
-            if (!$slug) {
-                continue;
-            }
+        $io->progressStart(count($citiesToProcess));
 
-            if ($cityFilter && $slug !== $cityFilter) {
-                continue;
-            }
-
+        foreach ($citiesToProcess as $cityId => $networkGroups) {
+            $slug = $cityMap[$cityId];
             $citiesProcessed++;
 
             foreach ($networkGroups as $networkIdentifier => $cityProfiles) {
@@ -169,16 +175,10 @@ class ImportItemsCommand extends Command
                 }
             }
 
-            if ($citiesProcessed % 25 === 0) {
-                $io->info(sprintf(
-                    '%d Städte verarbeitet — %d erstellt, %d aktualisiert, %d übersprungen',
-                    $citiesProcessed,
-                    $totalCreated,
-                    $totalUpdated,
-                    $totalSkipped,
-                ));
-            }
+            $io->progressAdvance();
         }
+
+        $io->progressFinish();
 
         if (!$dryRun) {
             $this->entityManager->flush();
