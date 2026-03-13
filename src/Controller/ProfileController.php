@@ -10,6 +10,7 @@ use App\FeedFetcher\FetchResult;
 use App\FeedItemPersister\FeedItemPersisterInterface;
 use App\Model\Profile as ModelProfile;
 use App\Repository\ItemRepository;
+use App\Repository\NetworkRepository;
 use App\Repository\ProfileRepository;
 use App\RssApp\RssAppInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -22,11 +23,46 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/profiles')]
 class ProfileController extends AbstractController
 {
+    private const PROFILES_PER_PAGE = 50;
+
     #[Route('', name: 'app_profile_index')]
-    public function index(ProfileRepository $profileRepository): Response
+    public function index(Request $request, ProfileRepository $profileRepository, NetworkRepository $networkRepository): Response
     {
+        $page = max(1, $request->query->getInt('page', 1));
+        $search = trim($request->query->getString('search', ''));
+        $networkIds = array_map('intval', (array) $request->query->all('networks'));
+        $status = $request->query->getString('status', '');
+
+        $total = $profileRepository->countFiltered($networkIds, $search, $status);
+        $pages = max(1, (int) ceil($total / self::PROFILES_PER_PAGE));
+        $page = min($page, $pages);
+        $profiles = $profileRepository->findPaginated($page, self::PROFILES_PER_PAGE, $networkIds, $search, $status);
+
+        if ($request->headers->get('X-Requested-With') === 'XMLHttpRequest') {
+            return new JsonResponse([
+                'html' => $this->renderView('profile/_partials/_profile_table_body.html.twig', [
+                    'profiles' => $profiles,
+                ]),
+                'paginationHtml' => $this->renderView('_partials/_pagination.html.twig', [
+                    'page' => $page,
+                    'pages' => $pages,
+                ]),
+                'page' => $page,
+                'pages' => $pages,
+                'total' => $total,
+                'status' => $status,
+            ]);
+        }
+
         return $this->render('profile/index.html.twig', [
-            'profiles' => $profileRepository->findBy([], ['identifier' => 'ASC']),
+            'profiles' => $profiles,
+            'networks' => $networkRepository->findBy([], ['name' => 'ASC']),
+            'page' => $page,
+            'pages' => $pages,
+            'total' => $total,
+            'search' => $search,
+            'selectedNetworks' => $networkIds,
+            'selectedStatus' => $status,
         ]);
     }
 

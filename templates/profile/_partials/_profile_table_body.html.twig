@@ -1,0 +1,68 @@
+{% for profile in profiles %}
+    <tr>
+        <td>{{ profile.id }}</td>
+        <td>
+            {% if profile.network %}
+                <span class="badge badge-network" style="background-color: {{ profile.network.backgroundColor }}; color: {{ profile.network.textColor }};">
+                    <i class="{{ profile.network.icon }} me-1"></i>{{ profile.network.name }}
+                </span>
+            {% endif %}
+        </td>
+        <td>
+            <a href="{{ path('app_profile_show', {id: profile.id}) }}">
+                {{ profile.identifier }}
+            </a>
+        </td>
+        <td>
+            {% include '_partials/_profile_toggle.html.twig' with { profile: profile, field: 'autoFetch', state: profile.autoFetch } %}
+        </td>
+        <td>
+            {% include '_partials/_profile_toggle.html.twig' with { profile: profile, field: 'fetchSource', state: profile.fetchSource } %}
+        </td>
+        <td data-fetch-status>
+            {% if profile.lastFetchSuccessDateTime %}
+                <span class="text-success" title="{{ profile.lastFetchSuccessDateTime|date('d.m.Y H:i:s') }}">
+                    <i class="fas fa-check me-1"></i>{{ profile.lastFetchSuccessDateTime|date('d.m.Y H:i') }}
+                </span>
+            {% elseif profile.lastFetchFailureDateTime %}
+                <span class="text-danger" title="{{ profile.lastFetchFailureError }}">
+                    <i class="fas fa-times me-1"></i>{{ profile.lastFetchFailureDateTime|date('d.m.Y H:i') }}
+                </span>
+            {% else %}
+                <span class="text-muted">Noch nicht abgerufen</span>
+            {% endif %}
+        </td>
+        <td>
+            <div class="d-flex gap-1">
+                <a href="{{ path('app_profile_show', {id: profile.id}) }}" class="btn btn-sm btn-outline-primary" title="Anzeigen">
+                    <i class="fas fa-eye"></i>
+                </a>
+                <a href="{{ path('app_profile_edit', {id: profile.id}) }}" class="btn btn-sm btn-outline-secondary" title="Bearbeiten">
+                    <i class="fas fa-edit"></i>
+                </a>
+                <button type="button"
+                        class="btn btn-sm btn-outline-warning"
+                        title="Items importieren"
+                        data-controller="profile-fetch"
+                        data-profile-fetch-url-value="{{ path('app_profile_fetch', {id: profile.id}) }}"
+                        data-profile-fetch-token-value="{{ csrf_token('fetch-profile-' ~ profile.id) }}"
+                        data-profile-fetch-identifier-value="{{ profile.identifier }}"
+                        data-action="profile-fetch#fetch">
+                    <i class="fas fa-download"></i>
+                </button>
+                <form method="post" action="{{ path('app_profile_delete', {id: profile.id}) }}"
+                      data-controller="confirm"
+                      data-confirm-message-value="Profil &quot;{{ profile.identifier }}&quot; wirklich löschen?">
+                    <input type="hidden" name="_token" value="{{ csrf_token('delete-profile-' ~ profile.id) }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Löschen">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </form>
+            </div>
+        </td>
+    </tr>
+{% else %}
+    <tr>
+        <td colspan="7" class="text-center text-muted py-4">Keine Profile gefunden.</td>
+    </tr>
+{% endfor %}
