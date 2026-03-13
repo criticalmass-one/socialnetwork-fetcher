@@ -89,8 +89,7 @@ class ImportProfilesCommand extends Command
         foreach ($uniqueProfiles as $data) {
             $network = $networkMap[$data['network']];
 
-            $existing = $this->profileRepository->findOneByNetworkAndIdentifier($network, $data['identifier'])
-                ?? $this->profileRepository->find($data['id']);
+            $existing = $this->profileRepository->findOneByNetworkAndIdentifier($network, $data['identifier']);
 
             if ($existing) {
                 $profile = $existing;
