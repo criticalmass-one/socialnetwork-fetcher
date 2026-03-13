@@ -150,7 +150,6 @@ class ImportProfilesCommand extends Command
             $batchCount++;
             if (!$dryRun && $batchCount >= self::BATCH_SIZE) {
                 $this->entityManager->flush();
-                $this->entityManager->clear();
                 $batchCount = 0;
             }
         }
