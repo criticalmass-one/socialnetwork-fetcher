@@ -59,7 +59,7 @@ class ImportProfilesCommand extends Command
         $created = 0;
         $updated = 0;
         $skipped = 0;
-        $seen = [];
+        $seen = [];       // networkId::identifier → Profile entity (tracks persisted-but-unflushed)
 
         foreach ($apiProfiles as $data) {
             $networkIdentifier = $data['network'] ?? null;
@@ -77,10 +77,10 @@ class ImportProfilesCommand extends Command
                 $skipped++;
                 continue;
             }
-            $seen[$uniqueKey] = true;
 
-            $existing = $this->profileRepository->find($data['id'])
-                ?? $this->profileRepository->findOneByNetworkAndIdentifier($network, $data['identifier']);
+            // Priority: match by unique constraint (network+identifier), then by API id
+            $existing = $this->profileRepository->findOneByNetworkAndIdentifier($network, $data['identifier'])
+                ?? $this->profileRepository->find($data['id']);
 
             if ($existing) {
                 $profile = $existing;
@@ -90,6 +90,8 @@ class ImportProfilesCommand extends Command
                 $profile->setId($data['id']);
                 $isNew = true;
             }
+
+            $seen[$uniqueKey] = $profile;
 
             $profile->setNetwork($network);
             $profile->setIdentifier($data['identifier']);
@@ -132,7 +134,12 @@ class ImportProfilesCommand extends Command
         }
 
         if (!$dryRun) {
-            $this->entityManager->flush();
+            try {
+                $this->entityManager->flush();
+            } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $e) {
+                $io->error(sprintf('Unique-Constraint-Verletzung: %s', $e->getMessage()));
+                return Command::FAILURE;
+            }
         }
 
         $io->success(sprintf(
