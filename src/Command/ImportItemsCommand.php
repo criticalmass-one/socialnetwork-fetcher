@@ -172,13 +172,24 @@ class ImportItemsCommand extends Command
 
         do {
             $url = sprintf('%s/api/socialnetwork-feeditems?profileId=%d&page=%d&size=%d', $baseUrl, $profileId, $page, $size);
-            $response = $this->httpClient->request('GET', $url, [
-                'timeout' => 10,
-                'max_duration' => 30,
-                'http_version' => '1.1',
+            $context = stream_context_create([
+                'http' => [
+                    'timeout' => 30,
+                    'ignore_errors' => true,
+                ],
+                'ssl' => [
+                    'verify_peer' => true,
+                    'verify_peer_name' => true,
+                ],
             ]);
 
-            $responseData = $response->toArray();
+            $content = file_get_contents($url, false, $context);
+
+            if ($content === false) {
+                throw new \RuntimeException(sprintf('Fehler beim Laden von %s', $url));
+            }
+
+            $responseData = json_decode($content, true);
 
             if (!is_array($responseData) || !isset($responseData['data'])) {
                 break;
