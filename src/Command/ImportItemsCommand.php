@@ -231,7 +231,7 @@ class ImportItemsCommand extends Command
             $url = sprintf('%s/api/socialnetwork-profiles?page=%d&size=%d', $baseUrl, $page, $size);
             $profiles = $this->httpClient->request('GET', $url)->toArray();
 
-            array_push($allProfiles, ...$profiles);
+            $allProfiles = array_merge($allProfiles, array_values($profiles));
             $page++;
         } while (count($profiles) === $size);
 
@@ -248,7 +248,7 @@ class ImportItemsCommand extends Command
             $url = sprintf('%s/api/%s/socialnetwork-feeditems?networkIdentifier=%s&page=%d&size=%d', $baseUrl, $slug, $networkIdentifier, $page, $size);
             $items = $this->httpClient->request('GET', $url, ['timeout' => 15, 'max_duration' => 60])->toArray();
 
-            array_push($allItems, ...$items);
+            $allItems = array_merge($allItems, array_values($items));
             $page++;
         } while (count($items) === $size);
 
