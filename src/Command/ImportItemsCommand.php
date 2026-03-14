@@ -58,9 +58,9 @@ class ImportItemsCommand extends Command
         $cityMap = $this->loadCityMap($baseUrl);
         $io->info(sprintf('%d Städte geladen.', count($cityMap)));
 
-        // 2. Load all API profiles → group by city_id
+        // 2. Load all API profiles → group by city_id (paginated)
         $io->info('Lade Profile von der API...');
-        $apiProfiles = $this->httpClient->request('GET', $baseUrl . '/api/socialnetwork-profiles?size=10000')->toArray();
+        $apiProfiles = $this->loadAllProfiles($baseUrl);
         $io->info(sprintf('%d Profile geladen.', count($apiProfiles)));
 
         $profilesByCityAndNetwork = [];
@@ -109,10 +109,8 @@ class ImportItemsCommand extends Command
             $progressBar->setMessage($slug);
 
             foreach ($networkGroups as $networkIdentifier => $cityProfiles) {
-                $url = sprintf('%s/api/%s/socialnetwork-feeditems?networkIdentifier=%s', $baseUrl, $slug, $networkIdentifier);
-
                 try {
-                    $apiItems = $this->httpClient->request('GET', $url, ['timeout' => 15, 'max_duration' => 60])->toArray();
+                    $apiItems = $this->loadAllFeedItems($baseUrl, $slug, $networkIdentifier);
                 } catch (\Throwable $e) {
                     $io->warning(sprintf('%s/%s: Fehler beim Laden: %s', $slug, $networkIdentifier, $e->getMessage()));
                     continue;
@@ -206,17 +204,55 @@ class ImportItemsCommand extends Command
     private function loadCityMap(string $baseUrl): array
     {
         $cityMap = [];
+        $page = 0;
+        $size = 500;
 
-        foreach (['asc', 'desc'] as $direction) {
-            $url = sprintf('%s/api/city?extended=true&size=500&orderBy=id&orderDirection=%s', $baseUrl, $direction);
+        do {
+            $url = sprintf('%s/api/city?extended=true&size=%d&page=%d', $baseUrl, $size, $page);
             $cities = $this->httpClient->request('GET', $url)->toArray();
 
             foreach ($cities as $city) {
                 $cityMap[$city['id']] = $city['main_slug']['slug'];
             }
-        }
+
+            $page++;
+        } while (count($cities) === $size);
 
         return $cityMap;
+    }
+
+    private function loadAllProfiles(string $baseUrl): array
+    {
+        $allProfiles = [];
+        $page = 0;
+        $size = 1000;
+
+        do {
+            $url = sprintf('%s/api/socialnetwork-profiles?page=%d&size=%d', $baseUrl, $page, $size);
+            $profiles = $this->httpClient->request('GET', $url)->toArray();
+
+            array_push($allProfiles, ...$profiles);
+            $page++;
+        } while (count($profiles) === $size);
+
+        return $allProfiles;
+    }
+
+    private function loadAllFeedItems(string $baseUrl, string $slug, string $networkIdentifier): array
+    {
+        $allItems = [];
+        $page = 0;
+        $size = 1000;
+
+        do {
+            $url = sprintf('%s/api/%s/socialnetwork-feeditems?networkIdentifier=%s&page=%d&size=%d', $baseUrl, $slug, $networkIdentifier, $page, $size);
+            $items = $this->httpClient->request('GET', $url, ['timeout' => 15, 'max_duration' => 60])->toArray();
+
+            array_push($allItems, ...$items);
+            $page++;
+        } while (count($items) === $size);
+
+        return $allItems;
     }
 
     private function resolveProfileId(array $cityProfiles, array $localProfileIds): ?int
