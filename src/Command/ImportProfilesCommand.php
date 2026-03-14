@@ -63,9 +63,11 @@ class ImportProfilesCommand extends Command
             $url = sprintf('https://%s/api/socialnetwork-profiles?page=%d&size=%d', $this->criticalmassHostname, $page, $size);
 
             $response = $this->httpClient->request('GET', $url);
-            $apiProfiles = $response->toArray();
+            $responseData = $response->toArray();
+            $apiProfiles = $responseData['data'] ?? [];
+            $totalPages = $responseData['meta']['totalPages'] ?? 1;
 
-            $io->info(sprintf('Seite %d: %d Profile geladen.', $page, count($apiProfiles)));
+            $io->info(sprintf('Seite %d/%d: %d Profile geladen.', $page + 1, $totalPages, count($apiProfiles)));
 
             foreach ($apiProfiles as $data) {
                 $networkIdentifier = $data['network'] ?? null;
@@ -89,7 +91,7 @@ class ImportProfilesCommand extends Command
             }
 
             $page++;
-        } while (count($apiProfiles) === $size);
+        } while ($page < $totalPages);
 
         if ($duplicatesRemoved > 0) {
             $io->note(sprintf('%d Duplikate in API-Daten entfernt.', $duplicatesRemoved));
@@ -127,22 +129,6 @@ class ImportProfilesCommand extends Command
                 $profile->setAdditionalData($additionalData);
             } else {
                 $profile->setAdditionalData(null);
-            }
-
-            if (!empty($data['last_fetch_success_date_time'])) {
-                $profile->setLastFetchSuccessDateTime(
-                    (new \DateTimeImmutable())->setTimestamp((int) $data['last_fetch_success_date_time'])
-                );
-            }
-
-            if (!empty($data['last_fetch_failure_date_time'])) {
-                $profile->setLastFetchFailureDateTime(
-                    (new \DateTimeImmutable())->setTimestamp((int) $data['last_fetch_failure_date_time'])
-                );
-            }
-
-            if (!empty($data['last_fetch_failure_error'])) {
-                $profile->setLastFetchFailureError($data['last_fetch_failure_error']);
             }
 
             if ($isNew) {
