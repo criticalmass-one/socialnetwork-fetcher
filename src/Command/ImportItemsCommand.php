@@ -98,17 +98,21 @@ class ImportItemsCommand extends Command
         $batchCount = 0;
         $citiesProcessed = 0;
 
-        $io->progressStart(count($citiesToProcess));
+        $progressBar = $io->createProgressBar(count($citiesToProcess));
+        $progressBar->setFormat(' %current%/%max% [%bar%] %percent:3s%% — %message%');
+        $progressBar->setMessage('Starte...');
+        $progressBar->start();
 
         foreach ($citiesToProcess as $cityId => $networkGroups) {
             $slug = $cityMap[$cityId];
             $citiesProcessed++;
+            $progressBar->setMessage($slug);
 
             foreach ($networkGroups as $networkIdentifier => $cityProfiles) {
                 $url = sprintf('%s/api/%s/socialnetwork-feeditems?networkIdentifier=%s', $baseUrl, $slug, $networkIdentifier);
 
                 try {
-                    $apiItems = $this->httpClient->request('GET', $url)->toArray();
+                    $apiItems = $this->httpClient->request('GET', $url, ['timeout' => 30])->toArray();
                 } catch (\Throwable $e) {
                     $io->warning(sprintf('%s/%s: Fehler beim Laden: %s', $slug, $networkIdentifier, $e->getMessage()));
                     continue;
@@ -175,10 +179,12 @@ class ImportItemsCommand extends Command
                 }
             }
 
-            $io->progressAdvance();
+            $progressBar->advance();
         }
 
-        $io->progressFinish();
+        $progressBar->setMessage('Fertig.');
+        $progressBar->finish();
+        $io->newLine(2);
 
         if (!$dryRun) {
             $this->entityManager->flush();
