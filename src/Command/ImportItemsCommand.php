@@ -97,6 +97,10 @@ class ImportItemsCommand extends Command
                 continue;
             }
 
+            $progressBar->setMessage(sprintf('#%d %s (%d Items)', $profileId, $profileInfo['network'], count($apiItems)));
+
+            $profileEntity = null;
+
             foreach ($apiItems as $data) {
                 $text = $data['text'] ?? null;
                 if ($text === null || $text === '') {
@@ -116,8 +120,10 @@ class ImportItemsCommand extends Command
                     $this->updateItem($existing, $data);
                     $totalUpdated++;
                 } else {
-                    $profile = $this->entityManager->find(Profile::class, $profileId);
-                    $item = $this->createItem($profile, $data);
+                    if (!$profileEntity || !$this->entityManager->contains($profileEntity)) {
+                        $profileEntity = $this->entityManager->find(Profile::class, $profileId);
+                    }
+                    $item = $this->createItem($profileEntity, $data);
                     if (!$dryRun) {
                         $this->entityManager->persist($item);
                     }
@@ -129,6 +135,7 @@ class ImportItemsCommand extends Command
                     $this->entityManager->flush();
                     $this->entityManager->clear();
                     $this->debugDataHolder?->reset();
+                    $profileEntity = null;
                     $batchCount = 0;
                 }
             }
@@ -165,7 +172,10 @@ class ImportItemsCommand extends Command
 
         do {
             $url = sprintf('%s/api/socialnetwork-feeditems?profileId=%d&page=%d&size=%d', $baseUrl, $profileId, $page, $size);
-            $responseData = $this->httpClient->request('GET', $url, ['timeout' => 30, 'max_duration' => 120])->toArray();
+            $responseData = $this->httpClient->request('GET', $url, [
+                'timeout' => 10,
+                'max_duration' => 30,
+            ])->toArray();
             $items = $responseData['data'] ?? [];
             $totalPages = $responseData['meta']['totalPages'] ?? 1;
 
