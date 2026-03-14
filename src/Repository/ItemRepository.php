@@ -15,7 +15,7 @@ class ItemRepository extends ServiceEntityRepository
         parent::__construct($registry, Item::class);
     }
 
-    public function findOneByProfileAndUniqueIdentifier(Profile $profile, string $uniqueIdentifier): ?Item
+    public function findOneByProfileAndUniqueIdentifier(Profile|int $profile, string $uniqueIdentifier): ?Item
     {
         return $this->findOneBy([
             'profile' => $profile,

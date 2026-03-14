@@ -97,8 +97,6 @@ class ImportItemsCommand extends Command
                 continue;
             }
 
-            $profileRef = $this->entityManager->getReference(Profile::class, $profileId);
-
             foreach ($apiItems as $data) {
                 $text = $data['text'] ?? null;
                 if ($text === null || $text === '') {
@@ -112,13 +110,14 @@ class ImportItemsCommand extends Command
                     continue;
                 }
 
-                $existing = $this->itemRepository->findOneByProfileAndUniqueIdentifier($profileRef, $uniqueId);
+                $existing = $this->itemRepository->findOneByProfileAndUniqueIdentifier($profileId, $uniqueId);
 
                 if ($existing) {
                     $this->updateItem($existing, $data);
                     $totalUpdated++;
                 } else {
-                    $item = $this->createItem($profileRef, $data);
+                    $profile = $this->entityManager->find(Profile::class, $profileId);
+                    $item = $this->createItem($profile, $data);
                     if (!$dryRun) {
                         $this->entityManager->persist($item);
                     }
