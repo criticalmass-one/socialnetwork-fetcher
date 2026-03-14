@@ -112,7 +112,7 @@ class ImportItemsCommand extends Command
                 $url = sprintf('%s/api/%s/socialnetwork-feeditems?networkIdentifier=%s', $baseUrl, $slug, $networkIdentifier);
 
                 try {
-                    $apiItems = $this->httpClient->request('GET', $url, ['timeout' => 30])->toArray();
+                    $apiItems = $this->httpClient->request('GET', $url, ['timeout' => 15, 'max_duration' => 60])->toArray();
                 } catch (\Throwable $e) {
                     $io->warning(sprintf('%s/%s: Fehler beim Laden: %s', $slug, $networkIdentifier, $e->getMessage()));
                     continue;
