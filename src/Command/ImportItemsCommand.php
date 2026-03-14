@@ -172,10 +172,17 @@ class ImportItemsCommand extends Command
 
         do {
             $url = sprintf('%s/api/socialnetwork-feeditems?profileId=%d&page=%d&size=%d', $baseUrl, $profileId, $page, $size);
-            $responseData = $this->httpClient->request('GET', $url, [
+            $response = $this->httpClient->request('GET', $url, [
                 'timeout' => 10,
                 'max_duration' => 30,
-            ])->toArray();
+            ]);
+            $statusCode = $response->getStatusCode();
+
+            if ($statusCode !== 200) {
+                break;
+            }
+
+            $responseData = $response->toArray(false);
             $items = $responseData['data'] ?? [];
             $totalPages = $responseData['meta']['totalPages'] ?? 1;
 
