@@ -84,12 +84,20 @@ class ImportItemsCommand extends Command
             $progressBar->setMessage(sprintf('#%d %s', $profileId, $profileInfo['network']));
             $profilesProcessed++;
 
+            if ($output->isVerbose()) {
+                $output->writeln(sprintf("\n[DEBUG] Profil #%d (%s): Starte API-Abruf...", $profileId, $profileInfo['network']));
+            }
+
             try {
                 $apiItems = $this->loadFeedItemsForProfile($baseUrl, $profileId);
             } catch (\Throwable $e) {
                 $io->warning(sprintf('Profil #%d: Fehler beim Laden: %s', $profileId, $e->getMessage()));
                 $progressBar->advance();
                 continue;
+            }
+
+            if ($output->isVerbose()) {
+                $output->writeln(sprintf("[DEBUG] Profil #%d: %d Items geladen", $profileId, count($apiItems)));
             }
 
             if (empty($apiItems)) {
@@ -132,6 +140,9 @@ class ImportItemsCommand extends Command
 
                 $batchCount++;
                 if (!$dryRun && $batchCount >= self::BATCH_SIZE) {
+                    if ($output->isVerbose()) {
+                        $output->writeln(sprintf("[DEBUG] Flush bei batchCount=%d", $batchCount));
+                    }
                     $this->entityManager->flush();
                     $this->entityManager->clear();
                     $this->debugDataHolder?->reset();
