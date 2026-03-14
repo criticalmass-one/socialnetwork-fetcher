@@ -44,15 +44,6 @@ class ImportProfilesCommand extends Command
         $io = new SymfonyStyle($input, $output);
         $dryRun = $input->getOption('dry-run');
 
-        $url = sprintf('https://%s/api/socialnetwork-profiles?size=10000', $this->criticalmassHostname);
-
-        $io->info(sprintf('Lade Profile von %s ...', $url));
-
-        $response = $this->httpClient->request('GET', $url);
-        $apiProfiles = $response->toArray();
-
-        $io->info(sprintf('%d Profile von der API geladen.', count($apiProfiles)));
-
         $networkMap = [];
         foreach ($this->networkRepository->findAll() as $network) {
             $networkMap[$network->getIdentifier()] = $network;
@@ -63,26 +54,42 @@ class ImportProfilesCommand extends Command
         $seenIds = [];
         $duplicatesRemoved = 0;
 
-        foreach ($apiProfiles as $data) {
-            $networkIdentifier = $data['network'] ?? null;
+        $page = 0;
+        $size = 1000;
 
-            if (!$networkIdentifier || !isset($networkMap[$networkIdentifier])) {
-                $io->warning(sprintf('Netzwerk "%s" nicht gefunden, überspringe Profil #%d (%s)', $networkIdentifier, $data['id'], $data['identifier'] ?? ''));
-                continue;
+        $io->info(sprintf('Lade Profile von %s ...', $this->criticalmassHostname));
+
+        do {
+            $url = sprintf('https://%s/api/socialnetwork-profiles?page=%d&size=%d', $this->criticalmassHostname, $page, $size);
+
+            $response = $this->httpClient->request('GET', $url);
+            $apiProfiles = $response->toArray();
+
+            $io->info(sprintf('Seite %d: %d Profile geladen.', $page, count($apiProfiles)));
+
+            foreach ($apiProfiles as $data) {
+                $networkIdentifier = $data['network'] ?? null;
+
+                if (!$networkIdentifier || !isset($networkMap[$networkIdentifier])) {
+                    $io->warning(sprintf('Netzwerk "%s" nicht gefunden, überspringe Profil #%d (%s)', $networkIdentifier, $data['id'], $data['identifier'] ?? ''));
+                    continue;
+                }
+
+                $network = $networkMap[$networkIdentifier];
+                $constraintKey = $network->getId() . '::' . mb_strtolower($data['identifier']);
+                $apiId = $data['id'];
+
+                if (isset($uniqueProfiles[$constraintKey]) || isset($seenIds[$apiId])) {
+                    $duplicatesRemoved++;
+                    continue;
+                }
+
+                $uniqueProfiles[$constraintKey] = $data;
+                $seenIds[$apiId] = true;
             }
 
-            $network = $networkMap[$networkIdentifier];
-            $constraintKey = $network->getId() . '::' . mb_strtolower($data['identifier']);
-            $apiId = $data['id'];
-
-            if (isset($uniqueProfiles[$constraintKey]) || isset($seenIds[$apiId])) {
-                $duplicatesRemoved++;
-                continue;
-            }
-
-            $uniqueProfiles[$constraintKey] = $data;
-            $seenIds[$apiId] = true;
-        }
+            $page++;
+        } while (count($apiProfiles) === $size);
 
         if ($duplicatesRemoved > 0) {
             $io->note(sprintf('%d Duplikate in API-Daten entfernt.', $duplicatesRemoved));
