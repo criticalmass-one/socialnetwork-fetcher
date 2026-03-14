@@ -53,9 +53,20 @@ class ImportItemsCommand extends Command
 
         $baseUrl = sprintf('https://%s', $this->criticalmassHostname);
 
-        // 1. Load local profiles
+        // 1. Load local profiles — extract data before clearing EntityManager
         $profiles = $this->profileRepository->findAll();
         $io->info(sprintf('%d lokale Profile geladen.', count($profiles)));
+
+        $profileInfos = [];
+        foreach ($profiles as $profile) {
+            $networkIdentifier = $profile->getNetwork()->getIdentifier();
+            if ($networkFilter && $networkIdentifier !== $networkFilter) {
+                continue;
+            }
+            $profileInfos[] = ['id' => $profile->getId(), 'network' => $networkIdentifier];
+        }
+
+        $this->entityManager->clear();
 
         $totalCreated = 0;
         $totalUpdated = 0;
@@ -63,23 +74,14 @@ class ImportItemsCommand extends Command
         $batchCount = 0;
         $profilesProcessed = 0;
 
-        $filteredProfiles = array_filter($profiles, function (Profile $profile) use ($networkFilter) {
-            if ($networkFilter && $profile->getNetwork()->getIdentifier() !== $networkFilter) {
-                return false;
-            }
-            return true;
-        });
-
-        $this->entityManager->clear();
-
-        $progressBar = $io->createProgressBar(count($filteredProfiles));
+        $progressBar = $io->createProgressBar(count($profileInfos));
         $progressBar->setFormat(' %current%/%max% [%bar%] %percent:3s%% — %message%');
         $progressBar->setMessage('Starte...');
         $progressBar->start();
 
-        foreach ($filteredProfiles as $profile) {
-            $profileId = $profile->getId();
-            $progressBar->setMessage(sprintf('#%d %s', $profileId, $profile->getNetwork()->getIdentifier()));
+        foreach ($profileInfos as $profileInfo) {
+            $profileId = $profileInfo['id'];
+            $progressBar->setMessage(sprintf('#%d %s', $profileId, $profileInfo['network']));
             $profilesProcessed++;
 
             try {
