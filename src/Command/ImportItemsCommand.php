@@ -174,16 +174,24 @@ class ImportItemsCommand extends Command
             $url = sprintf('%s/api/socialnetwork-feeditems?profileId=%d&page=%d&size=%d', $baseUrl, $profileId, $page, $size);
             $response = $this->httpClient->request('GET', $url, [
                 'timeout' => 10,
-                'max_duration' => 30,
             ]);
-            $statusCode = $response->getStatusCode();
 
-            if ($statusCode !== 200) {
+            $content = '';
+            foreach ($this->httpClient->stream($response, 15) as $chunk) {
+                if ($chunk->isTimeout()) {
+                    $response->cancel();
+                    throw new \RuntimeException(sprintf('Timeout bei %s', $url));
+                }
+                $content .= $chunk->getContent();
+            }
+
+            $responseData = json_decode($content, true);
+
+            if (!is_array($responseData) || !isset($responseData['data'])) {
                 break;
             }
 
-            $responseData = $response->toArray(false);
-            $items = $responseData['data'] ?? [];
+            $items = $responseData['data'];
             $totalPages = $responseData['meta']['totalPages'] ?? 1;
 
             $allItems = array_merge($allItems, $items);
