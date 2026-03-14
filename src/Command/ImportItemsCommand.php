@@ -175,18 +175,10 @@ class ImportItemsCommand extends Command
             $response = $this->httpClient->request('GET', $url, [
                 'timeout' => 10,
                 'max_duration' => 30,
+                'http_version' => '1.1',
             ]);
 
-            $content = '';
-            foreach ($this->httpClient->stream($response, 15) as $chunk) {
-                if ($chunk->isTimeout()) {
-                    $response->cancel();
-                    throw new \RuntimeException(sprintf('Timeout bei %s', $url));
-                }
-                $content .= $chunk->getContent();
-            }
-
-            $responseData = json_decode($content, true);
+            $responseData = $response->toArray();
 
             if (!is_array($responseData) || !isset($responseData['data'])) {
                 break;
