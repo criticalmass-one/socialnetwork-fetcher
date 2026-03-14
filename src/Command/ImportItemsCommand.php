@@ -174,6 +174,7 @@ class ImportItemsCommand extends Command
             $url = sprintf('%s/api/socialnetwork-feeditems?profileId=%d&page=%d&size=%d', $baseUrl, $profileId, $page, $size);
             $response = $this->httpClient->request('GET', $url, [
                 'timeout' => 10,
+                'max_duration' => 30,
             ]);
 
             $content = '';
