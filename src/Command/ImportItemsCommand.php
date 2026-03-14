@@ -24,6 +24,7 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 class ImportItemsCommand extends Command
 {
     private const BATCH_SIZE = 200;
+    private const MAX_ITEMS_PER_PROFILE = 5000;
 
     public function __construct(
         private readonly HttpClientInterface $httpClient,
@@ -84,10 +85,6 @@ class ImportItemsCommand extends Command
             $progressBar->setMessage(sprintf('#%d %s', $profileId, $profileInfo['network']));
             $profilesProcessed++;
 
-            if ($output->isVerbose()) {
-                $output->writeln(sprintf("\n[DEBUG] Profil #%d (%s): Starte API-Abruf...", $profileId, $profileInfo['network']));
-            }
-
             try {
                 $apiItems = $this->loadFeedItemsForProfile($baseUrl, $profileId);
             } catch (\Throwable $e) {
@@ -96,16 +93,20 @@ class ImportItemsCommand extends Command
                 continue;
             }
 
-            if ($output->isVerbose()) {
-                $output->writeln(sprintf("[DEBUG] Profil #%d: %d Items geladen", $profileId, count($apiItems)));
-            }
-
             if (empty($apiItems)) {
                 $progressBar->advance();
                 continue;
             }
 
-            $progressBar->setMessage(sprintf('#%d %s (%d Items)', $profileId, $profileInfo['network'], count($apiItems)));
+            $itemCount = count($apiItems);
+
+            if ($itemCount > self::MAX_ITEMS_PER_PROFILE) {
+                $io->warning(sprintf('Profil #%d: %d Items, limitiert auf %d', $profileId, $itemCount, self::MAX_ITEMS_PER_PROFILE));
+                $apiItems = array_slice($apiItems, 0, self::MAX_ITEMS_PER_PROFILE);
+                $itemCount = self::MAX_ITEMS_PER_PROFILE;
+            }
+
+            $progressBar->setMessage(sprintf('#%d %s (%d Items)', $profileId, $profileInfo['network'], $itemCount));
 
             $profileEntity = null;
 
@@ -140,9 +141,6 @@ class ImportItemsCommand extends Command
 
                 $batchCount++;
                 if (!$dryRun && $batchCount >= self::BATCH_SIZE) {
-                    if ($output->isVerbose()) {
-                        $output->writeln(sprintf("[DEBUG] Flush bei batchCount=%d", $batchCount));
-                    }
                     $this->entityManager->flush();
                     $this->entityManager->clear();
                     $this->debugDataHolder?->reset();
@@ -180,27 +178,16 @@ class ImportItemsCommand extends Command
         $allItems = [];
         $page = 0;
         $size = 1000;
+        $maxPages = (int) ceil(self::MAX_ITEMS_PER_PROFILE / $size);
 
         do {
             $url = sprintf('%s/api/socialnetwork-feeditems?profileId=%d&page=%d&size=%d', $baseUrl, $profileId, $page, $size);
-            $context = stream_context_create([
-                'http' => [
-                    'timeout' => 30,
-                    'ignore_errors' => true,
-                ],
-                'ssl' => [
-                    'verify_peer' => true,
-                    'verify_peer_name' => true,
-                ],
+            $response = $this->httpClient->request('GET', $url, [
+                'timeout' => 10,
+                'max_duration' => 30,
             ]);
 
-            $content = file_get_contents($url, false, $context);
-
-            if ($content === false) {
-                throw new \RuntimeException(sprintf('Fehler beim Laden von %s', $url));
-            }
-
-            $responseData = json_decode($content, true);
+            $responseData = $response->toArray();
 
             if (!is_array($responseData) || !isset($responseData['data'])) {
                 break;
@@ -211,7 +198,7 @@ class ImportItemsCommand extends Command
 
             $allItems = array_merge($allItems, $items);
             $page++;
-        } while ($page < $totalPages);
+        } while ($page < $totalPages && $page < $maxPages);
 
         return $allItems;
     }
