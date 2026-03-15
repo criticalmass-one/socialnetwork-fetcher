@@ -13,6 +13,8 @@
         "dragonmantank/cron-expression": "^3.6",
         "laminas/laminas-feed": "^2.12",
         "laminas/laminas-http": "^2.11",
+        "nelmio/api-doc-bundle": "^5.9",
+        "symfony/apache-pack": "*",
         "symfony/asset": "^8.0",
         "symfony/asset-mapper": "*",
         "symfony/console": "^8.0",
