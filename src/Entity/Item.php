@@ -11,7 +11,10 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
+use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
+use ApiPlatform\OpenApi\Model\Parameter;
 use App\State\ClientScopedItemProvider;
+use App\State\TimelineProvider;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 
@@ -24,6 +27,21 @@ use Symfony\Component\Serializer\Attribute\Groups;
         new GetCollection(
             provider: ClientScopedItemProvider::class,
             description: 'Returns feed items for profiles linked to the authenticated client. Ordered by dateTime descending. Filter by profile using ?profile=<id>.',
+        ),
+        new GetCollection(
+            uriTemplate: '/timeline',
+            provider: TimelineProvider::class,
+            description: 'Chronological timeline of all feed items across the authenticated client\'s profiles. Defaults to the last 24 hours, max 100 items. Use query parameters to customize: ?limit=50&since=2025-01-01T00:00:00Z&until=2025-01-31T23:59:59Z&network=mastodon',
+            openapi: new OpenApiOperation(
+                summary: 'Get client timeline',
+                parameters: [
+                    new Parameter(name: 'limit', in: 'query', description: 'Maximum number of items to return (default: 100, max: 500).', schema: ['type' => 'integer', 'default' => 100, 'minimum' => 1, 'maximum' => 500]),
+                    new Parameter(name: 'since', in: 'query', description: 'Return items published after this timestamp (default: 24 hours ago). ISO 8601 format.', schema: ['type' => 'string', 'format' => 'date-time']),
+                    new Parameter(name: 'until', in: 'query', description: 'Return items published before this timestamp. ISO 8601 format.', schema: ['type' => 'string', 'format' => 'date-time']),
+                    new Parameter(name: 'network', in: 'query', description: 'Filter by network identifier (e.g. "mastodon", "bluesky", "instagram_profile").', schema: ['type' => 'string']),
+                ],
+            ),
+            paginationEnabled: false,
         ),
         new Get(
             provider: ClientScopedItemProvider::class,
