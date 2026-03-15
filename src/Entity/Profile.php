@@ -4,11 +4,16 @@ namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use App\State\ClientScopedProfileProcessor;
+use App\State\ClientScopedProfileProvider;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 
@@ -17,9 +22,10 @@ use Symfony\Component\Serializer\Attribute\Groups;
 #[ORM\Entity(repositoryClass: \App\Repository\ProfileRepository::class)]
 #[ApiResource(
     operations: [
-        new GetCollection(),
-        new Get(),
-        new Post(),
+        new GetCollection(provider: ClientScopedProfileProvider::class),
+        new Get(provider: ClientScopedProfileProvider::class),
+        new Post(processor: ClientScopedProfileProcessor::class),
+        new Delete(processor: ClientScopedProfileProcessor::class),
         new Put(),
     ],
     normalizationContext: ['groups' => ['profile:read']],
@@ -69,6 +75,23 @@ class Profile
     #[ORM\Column(type: 'text', nullable: true)]
     #[Groups(['profile:read', 'profile:write'])]
     private ?string $additionalData = null;
+
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    #[Groups(['profile:read'])]
+    private bool $deleted = false;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[Groups(['profile:read'])]
+    private ?\DateTimeImmutable $deletedAt = null;
+
+    /** @var Collection<int, Client> */
+    #[ORM\ManyToMany(targetEntity: Client::class, mappedBy: 'profiles')]
+    private Collection $clients;
+
+    public function __construct()
+    {
+        $this->clients = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -190,4 +213,38 @@ class Profile
         return $this;
     }
 
+    public function isDeleted(): bool
+    {
+        return $this->deleted;
+    }
+
+    public function setDeleted(bool $deleted): self
+    {
+        $this->deleted = $deleted;
+
+        return $this;
+    }
+
+    public function getDeletedAt(): ?\DateTimeImmutable
+    {
+        return $this->deletedAt;
+    }
+
+    public function setDeletedAt(?\DateTimeImmutable $deletedAt): self
+    {
+        $this->deletedAt = $deletedAt;
+
+        return $this;
+    }
+
+    /** @return Collection<int, Client> */
+    public function getClients(): Collection
+    {
+        return $this->clients;
+    }
+
+    public function getClientCount(): int
+    {
+        return $this->clients->count();
+    }
 }

@@ -1,0 +1,30 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Neuer Client - Social Network Fetcher{% endblock %}
+
+{% block body %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ path('app_client_index') }}">Clients</a></li>
+            <li class="breadcrumb-item active">Neu</li>
+        </ol>
+    </nav>
+
+    <h1>Neuer Client</h1>
+
+    <div class="card">
+        <div class="card-body">
+            <form method="post">
+                <div class="mb-3">
+                    <label for="client_name" class="form-label">Name</label>
+                    <input type="text" class="form-control" id="client_name" name="name" required
+                           placeholder="z.B. wahlkampf.app">
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>Erstellen
+                </button>
+                <a href="{{ path('app_client_index') }}" class="btn btn-secondary ms-2">Abbrechen</a>
+            </form>
+        </div>
+    </div>
+{% endblock %}

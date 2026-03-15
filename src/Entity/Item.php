@@ -10,6 +10,7 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
+use App\State\ClientScopedItemProvider;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
 
@@ -19,8 +20,8 @@ use Symfony\Component\Serializer\Attribute\Groups;
 #[ORM\Entity(repositoryClass: \App\Repository\ItemRepository::class)]
 #[ApiResource(
     operations: [
-        new GetCollection(),
-        new Get(),
+        new GetCollection(provider: ClientScopedItemProvider::class),
+        new Get(provider: ClientScopedItemProvider::class),
         new Post(),
         new Put(),
     ],

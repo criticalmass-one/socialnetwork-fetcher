@@ -339,6 +339,9 @@
             "config/routes.yaml"
         ]
     },
+    "symfony/security-bundle": {
+        "version": "v8.0.6"
+    },
     "symfony/service-contracts": {
         "version": "v2.1.3"
     },

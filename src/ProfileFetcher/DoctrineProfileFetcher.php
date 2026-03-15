@@ -24,7 +24,7 @@ class DoctrineProfileFetcher implements ProfileFetcherInterface
             return [];
         }
 
-        $entities = $this->profileRepository->findBy(['network' => $network]);
+        $entities = $this->profileRepository->findBy(['network' => $network, 'deleted' => false]);
 
         return array_map($this->convertToModel(...), $entities);
     }
@@ -46,7 +46,7 @@ class DoctrineProfileFetcher implements ProfileFetcherInterface
             return $this->fetchByNetworkIdentifiers($fetchInfo->getNetworkList());
         }
 
-        $entities = $this->profileRepository->findAll();
+        $entities = $this->profileRepository->findBy(['deleted' => false]);
 
         return array_map($this->convertToModel(...), $entities);
     }
