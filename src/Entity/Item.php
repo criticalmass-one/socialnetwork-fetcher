@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\Get;
@@ -49,56 +50,69 @@ class Item
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
     #[Groups(['item:read'])]
+    #[ApiProperty(description: 'Unique identifier of the feed item.', readable: true, writable: false)]
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: Profile::class)]
     #[ORM\JoinColumn(name: 'profile_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
     #[Groups(['item:read', 'item:write'])]
+    #[ApiProperty(description: 'The profile this item belongs to. Pass as IRI, e.g. "/api/profiles/42". Items are only visible if the profile is linked to the authenticated client.')]
     private ?Profile $profile = null;
 
     #[ORM\Column(type: 'string', length: 255, nullable: false)]
     #[Groups(['item:read', 'item:write'])]
+    #[ApiProperty(description: 'Network-specific unique identifier for this item (e.g. tweet ID, Mastodon status ID). Used for deduplication during feed fetching.')]
     private ?string $uniqueIdentifier = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
     #[Groups(['item:read', 'item:write'])]
+    #[ApiProperty(description: 'Direct URL to the original post on the social network.')]
     private ?string $permalink = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
     #[Groups(['item:read', 'item:write'])]
+    #[ApiProperty(description: 'Title of the feed item, if available (e.g. for RSS/blog posts). May be null for social media posts.')]
     private ?string $title = null;
 
     #[ORM\Column(type: 'text', nullable: false)]
     #[Groups(['item:read', 'item:write'])]
+    #[ApiProperty(description: 'The main text content of the feed item.')]
     private ?string $text = null;
 
     #[ORM\Column(name: 'date_time', type: 'datetime_immutable', nullable: false)]
     #[Groups(['item:read', 'item:write'])]
+    #[ApiProperty(description: 'Publication date and time of the feed item on the social network.')]
     private ?\DateTimeImmutable $dateTime = null;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     #[Groups(['item:read', 'item:write'])]
+    #[ApiProperty(description: 'Whether this item is hidden from public display.')]
     private bool $hidden = false;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     #[Groups(['item:read', 'item:write'])]
+    #[ApiProperty(description: 'Whether this item has been marked as deleted.')]
     private bool $deleted = false;
 
     #[ORM\Column(name: 'created_at', type: 'datetime_immutable', nullable: false)]
     #[Groups(['item:read'])]
+    #[ApiProperty(description: 'Timestamp when this item was first imported into the system.', readable: true, writable: false)]
     private \DateTimeImmutable $createdAt;
 
     #[ORM\Column(type: 'text', nullable: true)]
     #[Groups(['item:read', 'item:write'])]
+    #[ApiProperty(description: 'Raw JSON response from the social network API for this item.')]
     private ?string $raw = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
     #[Groups(['item:read', 'item:write'])]
+    #[ApiProperty(description: 'Raw HTML source of the original page, if fetchSource was enabled on the profile.')]
     private ?string $rawSource = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
     #[Groups(['item:read', 'item:write'])]
-    private ?string $source = null;
+    #[ApiProperty(description: 'Parsed/processed version of the source content.')]
+    private ?string $parsedSource = null;
 
     public function __construct()
     {

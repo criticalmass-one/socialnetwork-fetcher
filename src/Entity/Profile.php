@@ -2,6 +2,7 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\Delete;
@@ -52,51 +53,63 @@ class Profile
     #[ORM\Id]
     #[ORM\Column(type: 'integer')]
     #[Groups(['profile:read', 'item:read'])]
+    #[ApiProperty(description: 'Unique identifier of the profile.', readable: true, writable: false)]
     private ?int $id = null;
 
     #[ORM\Column(type: 'string', length: 255)]
     #[Groups(['profile:read', 'profile:write', 'item:read'])]
+    #[ApiProperty(description: 'Network-specific identifier, typically a URL. Example: "https://mastodon.social/@username" for Mastodon or "username.bsky.social" for Bluesky.')]
     private ?string $identifier = null;
 
     #[ORM\ManyToOne(targetEntity: Network::class)]
     #[ORM\JoinColumn(name: 'network_id', referencedColumnName: 'id', nullable: false)]
     #[Groups(['profile:read', 'profile:write'])]
+    #[ApiProperty(description: 'The social network this profile belongs to. Pass as IRI, e.g. "/api/networks/1".')]
     private ?Network $network = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     #[Groups(['profile:read'])]
+    #[ApiProperty(description: 'Timestamp when the profile was first created.', readable: true, writable: false)]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     #[Groups(['profile:read'])]
+    #[ApiProperty(description: 'Timestamp of the last successful feed fetch for this profile.', readable: true, writable: false)]
     private ?\DateTimeImmutable $lastFetchSuccessDateTime = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     #[Groups(['profile:read'])]
+    #[ApiProperty(description: 'Timestamp of the last failed feed fetch attempt.', readable: true, writable: false)]
     private ?\DateTimeImmutable $lastFetchFailureDateTime = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
     #[Groups(['profile:read'])]
+    #[ApiProperty(description: 'Error message from the last failed fetch attempt, if any.', readable: true, writable: false)]
     private ?string $lastFetchFailureError = null;
 
     #[ORM\Column(type: 'boolean', options: ['default' => true])]
     #[Groups(['profile:read', 'profile:write'])]
+    #[ApiProperty(description: 'Whether this profile is automatically included in scheduled feed fetches. Defaults to true.')]
     private bool $autoFetch = true;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     #[Groups(['profile:read', 'profile:write'])]
+    #[ApiProperty(description: 'Whether to fetch and store the raw source HTML/data alongside the parsed content.')]
     private bool $fetchSource = false;
 
     #[ORM\Column(type: 'text', nullable: true)]
     #[Groups(['profile:read', 'profile:write'])]
+    #[ApiProperty(description: 'Arbitrary JSON data for network-specific configuration (e.g. RSS.app feed ID).')]
     private ?string $additionalData = null;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     #[Groups(['profile:read'])]
+    #[ApiProperty(description: 'Whether this profile has been soft-deleted. Soft-deleted profiles are excluded from collection responses.', readable: true, writable: false)]
     private bool $deleted = false;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     #[Groups(['profile:read'])]
+    #[ApiProperty(description: 'Timestamp when the profile was soft-deleted, if applicable.', readable: true, writable: false)]
     private ?\DateTimeImmutable $deletedAt = null;
 
     /** @var Collection<int, Client> */
