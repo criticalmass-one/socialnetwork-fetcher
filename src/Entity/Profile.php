@@ -22,12 +22,27 @@ use Symfony\Component\Serializer\Attribute\Groups;
 #[ORM\Entity(repositoryClass: \App\Repository\ProfileRepository::class)]
 #[ApiResource(
     operations: [
-        new GetCollection(provider: ClientScopedProfileProvider::class),
-        new Get(provider: ClientScopedProfileProvider::class),
-        new Post(processor: ClientScopedProfileProcessor::class),
-        new Delete(processor: ClientScopedProfileProcessor::class),
-        new Put(),
+        new GetCollection(
+            provider: ClientScopedProfileProvider::class,
+            description: 'Returns all profiles linked to the authenticated client. Soft-deleted profiles are excluded.',
+        ),
+        new Get(
+            provider: ClientScopedProfileProvider::class,
+            description: 'Returns a single profile by ID. Returns 404 if the profile is not linked to the authenticated client.',
+        ),
+        new Post(
+            processor: ClientScopedProfileProcessor::class,
+            description: 'Creates a new profile or links an existing one to the authenticated client. If a profile with the same network and identifier already exists, it is linked (idempotent). If the existing profile was soft-deleted, it is reactivated and re-registered at RSS.app if applicable.',
+        ),
+        new Delete(
+            processor: ClientScopedProfileProcessor::class,
+            description: 'Unlinks a profile from the authenticated client. If no other client references the profile, it is soft-deleted (deleted=true, deletedAt set) and its RSS.app feed is removed. Profiles and items are never physically deleted.',
+        ),
+        new Put(
+            description: 'Updates an existing profile.',
+        ),
     ],
+    description: 'A social network profile (e.g. a Mastodon account, Instagram page). Profiles are scoped to the authenticated API client.',
     normalizationContext: ['groups' => ['profile:read']],
     denormalizationContext: ['groups' => ['profile:write']],
 )]

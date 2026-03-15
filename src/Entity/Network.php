@@ -15,11 +15,20 @@ use Symfony\Component\Serializer\Attribute\Groups;
 #[ORM\Entity(repositoryClass: NetworkRepository::class)]
 #[ApiResource(
     operations: [
-        new GetCollection(),
-        new Get(),
-        new Post(),
-        new Put(),
+        new GetCollection(
+            description: 'Returns all available social networks (e.g. mastodon, bluesky, instagram_profile).',
+        ),
+        new Get(
+            description: 'Returns a single network by ID.',
+        ),
+        new Post(
+            description: 'Registers a new social network.',
+        ),
+        new Put(
+            description: 'Updates an existing network.',
+        ),
     ],
+    description: 'A social network type (e.g. Mastodon, Bluesky, Instagram). Networks define the identifier pattern and fetch schedule. Use the network IRI when creating profiles.',
     normalizationContext: ['groups' => ['network:read']],
     denormalizationContext: ['groups' => ['network:write']],
 )]

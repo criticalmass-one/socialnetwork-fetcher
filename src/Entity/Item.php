@@ -20,11 +20,22 @@ use Symfony\Component\Serializer\Attribute\Groups;
 #[ORM\Entity(repositoryClass: \App\Repository\ItemRepository::class)]
 #[ApiResource(
     operations: [
-        new GetCollection(provider: ClientScopedItemProvider::class),
-        new Get(provider: ClientScopedItemProvider::class),
-        new Post(),
-        new Put(),
+        new GetCollection(
+            provider: ClientScopedItemProvider::class,
+            description: 'Returns feed items for profiles linked to the authenticated client. Ordered by dateTime descending. Filter by profile using ?profile=<id>.',
+        ),
+        new Get(
+            provider: ClientScopedItemProvider::class,
+            description: 'Returns a single feed item by ID. Returns 404 if the item belongs to a profile not linked to the authenticated client.',
+        ),
+        new Post(
+            description: 'Creates a new feed item.',
+        ),
+        new Put(
+            description: 'Updates an existing feed item.',
+        ),
     ],
+    description: 'A feed item (post, tweet, etc.) fetched from a social network profile. Items are scoped to profiles linked to the authenticated API client.',
     normalizationContext: ['groups' => ['item:read']],
     denormalizationContext: ['groups' => ['item:write']],
     order: ['dateTime' => 'DESC'],
