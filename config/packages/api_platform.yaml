@@ -40,6 +40,7 @@ api_platform:
     docs_formats:
         jsonld: ['application/ld+json']
         jsonopenapi: ['application/vnd.openapi+json']
+        json: ['application/json']
         html: ['text/html']
     swagger:
         api_keys:
