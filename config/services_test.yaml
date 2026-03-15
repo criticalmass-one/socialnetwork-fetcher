@@ -1,0 +1,3 @@
+services:
+    App\RssApp\RssAppInterface:
+        class: App\Tests\Stub\NullRssApp
