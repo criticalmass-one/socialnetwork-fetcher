@@ -25,6 +25,12 @@ php bin/console app:client:list                         # list all clients
 php bin/console app:client:regenerate-token <name>      # regenerate token
 php bin/console app:client:disable <name>               # disable client
 php bin/console app:client:enable <name>                # enable client
+
+php bin/console app:rssapp:sync-feed-ids                  # sync RSS.app feed IDs to DB
+php bin/console app:rssapp:sync-feed-ids --dry-run        # preview without writing
+php bin/console app:rssapp:sync-feed-ids --network=instagram_profile  # only one network
+php bin/console app:rssapp:sync-feed-ids --force          # re-check profiles with existing feed IDs
+php bin/console app:rssapp:sync-feed-ids -v               # show all profiles including skipped
 ```
 
 ## Architecture
