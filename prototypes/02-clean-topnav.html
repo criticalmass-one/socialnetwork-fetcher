@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Prototyp 2: Clean Top-Nav</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --brand: #0f172a;
+            --brand-light: #1e293b;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --surface: #ffffff;
+            --surface-alt: #f8fafc;
+            --border: #e2e8f0;
+            --text-primary: #0f172a;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --success: #22c55e;
+            --warning: #eab308;
+            --danger: #ef4444;
+            --radius: 8px;
+            --radius-lg: 16px;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--surface-alt);
+            color: var(--text-primary);
+        }
+
+        /* Header */
+        .app-header {
+            background: var(--brand);
+            color: white;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-top {
+            padding: 12px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: white;
+        }
+
+        .header-brand-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--accent);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
+        .header-brand-name {
+            font-weight: 700;
+            font-size: 16px;
+            letter-spacing: -0.5px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .header-search {
+            position: relative;
+        }
+
+        .header-search input {
+            background: var(--brand-light);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: var(--radius);
+            padding: 7px 12px 7px 34px;
+            color: white;
+            font-size: 13px;
+            width: 240px;
+            transition: all 0.2s;
+        }
+
+        .header-search input::placeholder { color: rgba(255,255,255,0.4); }
+
+        .header-search input:focus {
+            outline: none;
+            background: rgba(255,255,255,0.15);
+            border-color: var(--accent);
+        }
+
+        .header-search i {
+            position: absolute;
+            left: 11px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255,255,255,0.4);
+            font-size: 12px;
+        }
+
+        .header-user {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: rgba(255,255,255,0.7);
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .header-user:hover { color: white; }
+
+        .header-user-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: white;
+            font-weight: 600;
+        }
+
+        /* Tab Navigation */
+        .header-nav {
+            display: flex;
+            gap: 0;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .header-nav a {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            color: rgba(255,255,255,0.5);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            transition: all 0.15s;
+        }
+
+        .header-nav a:hover {
+            color: rgba(255,255,255,0.8);
+            border-bottom-color: rgba(255,255,255,0.2);
+        }
+
+        .header-nav a.active {
+            color: white;
+            border-bottom-color: var(--accent);
+        }
+
+        .header-nav a .count {
+            background: rgba(255,255,255,0.1);
+            padding: 1px 7px;
+            border-radius: 10px;
+            font-size: 11px;
+        }
+
+        .header-nav a.active .count {
+            background: var(--accent);
+        }
+
+        /* Content */
+        .page-content {
+            max-width: 1320px;
+            margin: 0 auto;
+            padding: 28px 24px;
+        }
+
+        /* Stat Row */
+        .stat-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .stat-item {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px 24px;
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: -1.5px;
+            line-height: 1;
+        }
+
+        .stat-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 6px;
+        }
+
+        .stat-sub .green { color: var(--success); font-weight: 600; }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        /* Network Tiles */
+        .section-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        .network-tiles {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .network-tile {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            cursor: pointer;
+            transition: all 0.15s;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .network-tile:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.08);
+        }
+
+        .network-tile-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .network-tile-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .network-tile-meta {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Card Table */
+        .card-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+
+        .card-panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-panel-title {
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .card-panel-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .filter-pills {
+            display: flex;
+            gap: 6px;
+        }
+
+        .filter-pill {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .filter-pill:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .filter-pill.active {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .tbl {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .tbl th {
+            padding: 8px 20px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            background: var(--surface-alt);
+        }
+
+        .tbl td {
+            padding: 14px 20px;
+            font-size: 13px;
+            border-top: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        .tbl tr:hover td {
+            background: var(--surface-alt);
+        }
+
+        /* Inline badge */
+        .inline-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .inline-badge-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 5px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 9px;
+        }
+
+        /* Status chip */
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .chip-active { background: #dcfce7; color: #166534; }
+        .chip-hidden { background: #fef9c3; color: #854d0e; }
+        .chip-deleted { background: #fee2e2; color: #991b1b; }
+
+        /* Text link */
+        .text-link {
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .text-link:hover {
+            color: var(--accent);
+        }
+
+        .text-preview {
+            max-width: 320px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--text-secondary);
+            display: block;
+            font-size: 13px;
+        }
+
+        .time-label {
+            color: var(--text-muted);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        /* Action icons row */
+        .actions-row {
+            display: flex;
+            gap: 2px;
+        }
+
+        .act-btn {
+            width: 30px;
+            height: 30px;
+            border: none;
+            background: none;
+            border-radius: 6px;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all 0.12s;
+        }
+
+        .act-btn:hover { background: var(--surface-alt); color: var(--text-primary); }
+        .act-btn.warn:hover { color: var(--warning); }
+        .act-btn.del:hover { color: var(--danger); }
+
+        .btn-sm-custom {
+            padding: 6px 14px;
+            border-radius: var(--radius);
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.15s;
+        }
+
+        .btn-sm-custom:hover { border-color: var(--accent); color: var(--accent); }
+
+        .btn-sm-primary {
+            padding: 6px 14px;
+            border-radius: var(--radius);
+            font-size: 12px;
+            font-weight: 500;
+            border: none;
+            background: var(--accent);
+            color: white;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-sm-primary:hover { background: var(--accent-hover); }
+
+        .toggle-sm {
+            width: 32px;
+            height: 18px;
+            background: #cbd5e1;
+            border-radius: 9px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .toggle-sm.on { background: var(--success); }
+
+        .toggle-sm::after {
+            content: '';
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: white;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.2s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .toggle-sm.on::after { transform: translateX(14px); }
+
+        .pagination-bar {
+            padding: 12px 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .pagination-bar .pages {
+            display: flex;
+            gap: 4px;
+        }
+
+        .page-btn {
+            width: 28px;
+            height: 28px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            border-radius: 6px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: all 0.12s;
+        }
+
+        .page-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .page-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="app-header">
+        <div class="container-fluid px-4">
+            <div class="header-top">
+                <a href="#" class="header-brand">
+                    <div class="header-brand-icon"><i class="fas fa-rss"></i></div>
+                    <span class="header-brand-name">SN-Fetcher</span>
+                </a>
+                <div class="header-actions">
+                    <div class="header-search">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Suche… (Ctrl+K)">
+                    </div>
+                    <div class="header-user">
+                        <div class="header-user-avatar">A</div>
+                        admin
+                        <i class="fas fa-chevron-down" style="font-size: 10px;"></i>
+                    </div>
+                </div>
+            </div>
+            <nav>
+                <ul class="header-nav">
+                    <li><a href="#" class="active"><i class="fas fa-th-large"></i> Dashboard</a></li>
+                    <li><a href="#"><i class="fas fa-network-wired"></i> Networks <span class="count">7</span></a></li>
+                    <li><a href="#"><i class="fas fa-users"></i> Profiles <span class="count">142</span></a></li>
+                    <li><a href="#"><i class="fas fa-stream"></i> Items <span class="count">48k</span></a></li>
+                    <li><a href="#"><i class="fas fa-id-badge"></i> Clients <span class="count">3</span></a></li>
+                    <li><a href="#"><i class="fas fa-book"></i> API Docs</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="page-content">
+        <!-- Stats -->
+        <div class="stat-row">
+            <div class="stat-item">
+                <div>
+                    <div class="stat-label">Netzwerke</div>
+                    <div class="stat-value">7</div>
+                    <div class="stat-sub">Alle aktiv</div>
+                </div>
+                <div class="stat-icon" style="background: #eff6ff; color: var(--accent);"><i class="fas fa-network-wired"></i></div>
+            </div>
+            <div class="stat-item">
+                <div>
+                    <div class="stat-label">Profile</div>
+                    <div class="stat-value">142</div>
+                    <div class="stat-sub"><span class="green">+12</span> diese Woche</div>
+                </div>
+                <div class="stat-icon" style="background: #f0fdf4; color: var(--success);"><i class="fas fa-users"></i></div>
+            </div>
+            <div class="stat-item">
+                <div>
+                    <div class="stat-label">Items gesamt</div>
+                    <div class="stat-value">48.291</div>
+                    <div class="stat-sub"><span class="green">+847</span> heute</div>
+                </div>
+                <div class="stat-icon" style="background: #fefce8; color: var(--warning);"><i class="fas fa-stream"></i></div>
+            </div>
+            <div class="stat-item">
+                <div>
+                    <div class="stat-label">Letzter Fetch</div>
+                    <div class="stat-value" style="font-size: 22px; letter-spacing: -0.5px;">14:32</div>
+                    <div class="stat-sub">3 Fehler in den letzten 24h</div>
+                </div>
+                <div class="stat-icon" style="background: #fef2f2; color: var(--danger);"><i class="fas fa-clock"></i></div>
+            </div>
+        </div>
+
+        <!-- Networks -->
+        <div class="section-label">Netzwerke</div>
+        <div class="network-tiles">
+            <a href="#" class="network-tile">
+                <div class="network-tile-icon" style="background: #6364ff;"><i class="fab fa-mastodon"></i></div>
+                <div>
+                    <div class="network-tile-name">Mastodon</div>
+                    <div class="network-tile-meta">38 Profile &middot; 12.4k Items</div>
+                </div>
+            </a>
+            <a href="#" class="network-tile">
+                <div class="network-tile-icon" style="background: #0085ff;"><i class="fab fa-bluesky"></i></div>
+                <div>
+                    <div class="network-tile-name">Bluesky</div>
+                    <div class="network-tile-meta">24 Profile &middot; 8.7k Items</div>
+                </div>
+            </a>
+            <a href="#" class="network-tile">
+                <div class="network-tile-icon" style="background: linear-gradient(45deg, #f09433, #dc2743, #bc1888);"><i class="fab fa-instagram"></i></div>
+                <div>
+                    <div class="network-tile-name">Instagram</div>
+                    <div class="network-tile-meta">42 Profile &middot; 15.2k Items</div>
+                </div>
+            </a>
+            <a href="#" class="network-tile">
+                <div class="network-tile-icon" style="background: #1877f2;"><i class="fab fa-facebook"></i></div>
+                <div>
+                    <div class="network-tile-name">Facebook</div>
+                    <div class="network-tile-meta">18 Profile &middot; 6.1k Items</div>
+                </div>
+            </a>
+            <a href="#" class="network-tile">
+                <div class="network-tile-icon" style="background: #000000;"><i class="fab fa-threads"></i></div>
+                <div>
+                    <div class="network-tile-name">Threads</div>
+                    <div class="network-tile-meta">12 Profile &middot; 3.4k Items</div>
+                </div>
+            </a>
+            <a href="#" class="network-tile">
+                <div class="network-tile-icon" style="background: #ff7800;"><i class="fas fa-rss"></i></div>
+                <div>
+                    <div class="network-tile-name">Homepage</div>
+                    <div class="network-tile-meta">8 Profile &middot; 2.5k Items</div>
+                </div>
+            </a>
+        </div>
+
+        <!-- Items Table -->
+        <div class="card-panel">
+            <div class="card-panel-header">
+                <div style="display: flex; align-items: center; gap: 16px;">
+                    <span class="card-panel-title">Neueste Items</span>
+                    <div class="filter-pills">
+                        <span class="filter-pill active">Alle</span>
+                        <span class="filter-pill">Aktiv</span>
+                        <span class="filter-pill">Versteckt</span>
+                        <span class="filter-pill">Gelöscht</span>
+                    </div>
+                </div>
+                <div class="card-panel-actions">
+                    <button class="btn-sm-custom"><i class="fas fa-filter"></i> Filter</button>
+                    <button class="btn-sm-primary"><i class="fas fa-arrow-right"></i> Alle Items</button>
+                </div>
+            </div>
+            <table class="tbl">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">ID</th>
+                        <th>Netzwerk</th>
+                        <th>Profil</th>
+                        <th>Inhalt</th>
+                        <th>Status</th>
+                        <th>Datum</th>
+                        <th style="width: 120px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="color: var(--text-muted);">#4821</td>
+                        <td>
+                            <span class="inline-badge">
+                                <span class="inline-badge-dot" style="background: #6364ff;"><i class="fab fa-mastodon"></i></span>
+                                Mastodon
+                            </span>
+                        </td>
+                        <td><a class="text-link" href="#">@criticalmass</a></td>
+                        <td><span class="text-preview">Heute Abend findet die Critical Mass in Hamburg statt! Treffpunkt um 19 Uhr am Stadtpark.</span></td>
+                        <td><span class="chip chip-active">Aktiv</span></td>
+                        <td><span class="time-label">16.03.2026 14:32</span></td>
+                        <td>
+                            <div class="actions-row">
+                                <button class="act-btn" title="Anzeigen"><i class="fas fa-eye"></i></button>
+                                <button class="act-btn" title="Bearbeiten"><i class="fas fa-pen"></i></button>
+                                <button class="act-btn warn" title="Verstecken"><i class="fas fa-eye-slash"></i></button>
+                                <button class="act-btn del" title="Löschen"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="color: var(--text-muted);">#4820</td>
+                        <td>
+                            <span class="inline-badge">
+                                <span class="inline-badge-dot" style="background: #0085ff;"><i class="fab fa-bluesky"></i></span>
+                                Bluesky
+                            </span>
+                        </td>
+                        <td><a class="text-link" href="#">@criticalmass.bsky</a></td>
+                        <td><span class="text-preview">Die nächste Tour startet am Freitag um 18:30 Uhr. Kommt alle mit!</span></td>
+                        <td><span class="chip chip-active">Aktiv</span></td>
+                        <td><span class="time-label">16.03.2026 13:15</span></td>
+                        <td>
+                            <div class="actions-row">
+                                <button class="act-btn" title="Anzeigen"><i class="fas fa-eye"></i></button>
+                                <button class="act-btn" title="Bearbeiten"><i class="fas fa-pen"></i></button>
+                                <button class="act-btn warn" title="Verstecken"><i class="fas fa-eye-slash"></i></button>
+                                <button class="act-btn del" title="Löschen"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="color: var(--text-muted);">#4819</td>
+                        <td>
+                            <span class="inline-badge">
+                                <span class="inline-badge-dot" style="background: #1877f2;"><i class="fab fa-facebook"></i></span>
+                                Facebook
+                            </span>
+                        </td>
+                        <td><a class="text-link" href="#">CM Berlin</a></td>
+                        <td><span class="text-preview">Fotos von der letzten Ausfahrt mit 2000 Radfahrern sind jetzt online!</span></td>
+                        <td><span class="chip chip-hidden"><i class="fas fa-eye-slash" style="font-size: 9px;"></i> Versteckt</span></td>
+                        <td><span class="time-label">16.03.2026 11:08</span></td>
+                        <td>
+                            <div class="actions-row">
+                                <button class="act-btn" title="Anzeigen"><i class="fas fa-eye"></i></button>
+                                <button class="act-btn" title="Bearbeiten"><i class="fas fa-pen"></i></button>
+                                <button class="act-btn warn" title="Verstecken"><i class="fas fa-eye-slash"></i></button>
+                                <button class="act-btn del" title="Löschen"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr style="opacity: 0.5;">
+                        <td style="color: var(--text-muted);">#4818</td>
+                        <td>
+                            <span class="inline-badge">
+                                <span class="inline-badge-dot" style="background: #e1306c;"><i class="fab fa-instagram"></i></span>
+                                Instagram
+                            </span>
+                        </td>
+                        <td><a class="text-link" href="#">cm_koeln</a></td>
+                        <td><span class="text-preview">Spam-Posting gelöscht</span></td>
+                        <td><span class="chip chip-deleted"><i class="fas fa-trash" style="font-size: 9px;"></i> Gelöscht</span></td>
+                        <td><span class="time-label">16.03.2026 09:44</span></td>
+                        <td>
+                            <div class="actions-row">
+                                <button class="act-btn" title="Anzeigen"><i class="fas fa-eye"></i></button>
+                                <button class="act-btn" title="Bearbeiten"><i class="fas fa-pen"></i></button>
+                                <button class="act-btn warn" title="Wiederherstellen"><i class="fas fa-undo"></i></button>
+                                <button class="act-btn del" title="Löschen"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="color: var(--text-muted);">#4817</td>
+                        <td>
+                            <span class="inline-badge">
+                                <span class="inline-badge-dot" style="background: #ff7800;"><i class="fas fa-rss"></i></span>
+                                RSS
+                            </span>
+                        </td>
+                        <td><a class="text-link" href="#">criticalmass.in</a></td>
+                        <td><span class="text-preview">Neuer Blogeintrag: Wie man eine Critical Mass in seiner Stadt organisiert.</span></td>
+                        <td><span class="chip chip-active">Aktiv</span></td>
+                        <td><span class="time-label">15.03.2026 22:10</span></td>
+                        <td>
+                            <div class="actions-row">
+                                <button class="act-btn" title="Anzeigen"><i class="fas fa-eye"></i></button>
+                                <button class="act-btn" title="Bearbeiten"><i class="fas fa-pen"></i></button>
+                                <button class="act-btn warn" title="Verstecken"><i class="fas fa-eye-slash"></i></button>
+                                <button class="act-btn del" title="Löschen"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="pagination-bar">
+                <span>1–50 von 48.291 Items</span>
+                <div class="pages">
+                    <button class="page-btn" disabled><i class="fas fa-chevron-left" style="font-size: 10px;"></i></button>
+                    <button class="page-btn active">1</button>
+                    <button class="page-btn">2</button>
+                    <button class="page-btn">3</button>
+                    <button class="page-btn" style="width: auto; padding: 0 6px;">&hellip;</button>
+                    <button class="page-btn">966</button>
+                    <button class="page-btn"><i class="fas fa-chevron-right" style="font-size: 10px;"></i></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
