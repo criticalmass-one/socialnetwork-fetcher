@@ -1,30 +1,87 @@
 # SocialNetwork Fetcher
 
-Symfony 8 CLI application that fetches social media feeds from various networks and pushes them to the [criticalmass.in](https://criticalmass.in) API.
+Symfony 8 application that fetches social media feeds from various networks and aggregates them. Originally designed to push data to the [criticalmass.in](https://criticalmass.in) API, it also supports standalone mode with a local PostgreSQL database, a web-based admin UI, and a multi-tenant REST API for external clients.
 
 ## Requirements
 
 - PHP 8.5+
 - Composer
+- Docker & Docker Compose (for PostgreSQL)
 
 ## Installation
 
 ```bash
+git clone git@github.com:criticalmass-one/socialnetwork-fetcher.git
+cd socialnetwork-fetcher
 composer install
+```
+
+### Database setup
+
+Start PostgreSQL via Docker Compose:
+
+```bash
+docker compose up -d
+```
+
+This starts a PostgreSQL 16 container with a persistent volume. The default credentials are configured in `compose.yaml` (`app` / `!ChangeMe!`).
+
+Create and migrate the database:
+
+```bash
+php bin/console doctrine:database:create
+php bin/console doctrine:migrations:migrate
+```
+
+### Configuration
+
+Copy the environment file and adjust it:
+
+```bash
 cp .env .env.local
 ```
 
-Edit `.env.local` with your credentials:
+Key environment variables:
 
-```env
-CRITICALMASS_HOSTNAME=https://criticalmass.in
-RSS_APP_API_KEY=your_key
-RSS_APP_API_SECRET=your_secret
+| Variable | Purpose | Default |
+|---|---|---|
+| `DATABASE_URL` | PostgreSQL connection string | see `compose.yaml` |
+| `CRITICALMASS_HOSTNAME` | criticalmass.in API hostname | `criticalmass.in` |
+| `RSS_APP_API_KEY` | RSS.app API key (for Instagram, Facebook, Threads) | — |
+| `RSS_APP_API_SECRET` | RSS.app API secret | — |
+| `WEB_ADMIN_USERNAME` | Web UI admin username | `admin` |
+| `WEB_ADMIN_PASSWORD_HASH` | Bcrypt hash for web login | `$2y$13$changeme` |
+
+Generate a password hash for the web admin:
+
+```bash
+php bin/console security:hash-password 'your-password'
 ```
 
-## Usage
+Then set `WEB_ADMIN_PASSWORD_HASH` in `.env.local` to the generated hash.
 
-### Fetch feeds
+### Start the dev server
+
+```bash
+symfony serve -d
+```
+
+The application is accessible at `https://127.0.0.1:8000`.
+
+## Supported Networks
+
+| Network | Identifier | API | Auth required |
+|---|---|---|---|
+| Mastodon | `mastodon` | Mastodon API v1 | No |
+| Bluesky | `bluesky` | AT Protocol (public) | No |
+| Homepage/RSS | `homepage` | Direct RSS/Atom feed | No |
+| Instagram | `instagram_profile` | via RSS.app | Yes (RSS.app) |
+| Facebook | `facebook_page` | via RSS.app | Yes (RSS.app) |
+| Threads | `threads_profile` | via RSS.app | Yes (RSS.app) |
+
+## Console Commands
+
+### Feed fetching
 
 ```bash
 # Fetch all networks
@@ -35,9 +92,12 @@ php bin/console feeds:fetch mastodon bluesky
 
 # Fetch with options
 php bin/console feeds:fetch instagram_profile --count=50 --citySlug=hamburg
+
+# Run scheduled fetches (based on cron expressions per network)
+php bin/console app:fetch-scheduled
 ```
 
-Options:
+Options for `feeds:fetch`:
 
 | Option | Short | Description |
 |---|---|---|
@@ -45,49 +105,103 @@ Options:
 | `--fromDateTime` | `-f` | Start date filter |
 | `--untilDateTime` | `-u` | End date filter |
 | `--includeOldItems` | `-i` | Include already fetched items |
-| `--citySlug` | | Filter by city |
+| `--citySlug` | | Filter by city slug |
 
-### List registered networks
-
-```bash
-php bin/console network:list
-```
-
-```
- ------------------- -------------------------------------------------------
-  Network             Fetcher
- ------------------- -------------------------------------------------------
-  bluesky             App\NetworkFeedFetcher\Bluesky\BlueskyFeedFetcher
-  facebook_page       App\NetworkFeedFetcher\Facebook\FacebookFeedFetcher
-  homepage            App\NetworkFeedFetcher\Homepage\HomepageFeedFetcher
-  instagram_profile   App\NetworkFeedFetcher\Instagram\InstagramFeedFetcher
-  mastodon            App\NetworkFeedFetcher\Mastodon\MastodonFeedFetcher
-  threads_profile     App\NetworkFeedFetcher\Threads\ThreadFeedFetcher
- ------------------- -------------------------------------------------------
-```
-
-### List feeds/profiles
+### Profile & network management
 
 ```bash
-# List all
-php bin/console feed:list
-
-# Filter by network
-php bin/console feed:list mastodon bluesky
+php bin/console network:list                          # list registered network fetchers
+php bin/console feed:list                             # list all profiles
+php bin/console feed:list mastodon bluesky            # list profiles by network
 ```
 
-## Supported Networks
+### Standalone mode (data import)
 
-| Network | Identifier | API | Auth required |
-|---|---|---|---|
-| Mastodon | `mastodon` | Mastodon API v1 | No |
-| Bluesky | `bluesky` | AT Protocol (public) | No |
-| Instagram | `instagram_profile` | via RSS.app | Yes (RSS.app) |
-| Facebook | `facebook_page` | via RSS.app | Yes (RSS.app) |
-| Threads | `threads_profile` | via RSS.app | Yes (RSS.app) |
-| Homepage/RSS | `homepage` | Direct RSS/Atom | No |
+Import data from the criticalmass.in API into the local database:
+
+```bash
+php bin/console app:import-profiles                   # import profile metadata
+php bin/console app:import-items -v                   # import feed items per profile
+php bin/console app:import-items --network=twitter    # import only one network
+php bin/console app:import-items --dry-run            # preview without writing
+```
+
+Import limits: max 5000 items per profile, batch size 200 for database writes.
+
+### API client management
+
+```bash
+php bin/console app:client:create <name>              # create client, outputs Bearer token
+php bin/console app:client:list                       # list all clients
+php bin/console app:client:regenerate-token <name>    # regenerate token
+php bin/console app:client:enable <name>              # enable client
+php bin/console app:client:disable <name>             # disable client
+```
+
+### RSS.app integration
+
+```bash
+php bin/console app:rssapp:sync-feed-ids              # sync RSS.app feed IDs to DB
+php bin/console app:rssapp:sync-feed-ids --dry-run    # preview
+php bin/console app:rssapp:sync-feed-ids --network=instagram_profile
+php bin/console app:rssapp:sync-feed-ids --force      # re-check existing feed IDs
+```
+
+## Web UI
+
+The admin interface is accessible after login at `/login`. It provides:
+
+- **Dashboard** — Overview with network statistics, profile/item counts, and a table of recent items
+- **Networks** — CRUD for social networks (name, icon, color, cron schedule)
+- **Profiles** — Searchable/filterable list with auto-fetch toggle, fetch status, manual fetch trigger, RSS.app registration
+- **Items** — Searchable/filterable list with hide/delete toggles, network and profile filters
+- **Clients** — API client management with token display, enable/disable
+
+The frontend uses Bootstrap 5, Stimulus controllers for interactive features (toggles, AJAX pagination, search), and Handlebars for client-side template rendering. Assets are managed via Symfony Asset Mapper (no build step needed).
+
+## REST API
+
+All API endpoints under `/api/` require Bearer token authentication:
+
+```
+Authorization: Bearer <token>
+```
+
+Tokens are generated via `app:client:create`.
+
+### Endpoints
+
+**Profiles** (client-scoped):
+- `GET /api/profiles` — List profiles linked to the authenticated client
+- `GET /api/profiles/{id}` — Get single profile
+- `POST /api/profiles` — Create or link an existing profile (idempotent)
+- `PUT /api/profiles/{id}` — Update profile
+- `DELETE /api/profiles/{id}` — Unlink from client; soft-deletes if no other clients remain
+
+**Items** (client-scoped):
+- `GET /api/items` — List feed items (paginated, 50 per page)
+- `GET /api/items/{id}` — Get single item
+- `POST /api/items` — Create item
+- `PUT /api/items/{id}` — Update item
+
+**Timeline**:
+- `GET /api/timeline` — Chronological feed (default: last 24h, max 100 items)
+  - Query params: `limit`, `since`, `until`, `network`
+
+**Networks** (public):
+- `GET /api/networks` — List all networks
+- `GET /api/networks/{id}` — Get single network
+
+**Documentation**:
+- `GET /api/docs` — Interactive OpenAPI documentation
+
+### Multi-tenancy
+
+Profiles are shared across clients via a join table. Each client sees only its linked profiles and their items. Creating a profile that already exists links it to the client (idempotent). Deleting a profile unlinks it; it is soft-deleted only when no clients reference it. Profiles and items are never physically deleted.
 
 ## Architecture
+
+### Feed fetching flow
 
 ```
 feeds:fetch command
@@ -105,32 +219,78 @@ FeedFetcher (orchestrator)
     +-- ProfilePersister ---------> criticalmass.in API (update metadata)
 ```
 
-Network fetchers are auto-discovered via Symfony's autoconfiguration. Any class implementing `NetworkFeedFetcherInterface` is automatically registered — no manual service configuration needed.
+### Service wiring
 
-### Adding a new network
+Network fetchers are auto-discovered: any class implementing `NetworkFeedFetcherInterface` gets tagged via `Kernel::build()` and injected into `FeedFetcher` through the `SocialNetworkFetcherPass` compiler pass. No manual service registration needed.
 
-1. Create `src/NetworkFeedFetcher/YourNetwork/YourNetworkFeedFetcher.php` extending `AbstractNetworkFeedFetcher`
-2. Create `IdentifierParser.php` to extract handles from URL-based identifiers
-3. Create `EntryConverter.php` to map API responses to `SocialNetworkFeedItem`
-4. Add tests in `tests/NetworkFeedFetcher/YourNetwork/`
+### Network fetcher types
+
+- **Direct API fetchers**: `MastodonFeedFetcher`, `BlueskyFeedFetcher`, `HomepageFeedFetcher` — call the network's API directly
+- **RSS.app-based fetchers**: `FacebookFeedFetcher`, `InstagramFeedFetcher`, `ThreadFeedFetcher` — proxy through RSS.app's API
+
+### Each network fetcher directory contains
+
+```
+src/NetworkFeedFetcher/YourNetwork/
+    *FeedFetcher.php       — implements NetworkFeedFetcherInterface
+    IdentifierParser.php   — extracts handle/username from URL identifiers
+    EntryConverter.php     — converts API response to SocialNetworkFeedItem
+```
+
+### Entities
+
+| Entity | Purpose |
+|---|---|
+| `Profile` | Social network profile (URL identifier, optional title, network reference, fetch metadata) |
+| `Item` | Feed item (text, title, permalink, timestamps, hidden/deleted flags) |
+| `Network` | Social network definition (name, icon, colors, cron expression) |
+| `Client` | API client (name, Bearer token, enabled flag, linked profiles) |
+
+### Security
+
+- **Web UI** (`/`): Form-based login, `ROLE_ADMIN`, in-memory user via env vars
+- **API** (`/api/*`): Stateless Bearer token authentication, `ROLE_API_CLIENT`
+- **API docs** (`/api/docs`): Public access
+
+## Adding a New Network Fetcher
+
+1. Create directory `src/NetworkFeedFetcher/YourNetwork/`
+2. Create `YourNetworkFeedFetcher` extending `AbstractNetworkFeedFetcher`
+3. Override `getNetworkIdentifier()` if the class name doesn't follow the `{Network}FeedFetcher` pattern
+4. Create `IdentifierParser` to extract handles from URL-based identifiers
+5. Create `EntryConverter` to map API data to `SocialNetworkFeedItem`
+6. Add tests in `tests/NetworkFeedFetcher/YourNetwork/`
+7. Register the network in the database (via Web UI or migration)
+
+No service registration needed — autoconfiguration handles it.
 
 ## Testing
 
 ```bash
-# Run all tests
-bin/phpunit
-
-# Run a specific test file
-bin/phpunit tests/NetworkFeedFetcher/Bluesky/EntryConverterTest.php
-
-# Filter by test name
-bin/phpunit --filter testConvertValidEntry
+bin/phpunit                                          # run all tests
+bin/phpunit tests/NetworkFeedFetcher/Bluesky/        # run test directory
+bin/phpunit --filter testParseHandleFormat            # run single test
 ```
+
+## Tech Stack
+
+- **Framework**: Symfony 8.0
+- **PHP**: 8.5+
+- **Database**: PostgreSQL 16
+- **API**: API Platform 4.2
+- **Frontend**: Bootstrap 5.3, Stimulus 3.2, Handlebars 4.7
+- **Assets**: Symfony Asset Mapper (no build step)
+- **Testing**: PHPUnit 13
+- **API Docs**: NelmioApiDocBundle (OpenAPI/Swagger)
 
 ## Git Workflow
 
-- Every feature, fix, or refactoring gets its own branch — never commit directly to `main`.
-- Never squash commits. Keep individual commits as logical, reviewable work packages.
-- PRs must have appropriate labels and be assigned to the maintainer.
+- Never commit directly to `main`. Every feature, fix, or refactoring gets its own branch.
+- Never squash commits. Keep individual commits as logical, reviewable work packages so each step remains traceable.
+- PRs must have appropriate labels (e.g. `bug`, `enhancement`, `AI-generated`) and be assigned to `maltehuebner`.
 - PRs may only be merged after all tests have passed.
 - Delete remote branches after merging.
+
+## License
+
+Private repository. All rights reserved.
