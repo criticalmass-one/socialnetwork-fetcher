@@ -11,14 +11,24 @@
             {% block importmap %}{{ importmap('app') }}{% endblock %}
         {% endblock %}
     </head>
-    <body>
+    <body class="{% block body_class %}{% endblock %}">
         {% if is_granted('ROLE_ADMIN') %}
-            {% include '_partials/_navbar.html.twig' %}
+            {% include '_partials/_sidebar.html.twig' %}
+            <div class="main">
+                <div class="topbar">
+                    <div class="topbar-title">{% block page_title %}{% endblock %}</div>
+                    <div class="topbar-actions">{% block topbar_actions %}{% endblock %}</div>
+                </div>
+                <div class="content">
+                    {% include '_partials/_flash_messages.html.twig' %}
+                    {% block body %}{% endblock %}
+                </div>
+            </div>
+        {% else %}
+            <div class="content" style="max-width: 600px; margin: 0 auto; padding-top: 60px;">
+                {% include '_partials/_flash_messages.html.twig' %}
+                {{ block('body') }}
+            </div>
         {% endif %}
-
-        <main class="container py-4">
-            {% include '_partials/_flash_messages.html.twig' %}
-            {% block body %}{% endblock %}
-        </main>
     </body>
 </html>
