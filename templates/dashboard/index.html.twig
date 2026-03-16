@@ -44,17 +44,27 @@
         </div>
     </div>
 
-    <div class="row g-4 mb-4">
+    <div class="row g-3 mb-4">
         {% for stat in networkStats %}
             <div class="col-md-4 col-lg-3">
                 <a href="{{ path('app_profile_index', {network: stat.network.id}) }}" class="network-card">
-                    <div class="network-card-header" style="background-color: {{ stat.network.backgroundColor }}; color: {{ stat.network.textColor }};">
-                        <i class="{{ stat.network.icon }} fa-2x mb-2"></i>
-                        <div>{{ stat.network.name }}</div>
+                    <div class="network-card-header">
+                        <div class="network-card-icon" style="background: {{ stat.network.backgroundColor }};">
+                            <i class="{{ stat.network.icon }}"></i>
+                        </div>
+                        <div class="network-card-info">
+                            <h5>{{ stat.network.name }}</h5>
+                        </div>
                     </div>
                     <div class="network-card-stats">
-                        <span>{{ stat.profileCount }} Profile{{ stat.profileCount != 1 ? 's' : '' }}</span>
-                        <span>{{ stat.itemCount }} Items</span>
+                        <div class="network-card-stat">
+                            <div class="network-card-stat-value">{{ stat.profileCount }}</div>
+                            <div class="network-card-stat-label">Profile</div>
+                        </div>
+                        <div class="network-card-stat">
+                            <div class="network-card-stat-value">{{ stat.itemCount }}</div>
+                            <div class="network-card-stat-label">Items</div>
+                        </div>
                     </div>
                 </a>
             </div>
