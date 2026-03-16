@@ -2,6 +2,17 @@
 
 {% block title %}Profil {{ profile.identifier }} - Social Network Fetcher{% endblock %}
 
+{% block page_title %}{{ profile.identifier }}{% endblock %}
+
+{% block topbar_actions %}
+    <a href="{{ path('app_profile_edit', {id: profile.id}) }}" class="action-btn" title="Bearbeiten">
+        <i class="fas fa-edit me-1"></i>Bearbeiten
+    </a>
+    <a href="{{ path('app_item_index', {profile: profile.id}) }}" class="action-btn" title="Items">
+        <i class="fas fa-list me-1"></i>Items ({{ itemCount }})
+    </a>
+{% endblock %}
+
 {% block body %}
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
@@ -10,31 +21,12 @@
         </ol>
     </nav>
 
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>
-            {% if profile.network %}
-                <span class="badge badge-network me-2" style="background-color: {{ profile.network.backgroundColor }}; color: {{ profile.network.textColor }};">
-                    <i class="{{ profile.network.icon }}"></i>
-                </span>
-            {% endif %}
-            {{ profile.identifier }}
-        </h1>
-        <div class="btn-group">
-            <a href="{{ path('app_profile_edit', {id: profile.id}) }}" class="btn btn-outline-primary">
-                <i class="fas fa-edit me-1"></i>Bearbeiten
-            </a>
-            <a href="{{ path('app_item_index', {profile: profile.id}) }}" class="btn btn-outline-info">
-                <i class="fas fa-list me-1"></i>Items ({{ itemCount }})
-            </a>
-        </div>
-    </div>
-
     <div class="row">
         <div class="col-md-8">
-            <div class="card mb-4">
-                <div class="card-header">Details</div>
-                <div class="card-body">
-                    <table class="table table-borderless mb-0">
+            <div class="data-card mb-4">
+                <div class="data-card-header">Details</div>
+                <div class="data-card-body">
+                    <table class="detail-table mb-0">
                         <tr>
                             <th style="width: 200px;">ID</th>
                             <td>{{ profile.id }}</td>
@@ -43,7 +35,7 @@
                             <th>Netzwerk</th>
                             <td>
                                 {% if profile.network %}
-                                    <span class="badge badge-network" style="background-color: {{ profile.network.backgroundColor }}; color: {{ profile.network.textColor }};">
+                                    <span class="net-badge" style="background-color: {{ profile.network.backgroundColor }}; color: {{ profile.network.textColor }};">
                                         <i class="{{ profile.network.icon }} me-1"></i>{{ profile.network.name }}
                                     </span>
                                 {% endif %}
@@ -86,9 +78,9 @@
                 </div>
             </div>
 
-            <div class="card mb-4">
-                <div class="card-header">Clients ({{ profile.clients|length }})</div>
-                <div class="card-body">
+            <div class="data-card mb-4">
+                <div class="data-card-header">Clients ({{ profile.clients|length }})</div>
+                <div class="data-card-body">
                     {% if profile.clients|length > 0 %}
                         <ul class="list-unstyled mb-0">
                             {% for client in profile.clients %}
@@ -108,16 +100,16 @@
                 </div>
             </div>
 
-            <div class="card mb-4"
+            <div class="data-card mb-4"
                  data-controller="item-list"
                  data-item-list-url-value="{{ path('app_item_index') }}"
                  data-item-list-page-value="1"
                  data-item-list-pages-value="1"
                  data-item-list-profile-value="{{ profile.id }}">
-                <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="data-card-header d-flex justify-content-between align-items-center">
                     Items <span class="badge text-bg-secondary" data-item-list-target="totalBadge">{{ itemCount }}</span>
                 </div>
-                <div class="card-body">
+                <div class="data-card-body">
                     <div class="row mb-3 g-2">
                         <div class="col">
                             <input type="search" class="form-control form-control-sm"
@@ -127,7 +119,7 @@
                         </div>
                     </div>
                     <div class="table-responsive">
-                        <table class="table table-hover table-striped table-sm">
+                        <table class="data-table">
                             <thead>
                                 <tr>
                                     <th>ID</th>
@@ -223,9 +215,9 @@
             </div>
 
             {% if profile.additionalData %}
-                <div class="card mb-4">
-                    <div class="card-header">Zusätzliche Daten</div>
-                    <div class="card-body">
+                <div class="data-card mb-4">
+                    <div class="data-card-header">Zusätzliche Daten</div>
+                    <div class="data-card-body">
                         <pre class="raw-data mb-0">{{ profile.additionalData|json_encode(constant('JSON_PRETTY_PRINT') b-or constant('JSON_UNESCAPED_UNICODE')) }}</pre>
                     </div>
                 </div>
@@ -233,9 +225,9 @@
         </div>
 
         <div class="col-md-4">
-            <div class="card mb-4">
-                <div class="card-header">Fetch-Status</div>
-                <div class="card-body" data-fetch-status>
+            <div class="data-card mb-4">
+                <div class="data-card-header">Fetch-Status</div>
+                <div class="data-card-body" data-fetch-status>
                     {% if profile.lastFetchSuccessDateTime %}
                         <div class="mb-3">
                             <small class="text-muted d-block">Letzter erfolgreicher Fetch</small>
@@ -266,9 +258,9 @@
                 </div>
             </div>
 
-            <div class="card">
-                <div class="card-header">Aktionen</div>
-                <div class="card-body d-grid gap-2">
+            <div class="data-card">
+                <div class="data-card-header">Aktionen</div>
+                <div class="data-card-body d-grid gap-2">
                     <a href="{{ path('app_item_index', {profile: profile.id}) }}" class="btn btn-outline-info">
                         <i class="fas fa-list me-1"></i>{{ itemCount }} Items anzeigen
                     </a>

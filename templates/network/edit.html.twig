@@ -2,16 +2,8 @@
 
 {% block title %}Netzwerk bearbeiten - Social Network Fetcher{% endblock %}
 
+{% block page_title %}Netzwerk bearbeiten{% endblock %}
+
 {% block body %}
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ path('app_network_index') }}">Networks</a></li>
-            <li class="breadcrumb-item"><a href="{{ path('app_network_show', {id: network.id}) }}">{{ network.name }}</a></li>
-            <li class="breadcrumb-item active">Bearbeiten</li>
-        </ol>
-    </nav>
-
-    <h1 class="mb-4">Netzwerk bearbeiten</h1>
-
     {% include 'network/_form.html.twig' with {cancel_url: path('app_network_show', {id: network.id})} %}
 {% endblock %}

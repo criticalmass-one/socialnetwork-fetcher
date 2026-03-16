@@ -2,6 +2,8 @@
 
 {% block title %}Neues Profil - Social Network Fetcher{% endblock %}
 
+{% block page_title %}Neues Profil{% endblock %}
+
 {% block body %}
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
@@ -9,8 +11,6 @@
             <li class="breadcrumb-item active">Neu</li>
         </ol>
     </nav>
-
-    <h1 class="mb-4">Neues Profil anlegen</h1>
 
     {% include 'profile/_form.html.twig' with {cancel_url: path('app_profile_index')} %}
 {% endblock %}

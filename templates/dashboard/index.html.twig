@@ -2,138 +2,119 @@
 
 {% block title %}Dashboard - Social Network Fetcher{% endblock %}
 
-{% block body %}
-    <h1 class="mb-4">Dashboard</h1>
+{% block page_title %}Dashboard{% endblock %}
 
-    <div class="row mb-4">
-        <div class="col-md-4">
-            <div class="card text-bg-primary">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="card-title mb-0">Networks</h6>
-                            <h2 class="mb-0">{{ networkCount }}</h2>
-                        </div>
-                        <i class="fas fa-globe fa-2x opacity-50"></i>
-                    </div>
+{% block body %}
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span class="stat-card-label">Netzwerke</span>
+                    <div class="stat-card-icon purple"><i class="fas fa-network-wired"></i></div>
                 </div>
-                <div class="card-footer bg-transparent border-0">
-                    <a href="{{ path('app_network_index') }}" class="text-white text-decoration-none">
-                        Alle anzeigen <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
+                <div class="stat-card-value">{{ networkCount }}</div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card text-bg-success">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="card-title mb-0">Profiles</h6>
-                            <h2 class="mb-0">{{ profileCount }}</h2>
-                        </div>
-                        <i class="fas fa-users fa-2x opacity-50"></i>
-                    </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span class="stat-card-label">Profile</span>
+                    <div class="stat-card-icon green"><i class="fas fa-users"></i></div>
                 </div>
-                <div class="card-footer bg-transparent border-0">
-                    <a href="{{ path('app_profile_index') }}" class="text-white text-decoration-none">
-                        Alle anzeigen <i class="fas fa-arrow-right"></i>
-                    </a>
-                </div>
+                <div class="stat-card-value">{{ profileCount }}</div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card text-bg-info">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="card-title mb-0">Items</h6>
-                            <h2 class="mb-0">{{ itemCount }}</h2>
-                        </div>
-                        <i class="fas fa-list fa-2x opacity-50"></i>
-                    </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span class="stat-card-label">Items</span>
+                    <div class="stat-card-icon amber"><i class="fas fa-list"></i></div>
                 </div>
-                <div class="card-footer bg-transparent border-0">
-                    <a href="{{ path('app_item_index') }}" class="text-white text-decoration-none">
-                        Alle anzeigen <i class="fas fa-arrow-right"></i>
-                    </a>
+                <div class="stat-card-value">{{ itemCount }}</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <span class="stat-card-label">Clients</span>
+                    <div class="stat-card-icon blue"><i class="fas fa-plug"></i></div>
                 </div>
+                <div class="stat-card-value">0</div>
             </div>
         </div>
     </div>
 
-    <h2 class="mb-3">Networks</h2>
-    <div class="row">
+    <div class="row g-4 mb-4">
         {% for stat in networkStats %}
-            <div class="col-md-4 col-lg-3 mb-3">
-                <div class="card network-card h-100">
-                    <div class="card-body text-center" style="background-color: {{ stat.network.backgroundColor }}; color: {{ stat.network.textColor }};">
+            <div class="col-md-4 col-lg-3">
+                <a href="{{ path('app_profile_index', {network: stat.network.id}) }}" class="network-card">
+                    <div class="network-card-header" style="background-color: {{ stat.network.backgroundColor }}; color: {{ stat.network.textColor }};">
                         <i class="{{ stat.network.icon }} fa-2x mb-2"></i>
-                        <h6 class="card-title">{{ stat.network.name }}</h6>
+                        <div>{{ stat.network.name }}</div>
                     </div>
-                    <div class="card-footer bg-white">
-                        <div class="d-flex justify-content-between small">
-                            <span>
-                                <a href="{{ path('app_profile_index', {network: stat.network.id}) }}">
-                                    {{ stat.profileCount }} Profile{{ stat.profileCount != 1 ? 's' : '' }}
-                                </a>
-                            </span>
-                            <span class="text-muted">{{ stat.itemCount }} Items</span>
-                        </div>
+                    <div class="network-card-stats">
+                        <span>{{ stat.profileCount }} Profile{{ stat.profileCount != 1 ? 's' : '' }}</span>
+                        <span>{{ stat.itemCount }} Items</span>
                     </div>
-                </div>
+                </a>
             </div>
         {% endfor %}
     </div>
 
-    <h2 class="mb-3">Neueste Items</h2>
-    {% if latestItems is empty %}
-        <div class="alert alert-info">Keine Items vorhanden.</div>
-    {% else %}
-        <div class="table-responsive">
-            <table class="table table-hover table-striped">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Netzwerk</th>
-                        <th>Profil</th>
-                        <th>Text</th>
-                        <th>Datum</th>
-                        <th>Erstellt</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in latestItems %}
-                        <tr>
-                            <td>{{ item.id }}</td>
-                            <td>
-                                {% if item.profile and item.profile.network %}
-                                    <span class="badge badge-network" style="background-color: {{ item.profile.network.backgroundColor }}; color: {{ item.profile.network.textColor }};">
-                                        <i class="{{ item.profile.network.icon }} me-1"></i>{{ item.profile.network.name }}
-                                    </span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if item.profile %}
-                                    <a href="{{ path('app_profile_show', {id: item.profile.id}) }}">
-                                        {{ item.profile.identifier|length > 30 ? item.profile.identifier[:30] ~ '…' : item.profile.identifier }}
-                                    </a>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <a href="{{ path('app_item_show', {id: item.id}) }}">
-                                    {{ item.text|length > 80 ? item.text[:80] ~ '…' : item.text }}
-                                </a>
-                            </td>
-                            <td>{{ item.dateTime|date('d.m.Y H:i') }}</td>
-                            <td>{{ item.createdAt|date('d.m.Y H:i') }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+    <div class="data-card">
+        <div class="data-card-header">Neueste Items</div>
+        <div class="data-card-body">
+            {% if latestItems is empty %}
+                <div class="alert alert-info mb-0">Keine Items vorhanden.</div>
+            {% else %}
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Netzwerk</th>
+                                <th>Profil</th>
+                                <th>Text</th>
+                                <th>Datum</th>
+                                <th>Erstellt</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in latestItems %}
+                                <tr>
+                                    <td>{{ item.id }}</td>
+                                    <td>
+                                        {% if item.profile and item.profile.network %}
+                                            <span class="net-badge" style="background: rgba(0,0,0,0.1); color: {{ item.profile.network.textColor }}; background-color: {{ item.profile.network.backgroundColor }};">
+                                                <i class="{{ item.profile.network.icon }} me-1"></i>{{ item.profile.network.name }}
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if item.profile %}
+                                            <a href="{{ path('app_profile_show', {id: item.profile.id}) }}" class="link-subtle">
+                                                {{ item.profile.identifier|length > 30 ? item.profile.identifier[:30] ~ '…' : item.profile.identifier }}
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ path('app_item_show', {id: item.id}) }}" class="text-truncate-custom">
+                                            {{ item.text|length > 80 ? item.text[:80] ~ '…' : item.text }}
+                                        </a>
+                                    </td>
+                                    <td><span class="time-ago">{{ item.dateTime|date('d.m.Y H:i') }}</span></td>
+                                    <td><span class="time-ago">{{ item.createdAt|date('d.m.Y H:i') }}</span></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="mt-3">
+                    <a href="{{ path('app_item_index') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-list me-1"></i>Alle Items anzeigen
+                    </a>
+                </div>
+            {% endif %}
         </div>
-        <a href="{{ path('app_item_index') }}" class="btn btn-outline-secondary btn-sm">
-            <i class="fas fa-list me-1"></i>Alle Items anzeigen
-        </a>
-    {% endif %}
+    </div>
 {% endblock %}
