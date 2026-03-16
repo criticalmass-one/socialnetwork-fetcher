@@ -86,6 +86,7 @@ class ItemController extends AbstractController
                 'profile' => $profile ? [
                     'id' => $profile->getId(),
                     'identifier' => $profile->getIdentifier(),
+                    'displayName' => $profile->getDisplayName(),
                     'showUrl' => $this->generateUrl('app_profile_show', ['id' => $profile->getId()]),
                     'network' => $network ? [
                         'name' => $network->getName(),
