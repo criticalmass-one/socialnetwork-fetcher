@@ -13,6 +13,8 @@ class Profile
     protected ?string $lastFetchFailureError = null;
     protected bool $autoFetch = true;
     protected bool $fetchSource = false;
+    protected bool $savePhotos = false;
+    protected bool $saveVideos = false;
     protected ?string $additionalData = null;
 
     public function getId(): ?int
@@ -126,6 +128,30 @@ class Profile
     public function setFetchSource(bool $fetchSource): self
     {
         $this->fetchSource = $fetchSource;
+
+        return $this;
+    }
+
+    public function isSavePhotos(): bool
+    {
+        return $this->savePhotos;
+    }
+
+    public function setSavePhotos(bool $savePhotos): self
+    {
+        $this->savePhotos = $savePhotos;
+
+        return $this;
+    }
+
+    public function isSaveVideos(): bool
+    {
+        return $this->saveVideos;
+    }
+
+    public function setSaveVideos(bool $saveVideos): self
+    {
+        $this->saveVideos = $saveVideos;
 
         return $this;
     }
