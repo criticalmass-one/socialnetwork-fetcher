@@ -2,11 +2,32 @@
 
 namespace App\FeedFetcher;
 
+use App\FeedItemPersister\FeedItemPersisterInterface;
+use App\MediaDownloader\MediaDownloadService;
 use App\NetworkFeedFetcher\NetworkFeedFetcherInterface;
 use App\Model\Profile;
+use App\ProfileFetcher\ProfileFetcherInterface;
+use App\ProfilePersister\ProfilePersisterInterface;
+use App\Repository\ProfileRepository;
+use App\SourceFetcher\SourceFetcher;
 
 class FeedFetcher extends AbstractFeedFetcher
 {
+    private MediaDownloadService $mediaDownloadService;
+    private ProfileRepository $profileRepository;
+
+    public function __construct(
+        FeedItemPersisterInterface $feedItemPersister,
+        ProfileFetcherInterface $profileFetcher,
+        ProfilePersisterInterface $profilePersister,
+        SourceFetcher $sourceFetcher,
+        MediaDownloadService $mediaDownloadService,
+        ProfileRepository $profileRepository,
+    ) {
+        parent::__construct($feedItemPersister, $profileFetcher, $profilePersister, $sourceFetcher);
+        $this->mediaDownloadService = $mediaDownloadService;
+        $this->profileRepository = $profileRepository;
+    }
     protected function getFeedFetcherForProfile(Profile $profile): ?NetworkFeedFetcherInterface
     {
         /** @var NetworkFeedFetcherInterface $fetcher */
@@ -43,6 +64,13 @@ class FeedFetcher extends AbstractFeedFetcher
                     ->setCounterFetched(count($feedItemList));
 
                 $this->feedItemPersister->persistFeedItemList($feedItemList, $fetchResult)->flush();
+
+                // Download media if profile has savePhotos or saveVideos enabled
+                $entityProfile = $this->profileRepository->find($profile->getId());
+
+                if ($entityProfile && ($entityProfile->isSavePhotos() || $entityProfile->isSaveVideos())) {
+                    $this->mediaDownloadService->downloadNewItemsForProfile($entityProfile);
+                }
 
                 $callback($fetchResult);
             }

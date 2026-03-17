@@ -117,6 +117,7 @@
                                 <th>Profil</th>
                                 <th>Text</th>
                                 <th>Datum</th>
+                                <th>Medien</th>
                                 <th>Status</th>
                                 <th>Aktionen</th>
                             </tr>
@@ -124,7 +125,7 @@
                         <tbody data-item-list-target="tableBody">
                             {% set toggleToken = csrf_token('toggle-item') %}
                             {% if items is empty %}
-                                <tr><td colspan="7" class="text-center text-muted py-4">Keine Items gefunden.</td></tr>
+                                <tr><td colspan="8" class="text-center text-muted py-4">Keine Items gefunden.</td></tr>
                             {% else %}
                                 {% for item in items %}
                                     <tr id="item-row-{{ item.id }}"
@@ -153,6 +154,17 @@
                                             </a>
                                         </td>
                                         <td>{{ item.dateTime|date('d.m.Y H:i') }}</td>
+                                        <td>
+                                            {% if item.hasPhoto %}
+                                                <i class="fas fa-camera text-success" title="{{ item.photoCount }} Foto(s) heruntergeladen"></i>
+                                                {% if item.photoCount > 1 %}
+                                                    <small class="text-success">{{ item.photoCount }}</small>
+                                                {% endif %}
+                                            {% endif %}
+                                            {% if item.hasVideo %}
+                                                <i class="fas fa-video text-success" title="Video heruntergeladen"></i>
+                                            {% endif %}
+                                        </td>
                                         <td>
                                             <button class="btn btn-sm {{ item.hidden ? 'btn-warning' : 'btn-outline-warning' }}"
                                                     data-action="toggle#toggleHidden"
@@ -215,6 +227,13 @@
                 </td>
                 <td>{{dateTime}}</td>
                 <td>
+                    {{#if hasPhoto}}
+                        <i class="fas fa-camera text-success" title="{{photoCount}} Foto(s) heruntergeladen"></i>
+                        {{#if (gt photoCount 1)}}<small class="text-success">{{photoCount}}</small>{{/if}}
+                    {{/if}}
+                    {{#if hasVideo}}<i class="fas fa-video text-success" title="Video heruntergeladen"></i>{{/if}}
+                </td>
+                <td>
                     <button class="btn btn-sm {{#if hidden}}btn-warning{{else}}btn-outline-warning{{/if}}"
                             data-action="toggle#toggleHidden"
                             data-toggle-target="hiddenBtn"
@@ -242,7 +261,7 @@
         </template>
 
         <template data-item-list-target="emptyTemplate">
-            <tr><td colspan="7" class="text-center text-muted py-4">Keine Items gefunden.</td></tr>
+            <tr><td colspan="8" class="text-center text-muted py-4">Keine Items gefunden.</td></tr>
         </template>
 
         <template data-item-list-target="paginationTemplate">

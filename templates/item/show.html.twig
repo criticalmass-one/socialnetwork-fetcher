@@ -31,6 +31,60 @@
                 </div>
             </div>
 
+            <div class="data-card mb-4" id="media-card">
+                <div class="data-card-header">Medien</div>
+                <div class="data-card-body">
+                    <div class="media-content">
+                        {% if item.photoPaths|length > 0 %}
+                            <div class="row g-2 mb-3">
+                                {% for photoPath in item.photoPaths %}
+                                    <div class="col-{{ item.photoPaths|length == 1 ? '12' : '6' }}">
+                                        <img src="/media/{{ photoPath }}" class="img-fluid rounded" alt="Foto {{ loop.index }}">
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if item.videoPath %}
+                            <div class="mb-3">
+                                <video src="/media/{{ item.videoPath }}" controls class="w-100 rounded"></video>
+                            </div>
+                        {% endif %}
+                        {% if item.photoPaths|length == 0 and not item.videoPath %}
+                            <p class="text-muted mb-0">Keine Medien heruntergeladen.</p>
+                        {% endif %}
+                    </div>
+                    {% if item.mediaStatus == 'failed' and item.mediaError %}
+                        <div class="alert alert-danger mt-3 mb-0">
+                            <i class="fas fa-exclamation-triangle me-1"></i>{{ item.mediaError }}
+                        </div>
+                    {% endif %}
+                    {% if item.mediaStatus %}
+                        <div class="mt-2">
+                            <small class="text-muted">Status: </small>
+                            {% if item.mediaStatus == 'completed' %}
+                                <span class="badge bg-success">{{ item.mediaStatus }}</span>
+                            {% elseif item.mediaStatus == 'failed' %}
+                                <span class="badge bg-danger">{{ item.mediaStatus }}</span>
+                            {% elseif item.mediaStatus == 'downloading' %}
+                                <span class="badge bg-info">{{ item.mediaStatus }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ item.mediaStatus }}</span>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                    <div class="mt-3">
+                        <button type="button"
+                                class="btn btn-outline-primary w-100"
+                                data-controller="media-download"
+                                data-media-download-url-value="{{ path('app_item_download_media', {id: item.id}) }}"
+                                data-media-download-token-value="{{ csrf_token('download-media-' ~ item.id) }}"
+                                data-action="media-download#download">
+                            <i class="fas fa-download me-1"></i>Medien herunterladen
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             {% if item.raw %}
                 <div class="data-card mb-4">
                     <div class="data-card-header">Rohdaten</div>
@@ -109,6 +163,21 @@
                         <i class="fas fa-trash me-1"></i>
                         <span data-toggle-target="deletedLabel">{{ item.deleted ? 'Gelöscht' : 'Nicht gelöscht' }}</span>
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="mediaDownloadModal" tabindex="-1" aria-labelledby="mediaDownloadModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="mediaDownloadModalLabel">Medien herunterladen</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body"></div>
+                <div class="modal-footer d-none">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
                 </div>
             </div>
         </div>

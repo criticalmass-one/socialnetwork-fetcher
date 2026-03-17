@@ -19,6 +19,12 @@
         <td>
             {% include '_partials/_profile_toggle.html.twig' with { profile: profile, field: 'fetchSource', state: profile.fetchSource } %}
         </td>
+        <td>
+            {% include '_partials/_profile_toggle.html.twig' with { profile: profile, field: 'savePhotos', state: profile.savePhotos } %}
+        </td>
+        <td>
+            {% include '_partials/_profile_toggle.html.twig' with { profile: profile, field: 'saveVideos', state: profile.saveVideos } %}
+        </td>
         <td data-fetch-status>
             {% if profile.lastFetchSuccessDateTime %}
                 <span class="text-success" title="{{ profile.lastFetchSuccessDateTime|date('d.m.Y H:i:s') }}">
@@ -63,6 +69,6 @@
     </tr>
 {% else %}
     <tr>
-        <td colspan="7" class="text-center text-muted py-4">Keine Profile gefunden.</td>
+        <td colspan="9" class="text-center text-muted py-4">Keine Profile gefunden.</td>
     </tr>
 {% endfor %}

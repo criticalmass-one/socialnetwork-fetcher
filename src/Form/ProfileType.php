@@ -49,6 +49,14 @@ class ProfileType extends AbstractType
                 'label' => 'Quelltext laden',
                 'required' => false,
             ])
+            ->add('savePhotos', CheckboxType::class, [
+                'label' => 'Fotos speichern',
+                'required' => false,
+            ])
+            ->add('saveVideos', CheckboxType::class, [
+                'label' => 'Videos speichern',
+                'required' => false,
+            ])
             ->add('additionalData', TextareaType::class, [
                 'label' => 'Zusätzliche Daten (JSON)',
                 'required' => false,
