@@ -21,7 +21,7 @@ class BlueskyFeedFetcher extends AbstractNetworkFeedFetcher
 
     public function getNetworkIdentifier(): string
     {
-        return 'bluesky';
+        return 'bluesky_profile';
     }
 
     public function fetch(Profile $profile, FetchInfo $fetchInfo): array
