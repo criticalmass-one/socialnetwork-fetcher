@@ -43,7 +43,7 @@ class ItemController extends AbstractController
 
         if ($request->headers->get('X-Requested-With') === 'XMLHttpRequest') {
             return new JsonResponse([
-                'items' => $this->serializeItems($items),
+                'items' => $this->serializeItems($items, $csrfTokenManager),
                 'csrfToken' => $csrfTokenManager->getToken('toggle-item')->getValue(),
                 'page' => $page,
                 'pages' => $pages,
@@ -69,9 +69,9 @@ class ItemController extends AbstractController
      * @param list<Item> $items
      * @return list<array<string, mixed>>
      */
-    private function serializeItems(array $items): array
+    private function serializeItems(array $items, CsrfTokenManagerInterface $csrfTokenManager): array
     {
-        return array_map(function (Item $item): array {
+        return array_map(function (Item $item) use ($csrfTokenManager): array {
             $profile = $item->getProfile();
             $network = $profile?->getNetwork();
 
@@ -88,6 +88,8 @@ class ItemController extends AbstractController
                 'mediaStatus' => $item->getMediaStatus(),
                 'showUrl' => $this->generateUrl('app_item_show', ['id' => $item->getId()]),
                 'editUrl' => $this->generateUrl('app_item_edit', ['id' => $item->getId()]),
+                'downloadMediaUrl' => $this->generateUrl('app_item_download_media', ['id' => $item->getId()]),
+                'downloadMediaToken' => $csrfTokenManager->getToken('download-media-' . $item->getId())->getValue(),
                 'profile' => $profile ? [
                     'id' => $profile->getId(),
                     'identifier' => $profile->getIdentifier(),
