@@ -77,6 +77,66 @@ class MediaUrlExtractorTest extends TestCase
         ], $this->extractor->extractPhotoUrls($item));
     }
 
+    public function testExtractPhotoUrlsFromRssAppHtmlSingleImage(): void
+    {
+        $item = new Item();
+        $item->setRaw(json_encode([
+            'description_html' => '<p>Caption</p><img src="https://scontent.cdninstagram.com/v/original_photo.jpg?query=1" />',
+            'thumbnail' => 'https://example.com/low_res_thumb.jpg',
+        ]));
+
+        $urls = $this->extractor->extractPhotoUrls($item);
+        $this->assertSame(['https://scontent.cdninstagram.com/v/original_photo.jpg?query=1'], $urls);
+    }
+
+    public function testExtractPhotoUrlsFromRssAppHtmlCarousel(): void
+    {
+        $item = new Item();
+        $item->setRaw(json_encode([
+            'description_html' => '<img src="https://cdn.example.com/photo1.jpg" /><img src="https://cdn.example.com/photo2.jpg" /><img src="https://cdn.example.com/photo3.jpg" />',
+            'thumbnail' => 'https://example.com/thumb.jpg',
+        ]));
+
+        $urls = $this->extractor->extractPhotoUrls($item);
+        $this->assertCount(3, $urls);
+        $this->assertSame('https://cdn.example.com/photo1.jpg', $urls[0]);
+        $this->assertSame('https://cdn.example.com/photo2.jpg', $urls[1]);
+        $this->assertSame('https://cdn.example.com/photo3.jpg', $urls[2]);
+    }
+
+    public function testExtractPhotoUrlsFromRssAppHtmlDeduplicates(): void
+    {
+        $item = new Item();
+        $item->setRaw(json_encode([
+            'description_html' => '<img src="https://cdn.example.com/photo.jpg" /><img src="https://cdn.example.com/photo.jpg" />',
+        ]));
+
+        $urls = $this->extractor->extractPhotoUrls($item);
+        $this->assertCount(1, $urls);
+    }
+
+    public function testExtractPhotoUrlsFromRssAppHtmlSkipsRelativeUrls(): void
+    {
+        $item = new Item();
+        $item->setRaw(json_encode([
+            'description_html' => '<img src="/local/image.jpg" /><img src="https://cdn.example.com/photo.jpg" />',
+        ]));
+
+        $urls = $this->extractor->extractPhotoUrls($item);
+        $this->assertSame(['https://cdn.example.com/photo.jpg'], $urls);
+    }
+
+    public function testExtractPhotoUrlsFallsBackToThumbnailWhenNoHtmlImages(): void
+    {
+        $item = new Item();
+        $item->setRaw(json_encode([
+            'description_html' => '<p>Text only, no images</p>',
+            'thumbnail' => 'https://example.com/thumb.jpg',
+        ]));
+
+        $this->assertSame(['https://example.com/thumb.jpg'], $this->extractor->extractPhotoUrls($item));
+    }
+
     public function testExtractPhotoUrlsReturnsEmptyForNoRaw(): void
     {
         $item = new Item();
