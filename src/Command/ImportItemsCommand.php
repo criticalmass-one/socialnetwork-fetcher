@@ -228,6 +228,7 @@ class ImportItemsCommand extends Command
         $item->setPermalink($data['permalink'] ?? null);
         $item->setTitle($data['title'] ?? null);
         $item->setText($data['text']);
+        $item->setDateTime((new \DateTimeImmutable())->setTimestamp((int) $data['date_time']));
         $item->setHidden($data['hidden'] ?? false);
         $item->setDeleted($data['deleted'] ?? false);
         $item->setRaw($data['raw'] ?? null);
