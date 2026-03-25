@@ -7,7 +7,7 @@ Symfony 8 application that fetches social media feeds from various networks and 
 - PHP 8.5+
 - Composer
 - Docker & Docker Compose (for PostgreSQL)
-- yt-dlp (optional, for video downloads)
+- yt-dlp (optional, for video downloads and Instagram/Threads/Facebook photo extraction)
 
 ## Installation
 
@@ -74,7 +74,7 @@ The application is accessible at `https://127.0.0.1:8000`.
 | Network | Identifier | API | Auth required |
 |---|---|---|---|
 | Mastodon | `mastodon` | Mastodon API v1 | No |
-| Bluesky | `bluesky` | AT Protocol (public) | No |
+| Bluesky | `bluesky_profile` | AT Protocol (public) | No |
 | Homepage/RSS | `homepage` | Direct RSS/Atom feed | No |
 | Instagram | `instagram_profile` | via RSS.app | Yes (RSS.app) |
 | Facebook | `facebook_page` | via RSS.app | Yes (RSS.app) |
@@ -86,19 +86,19 @@ The application is accessible at `https://127.0.0.1:8000`.
 
 ```bash
 # Fetch all networks
-php bin/console feeds:fetch
+php bin/console fetch-feed
 
 # Fetch specific networks
-php bin/console feeds:fetch mastodon bluesky
+php bin/console fetch-feed mastodon bluesky_profile
 
 # Fetch with options
-php bin/console feeds:fetch instagram_profile --count=50 --citySlug=hamburg
+php bin/console fetch-feed instagram_profile --count=50
 
 # Run scheduled fetches (based on cron expressions per network)
 php bin/console app:fetch-scheduled
 ```
 
-Options for `feeds:fetch`:
+Options for `fetch-feed`:
 
 | Option | Short | Description |
 |---|---|---|
@@ -106,7 +106,6 @@ Options for `feeds:fetch`:
 | `--fromDateTime` | `-f` | Start date filter |
 | `--untilDateTime` | `-u` | End date filter |
 | `--includeOldItems` | `-i` | Include already fetched items |
-| `--citySlug` | | Filter by city slug |
 
 ### Profile & network management
 
@@ -150,7 +149,7 @@ php bin/console app:rssapp:sync-feed-ids --force      # re-check existing feed I
 
 ### Media download
 
-Download photos and videos for feed items. Photos are extracted from the raw API response (supports multiple photos per post for Bluesky and Mastodon). Videos are downloaded via `yt-dlp` from the item's permalink URL.
+Download photos and videos for feed items. For Instagram, Threads, and Facebook, photos (including carousel/album images) are extracted in original quality via `yt-dlp`, with a fallback to the RSS.app thumbnail. Bluesky and Mastodon photos are downloaded directly from their API response (supports multiple photos per post natively). Videos are downloaded via `yt-dlp` from the item's permalink URL.
 
 ```bash
 php bin/console app:download-media                    # all profiles with savePhotos/saveVideos enabled
@@ -166,7 +165,7 @@ Media files are stored in `public/media/{profileId}/{itemId}/`. Profiles must ha
 
 The admin interface is accessible after login at `/login`. It provides:
 
-- **Dashboard** — Overview with network statistics, profile/item counts, and a table of recent items
+- **Dashboard** — Overview with network statistics (item counts per 24h/7d/31d/365d by publication date), profile/item counts, and a table of recent items
 - **Networks** — CRUD for social networks (name, icon, color, cron schedule)
 - **Profiles** — Searchable/filterable list with auto-fetch toggle, save photos/videos toggles, fetch status, manual fetch trigger, RSS.app registration
 - **Items** — Searchable/filterable list with hide/delete toggles, media status indicators, network and profile filters, manual media download
@@ -219,20 +218,24 @@ Profiles are shared across clients via a join table. Each client sees only its l
 ### Feed fetching flow
 
 ```
-feeds:fetch command
+fetch-feed command
     |
     v
 FeedFetcher (orchestrator)
     |
-    +-- ProfileFetcher -----------> criticalmass.in API (load profiles)
+    +-- ProfileFetcher -----------> Load profiles (DB or API)
     |
     +-- NetworkFeedFetcher -------> Network API (fetch feed items)
     |   (Mastodon, Bluesky, ...)
     |
-    +-- FeedItemPersister --------> criticalmass.in API (push items)
+    +-- FeedItemPersister --------> Persist items
     |
-    +-- ProfilePersister ---------> criticalmass.in API (update metadata)
+    +-- ProfilePersister ---------> Update profile metadata + fetch timestamps
+    |
+    +-- MediaDownloadService -----> Download photos/videos (if profile flags set)
 ```
+
+After each fetch, the profile's `lastFetchSuccessDateTime` or `lastFetchFailureDateTime`/`lastFetchFailureError` fields are updated.
 
 ### Service wiring
 
