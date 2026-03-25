@@ -71,7 +71,7 @@ class FeedFetcher extends AbstractFeedFetcher
                     $this->feedItemPersister->persistFeedItemList($feedItemList, $fetchResult)->flush();
 
                     if (!$fetcherMarkedAsFailed) {
-                        $profile->setLastFetchSuccessDateTime(new \DateTime());
+                        $profile->setLastFetchSuccessDateTime(new \DateTimeImmutable());
                         $profile->setLastFetchFailureDateTime(null);
                         $profile->setLastFetchFailureError(null);
                     }
@@ -87,7 +87,7 @@ class FeedFetcher extends AbstractFeedFetcher
 
                     $callback($fetchResult);
                 } catch (\Exception $e) {
-                    $profile->setLastFetchFailureDateTime(new \DateTime());
+                    $profile->setLastFetchFailureDateTime(new \DateTimeImmutable());
                     $profile->setLastFetchFailureError($e->getMessage());
                     $this->profilePersister->persistProfile($profile);
                 }
