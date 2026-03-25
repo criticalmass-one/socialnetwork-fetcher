@@ -9,6 +9,7 @@ use App\MediaDownloader\MediaDownloadService;
 use App\MediaDownloader\MediaUrlExtractor;
 use App\MediaDownloader\PhotoDownloader;
 use App\MediaDownloader\VideoDownloader;
+use App\MediaDownloader\YtDlpPhotoDownloader;
 use App\Repository\ItemRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\TestCase;
@@ -18,6 +19,7 @@ class MediaDownloadServiceTest extends TestCase
     private MediaUrlExtractor $extractor;
     private PhotoDownloader $photoDownloader;
     private VideoDownloader $videoDownloader;
+    private YtDlpPhotoDownloader $ytDlpPhotoDownloader;
     private EntityManagerInterface $em;
     private ItemRepository $itemRepository;
     private MediaDownloadService $service;
@@ -27,6 +29,7 @@ class MediaDownloadServiceTest extends TestCase
         $this->extractor = $this->createMock(MediaUrlExtractor::class);
         $this->photoDownloader = $this->createMock(PhotoDownloader::class);
         $this->videoDownloader = $this->createMock(VideoDownloader::class);
+        $this->ytDlpPhotoDownloader = $this->createMock(YtDlpPhotoDownloader::class);
         $this->em = $this->createMock(EntityManagerInterface::class);
         $this->itemRepository = $this->createMock(ItemRepository::class);
 
@@ -34,6 +37,7 @@ class MediaDownloadServiceTest extends TestCase
             $this->extractor,
             $this->photoDownloader,
             $this->videoDownloader,
+            $this->ytDlpPhotoDownloader,
             $this->em,
             $this->itemRepository,
         );
@@ -151,6 +155,67 @@ class MediaDownloadServiceTest extends TestCase
         $this->em->expects($this->never())->method('flush');
 
         $this->service->downloadMedia($item);
+    }
+
+    public function testDownloadMediaUsesYtDlpForInstagram(): void
+    {
+        $network = new Network();
+        $network->setIdentifier('instagram_profile');
+        $profile = new Profile();
+        $profile->setId(42);
+        $profile->setNetwork($network);
+        $profile->setIdentifier('test');
+
+        $item = new Item();
+        $ref = new \ReflectionProperty(Item::class, 'id');
+        $ref->setValue($item, 100);
+        $item->setProfile($profile);
+        $item->setPermalink('https://www.instagram.com/p/abc123');
+
+        $this->ytDlpPhotoDownloader->method('isAvailable')->willReturn(true);
+        $this->ytDlpPhotoDownloader->expects($this->once())
+            ->method('download')
+            ->with('https://www.instagram.com/p/abc123', 42, 100)
+            ->willReturn(['42/100/photo_00001.jpg', '42/100/photo_00002.jpg']);
+
+        $this->extractor->method('extractVideoUrl')->willReturn(null);
+
+        $this->service->downloadMedia($item);
+
+        $this->assertSame('completed', $item->getMediaStatus());
+        $this->assertSame(['42/100/photo_00001.jpg', '42/100/photo_00002.jpg'], $item->getPhotoPaths());
+    }
+
+    public function testDownloadMediaFallsBackToThumbnailWhenYtDlpFails(): void
+    {
+        $network = new Network();
+        $network->setIdentifier('instagram_profile');
+        $profile = new Profile();
+        $profile->setId(42);
+        $profile->setNetwork($network);
+        $profile->setIdentifier('test');
+
+        $item = new Item();
+        $ref = new \ReflectionProperty(Item::class, 'id');
+        $ref->setValue($item, 100);
+        $item->setProfile($profile);
+        $item->setPermalink('https://www.instagram.com/p/abc123');
+
+        $this->ytDlpPhotoDownloader->method('isAvailable')->willReturn(true);
+        $this->ytDlpPhotoDownloader->method('download')->willReturn([]);
+
+        $this->extractor->method('extractPhotoUrls')->willReturn(['https://example.com/thumb.jpg']);
+        $this->extractor->method('extractVideoUrl')->willReturn(null);
+
+        $this->photoDownloader->expects($this->once())
+            ->method('download')
+            ->with('https://example.com/thumb.jpg', 42, 100, 0)
+            ->willReturn('42/100/photo_0.jpg');
+
+        $this->service->downloadMedia($item);
+
+        $this->assertSame('completed', $item->getMediaStatus());
+        $this->assertSame(['42/100/photo_0.jpg'], $item->getPhotoPaths());
     }
 
     public function testDownloadNewItemsForProfile(): void
