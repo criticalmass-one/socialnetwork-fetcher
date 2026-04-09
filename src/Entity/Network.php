@@ -55,6 +55,10 @@ class Network
     #[Groups(['network:read', 'network:write'])]
     private ?string $profileUrlPattern = null;
 
+    #[ORM\Column(type: 'string', length: 64, nullable: true)]
+    #[Groups(['network:read', 'network:write'])]
+    private ?string $cronExpression = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -128,6 +132,18 @@ class Network
     public function setProfileUrlPattern(string $profileUrlPattern): self
     {
         $this->profileUrlPattern = $profileUrlPattern;
+
+        return $this;
+    }
+
+    public function getCronExpression(): ?string
+    {
+        return $this->cronExpression;
+    }
+
+    public function setCronExpression(?string $cronExpression): self
+    {
+        $this->cronExpression = $cronExpression;
 
         return $this;
     }
