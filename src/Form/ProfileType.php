@@ -46,7 +46,7 @@ class ProfileType extends AbstractType
                 'required' => false,
             ])
             ->add('fetchSource', CheckboxType::class, [
-                'label' => 'Quelltext laden',
+                'label' => 'Quellcode einlesen',
                 'required' => false,
             ])
             ->add('savePhotos', CheckboxType::class, [

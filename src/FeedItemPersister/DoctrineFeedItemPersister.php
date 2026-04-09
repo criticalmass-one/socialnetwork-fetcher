@@ -64,7 +64,7 @@ class DoctrineFeedItemPersister implements FeedItemPersisterInterface
             ->setDeleted((bool) $feedItem->getDeleted())
             ->setRaw($feedItem->getRaw())
             ->setRawSource($feedItem->getRawSource())
-            ->setSource($feedItem->getSource());
+            ->setParsedSource($feedItem->getParsedSource());
 
         $this->entityManager->persist($entity);
 

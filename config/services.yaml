@@ -38,3 +38,6 @@ services:
 
     App\RssApp\RssAppInterface:
         alias: App\RssApp\RssApp
+
+    App\FeedFetcher\FeedFetcherInterface:
+        alias: App\FeedFetcher\FeedFetcher
