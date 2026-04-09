@@ -4,22 +4,108 @@
 
 {% block body %}
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Profiles</h1>
+        <h1>Profiles <span class="badge text-bg-secondary fs-6" data-profile-list-target="totalBadge">{{ total }}</span></h1>
         <a href="{{ path('app_profile_new') }}" class="btn btn-primary">
             <i class="fas fa-plus me-1"></i>Neues Profil
         </a>
     </div>
 
-    {% if profiles is empty %}
-        <div class="alert alert-info">
-            Keine Profile gefunden.
-            <a href="{{ path('app_profile_new') }}">Erstes Profil anlegen?</a>
+    <div data-controller="profile-list"
+         data-profile-list-url-value="{{ path('app_profile_index') }}"
+         data-profile-list-page-value="{{ page }}"
+         data-profile-list-pages-value="{{ pages }}">
+
+        <div class="row mb-3 g-2">
+            <div class="col-md-6">
+                <input type="search"
+                       class="form-control"
+                       placeholder="Suche nach Identifier…"
+                       value="{{ search }}"
+                       data-profile-list-target="searchInput"
+                       data-action="input->profile-list#onSearchInput">
+            </div>
+            <div class="col-md-6 d-flex gap-2">
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
+                        <i class="fas fa-filter me-1"></i>Netzwerk
+                        <span class="badge text-bg-primary ms-1" data-profile-list-target="networkCount">{{ selectedNetworks|length > 0 ? selectedNetworks|length : '' }}</span>
+                    </button>
+                    <ul class="dropdown-menu p-2" style="min-width: 220px;">
+                        {% for network in networks %}
+                            <li>
+                                <label class="dropdown-item d-flex align-items-center gap-2">
+                                    <input type="checkbox"
+                                           value="{{ network.id }}"
+                                           {{ network.id in selectedNetworks ? 'checked' : '' }}
+                                           data-profile-list-target="networkCheckbox"
+                                           data-action="change->profile-list#onNetworkChange">
+                                    <span class="badge badge-network" style="background-color: {{ network.backgroundColor }}; color: {{ network.textColor }};">
+                                        <i class="{{ network.icon }} me-1"></i>{{ network.name }}
+                                    </span>
+                                </label>
+                            </li>
+                        {% endfor %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <button type="button" class="dropdown-item text-muted" data-action="profile-list#clearNetworkFilter">
+                                <i class="fas fa-times me-1"></i>Filter zurücksetzen
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
+                        <i class="fas fa-sync-alt me-1"></i>Fetch-Status
+                        {% if selectedStatus is defined and selectedStatus %}
+                            <span class="badge text-bg-primary ms-1">1</span>
+                        {% endif %}
+                    </button>
+                    <ul class="dropdown-menu p-2" style="min-width: 220px;">
+                        <li>
+                            <label class="dropdown-item d-flex align-items-center gap-2">
+                                <input type="radio"
+                                       name="statusFilter"
+                                       value="success"
+                                       {{ selectedStatus is defined and selectedStatus == 'success' ? 'checked' : '' }}
+                                       data-profile-list-target="statusRadio"
+                                       data-action="change->profile-list#onStatusChange">
+                                <i class="fas fa-check-circle text-success me-1"></i>Erfolgreich
+                            </label>
+                        </li>
+                        <li>
+                            <label class="dropdown-item d-flex align-items-center gap-2">
+                                <input type="radio"
+                                       name="statusFilter"
+                                       value="failed"
+                                       {{ selectedStatus is defined and selectedStatus == 'failed' ? 'checked' : '' }}
+                                       data-profile-list-target="statusRadio"
+                                       data-action="change->profile-list#onStatusChange">
+                                <i class="fas fa-times-circle text-danger me-1"></i>Fehlgeschlagen
+                            </label>
+                        </li>
+                        <li>
+                            <label class="dropdown-item d-flex align-items-center gap-2">
+                                <input type="radio"
+                                       name="statusFilter"
+                                       value="never"
+                                       {{ selectedStatus is defined and selectedStatus == 'never' ? 'checked' : '' }}
+                                       data-profile-list-target="statusRadio"
+                                       data-action="change->profile-list#onStatusChange">
+                                <i class="fas fa-minus-circle text-secondary me-1"></i>Nie abgerufen
+                            </label>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <button type="button" class="dropdown-item text-muted" data-action="profile-list#clearStatusFilter">
+                                <i class="fas fa-times me-1"></i>Filter zurücksetzen
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </div>
-    {% else %}
-        <table class="table table-hover table-striped"
-               data-controller="datatable"
-               data-datatable-page-length-value="50"
-               data-datatable-order-value='[[0, "asc"]]'>
+
+        <table class="table table-hover table-striped">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -28,78 +114,18 @@
                     <th>Auto-Fetch</th>
                     <th>Quelltext</th>
                     <th>Letzter Fetch</th>
-                    <th class="no-sort">Aktionen</th>
+                    <th>Aktionen</th>
                 </tr>
             </thead>
-            <tbody>
-                {% for profile in profiles %}
-                    <tr>
-                        <td>{{ profile.id }}</td>
-                        <td>
-                            {% if profile.network %}
-                                <span class="badge badge-network" style="background-color: {{ profile.network.backgroundColor }}; color: {{ profile.network.textColor }};">
-                                    <i class="{{ profile.network.icon }} me-1"></i>{{ profile.network.name }}
-                                </span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <a href="{{ path('app_profile_show', {id: profile.id}) }}">
-                                {{ profile.identifier }}
-                            </a>
-                        </td>
-                        <td>
-                            {% include '_partials/_profile_toggle.html.twig' with { profile: profile, field: 'autoFetch', state: profile.autoFetch } %}
-                        </td>
-                        <td>
-                            {% include '_partials/_profile_toggle.html.twig' with { profile: profile, field: 'fetchSource', state: profile.fetchSource } %}
-                        </td>
-                        <td data-fetch-status>
-                            {% if profile.lastFetchSuccessDateTime %}
-                                <span class="text-success" title="{{ profile.lastFetchSuccessDateTime|date('d.m.Y H:i:s') }}">
-                                    <i class="fas fa-check me-1"></i>{{ profile.lastFetchSuccessDateTime|date('d.m.Y H:i') }}
-                                </span>
-                            {% elseif profile.lastFetchFailureDateTime %}
-                                <span class="text-danger" title="{{ profile.lastFetchFailureError }}">
-                                    <i class="fas fa-times me-1"></i>{{ profile.lastFetchFailureDateTime|date('d.m.Y H:i') }}
-                                </span>
-                            {% else %}
-                                <span class="text-muted">Noch nicht abgerufen</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                <a href="{{ path('app_profile_show', {id: profile.id}) }}" class="btn btn-outline-primary" title="Anzeigen">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="{{ path('app_profile_edit', {id: profile.id}) }}" class="btn btn-outline-secondary" title="Bearbeiten">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <button type="button"
-                                        class="btn btn-outline-warning"
-                                        title="Items importieren"
-                                        data-controller="profile-fetch"
-                                        data-profile-fetch-url-value="{{ path('app_profile_fetch', {id: profile.id}) }}"
-                                        data-profile-fetch-token-value="{{ csrf_token('fetch-profile-' ~ profile.id) }}"
-                                        data-profile-fetch-identifier-value="{{ profile.identifier }}"
-                                        data-action="profile-fetch#fetch">
-                                    <i class="fas fa-download"></i>
-                                </button>
-                                <form method="post" action="{{ path('app_profile_delete', {id: profile.id}) }}"
-                                      class="d-inline"
-                                      data-controller="confirm"
-                                      data-confirm-message-value="Profil &quot;{{ profile.identifier }}&quot; wirklich löschen?">
-                                    <input type="hidden" name="_token" value="{{ csrf_token('delete-profile-' ~ profile.id) }}">
-                                    <button type="submit" class="btn btn-outline-danger" title="Löschen">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                {% endfor %}
+            <tbody data-profile-list-target="tableBody">
+                {% include 'profile/_partials/_profile_table_body.html.twig' with { profiles: profiles } %}
             </tbody>
         </table>
-    {% endif %}
+
+        <div data-profile-list-target="pagination">
+            {% include '_partials/_pagination.html.twig' with { page: page, pages: pages } %}
+        </div>
+    </div>
 
     {% include '_partials/_delete_modal.html.twig' %}
 

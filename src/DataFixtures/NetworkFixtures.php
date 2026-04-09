@@ -51,7 +51,7 @@ class NetworkFixtures extends Fixture
             self::NETWORK_HOMEPAGE => [
                 'identifier' => 'homepage',
                 'name' => 'Homepage',
-                'icon' => 'far fa-home',
+                'icon' => 'fas fa-house',
                 'backgroundColor' => 'white',
                 'textColor' => 'black',
                 // Altcode: filter_var(URL) – wir approximieren das als "muss URL sein"
