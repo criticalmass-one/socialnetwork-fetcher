@@ -1,43 +1,113 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Items{% if profile %} - {{ profile.identifier }}{% endif %} - Social Network Fetcher{% endblock %}
+{% block title %}Items - Social Network Fetcher{% endblock %}
 
 {% block body %}
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>
-            Items
-            {% if profile %}
-                <small class="text-muted">
-                    {% if profile.network %}
-                        <span class="badge badge-network" style="background-color: {{ profile.network.backgroundColor }}; color: {{ profile.network.textColor }};">
-                            <i class="{{ profile.network.icon }}"></i>
-                        </span>
-                    {% endif %}
-                    {{ profile.identifier }}
-                </small>
-            {% endif %}
-        </h1>
-        <span class="badge text-bg-secondary fs-6">{{ total }} Items</span>
+        <h1>Items <span class="badge text-bg-secondary fs-6" data-item-list-target="totalBadge">{{ total }}</span></h1>
     </div>
 
-    <div class="mb-3">
-        <form class="row g-2 align-items-center" method="get">
-            <div class="col-auto">
-                <select name="profile" class="form-select form-select-sm" onchange="this.form.submit()">
+    <div data-controller="item-list"
+         data-item-list-url-value="{{ path('app_item_index') }}"
+         data-item-list-page-value="{{ page }}"
+         data-item-list-pages-value="{{ pages }}">
+
+        <div class="row mb-3 g-2">
+            <div class="col-md-4">
+                <input type="search"
+                       class="form-control"
+                       placeholder="Suche in Text, Titel, ID…"
+                       value="{{ search }}"
+                       data-item-list-target="searchInput"
+                       data-action="input->item-list#onSearchInput">
+            </div>
+            <div class="col-md-3">
+                <select class="form-select"
+                        data-item-list-target="profileSelect"
+                        data-action="change->item-list#onProfileChange">
                     <option value="">Alle Profile</option>
                     {% for p in profiles %}
-                        <option value="{{ p.id }}" {% if profile and profile.id == p.id %}selected{% endif %}>
+                        <option value="{{ p.id }}" {% if selectedProfile == p.id %}selected{% endif %}>
                             {{ p.network ? p.network.name ~ ': ' : '' }}{{ p.identifier }}
                         </option>
                     {% endfor %}
                 </select>
             </div>
-        </form>
-    </div>
+            <div class="col-md-5 d-flex gap-2">
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
+                        <i class="fas fa-filter me-1"></i>Netzwerk
+                        <span class="badge text-bg-primary ms-1" data-item-list-target="networkCount">{{ selectedNetworks|length > 0 ? selectedNetworks|length : '' }}</span>
+                    </button>
+                    <ul class="dropdown-menu p-2" style="min-width: 220px;">
+                        {% for network in networks %}
+                            <li>
+                                <label class="dropdown-item d-flex align-items-center gap-2">
+                                    <input type="checkbox"
+                                           value="{{ network.id }}"
+                                           {{ network.id in selectedNetworks ? 'checked' : '' }}
+                                           data-item-list-target="networkCheckbox"
+                                           data-action="change->item-list#onNetworkChange">
+                                    <span class="badge badge-network" style="background-color: {{ network.backgroundColor }}; color: {{ network.textColor }};">
+                                        <i class="{{ network.icon }} me-1"></i>{{ network.name }}
+                                    </span>
+                                </label>
+                            </li>
+                        {% endfor %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <button type="button" class="dropdown-item text-muted" data-action="item-list#clearNetworkFilter">
+                                <i class="fas fa-times me-1"></i>Filter zurücksetzen
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside">
+                        <i class="fas fa-eye me-1"></i>Status
+                        {% if selectedStatus is defined and selectedStatus %}
+                            <span class="badge text-bg-primary ms-1">1</span>
+                        {% endif %}
+                    </button>
+                    <ul class="dropdown-menu p-2" style="min-width: 220px;">
+                        <li>
+                            <label class="dropdown-item d-flex align-items-center gap-2">
+                                <input type="radio" name="statusFilter" value="active"
+                                       {{ selectedStatus is defined and selectedStatus == 'active' ? 'checked' : '' }}
+                                       data-item-list-target="statusRadio"
+                                       data-action="change->item-list#onStatusChange">
+                                <i class="fas fa-check-circle text-success me-1"></i>Aktiv
+                            </label>
+                        </li>
+                        <li>
+                            <label class="dropdown-item d-flex align-items-center gap-2">
+                                <input type="radio" name="statusFilter" value="hidden"
+                                       {{ selectedStatus is defined and selectedStatus == 'hidden' ? 'checked' : '' }}
+                                       data-item-list-target="statusRadio"
+                                       data-action="change->item-list#onStatusChange">
+                                <i class="fas fa-eye-slash text-warning me-1"></i>Versteckt
+                            </label>
+                        </li>
+                        <li>
+                            <label class="dropdown-item d-flex align-items-center gap-2">
+                                <input type="radio" name="statusFilter" value="deleted"
+                                       {{ selectedStatus is defined and selectedStatus == 'deleted' ? 'checked' : '' }}
+                                       data-item-list-target="statusRadio"
+                                       data-action="change->item-list#onStatusChange">
+                                <i class="fas fa-trash text-danger me-1"></i>Gelöscht
+                            </label>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <button type="button" class="dropdown-item text-muted" data-action="item-list#clearStatusFilter">
+                                <i class="fas fa-times me-1"></i>Filter zurücksetzen
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
 
-    {% if items is empty %}
-        <div class="alert alert-info">Keine Items gefunden.</div>
-    {% else %}
         <div class="table-responsive">
             <table class="table table-hover table-striped">
                 <thead>
@@ -51,65 +121,159 @@
                         <th>Aktionen</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody data-item-list-target="tableBody">
                     {% set toggleToken = csrf_token('toggle-item') %}
-                    {% for item in items %}
-                        <tr id="item-row-{{ item.id }}"
-                            class="{% if item.deleted %}table-row-deleted{% elseif item.hidden %}table-row-hidden{% endif %}"
-                            data-controller="toggle"
-                            data-toggle-id-value="{{ item.id }}"
-                            data-toggle-token-value="{{ toggleToken }}">
-                            <td>{{ item.id }}</td>
-                            <td>
-                                {% if item.profile and item.profile.network %}
-                                    <span class="badge badge-network" style="background-color: {{ item.profile.network.backgroundColor }}; color: {{ item.profile.network.textColor }};">
-                                        <i class="{{ item.profile.network.icon }} me-1"></i>{{ item.profile.network.name }}
-                                    </span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if item.profile %}
-                                    <a href="{{ path('app_profile_show', {id: item.profile.id}) }}">
-                                        {{ item.profile.identifier|length > 30 ? item.profile.identifier|slice(0, 30) ~ '...' : item.profile.identifier }}
+                    {% if items is empty %}
+                        <tr><td colspan="7" class="text-center text-muted py-4">Keine Items gefunden.</td></tr>
+                    {% else %}
+                        {% for item in items %}
+                            <tr id="item-row-{{ item.id }}"
+                                class="{% if item.deleted %}table-row-deleted{% elseif item.hidden %}table-row-hidden{% endif %}"
+                                data-controller="toggle"
+                                data-toggle-id-value="{{ item.id }}"
+                                data-toggle-token-value="{{ toggleToken }}">
+                                <td>{{ item.id }}</td>
+                                <td>
+                                    {% if item.profile and item.profile.network %}
+                                        <span class="badge badge-network" style="background-color: {{ item.profile.network.backgroundColor }}; color: {{ item.profile.network.textColor }};">
+                                            <i class="{{ item.profile.network.icon }} me-1"></i>{{ item.profile.network.name }}
+                                        </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.profile %}
+                                        <a href="{{ path('app_profile_show', {id: item.profile.id}) }}">
+                                            {{ item.profile.identifier|length > 30 ? item.profile.identifier|slice(0, 30) ~ '...' : item.profile.identifier }}
+                                        </a>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ path('app_item_show', {id: item.id}) }}">
+                                        {{ item.text|length > 80 ? item.text|slice(0, 80) ~ '...' : item.text }}
                                     </a>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <a href="{{ path('app_item_show', {id: item.id}) }}">
-                                    {{ item.text|length > 80 ? item.text|slice(0, 80) ~ '...' : item.text }}
-                                </a>
-                            </td>
-                            <td>{{ item.dateTime|date('d.m.Y H:i') }}</td>
-                            <td>
-                                <button class="btn btn-sm {{ item.hidden ? 'btn-warning' : 'btn-outline-warning' }}"
-                                        data-action="toggle#toggleHidden"
-                                        data-toggle-target="hiddenBtn"
-                                        title="Versteckt">
-                                    <i class="fas fa-eye-slash"></i>
-                                </button>
-                                <button class="btn btn-sm {{ item.deleted ? 'btn-danger' : 'btn-outline-danger' }}"
-                                        data-action="toggle#toggleDeleted"
-                                        data-toggle-target="deletedBtn"
-                                        title="Gelöscht">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </td>
-                            <td>
-                                <div class="btn-group btn-group-sm">
-                                    <a href="{{ path('app_item_show', {id: item.id}) }}" class="btn btn-outline-primary" title="Anzeigen">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="{{ path('app_item_edit', {id: item.id}) }}" class="btn btn-outline-secondary" title="Bearbeiten">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                    {% endfor %}
+                                </td>
+                                <td>{{ item.dateTime|date('d.m.Y H:i') }}</td>
+                                <td>
+                                    <button class="btn btn-sm {{ item.hidden ? 'btn-warning' : 'btn-outline-warning' }}"
+                                            data-action="toggle#toggleHidden"
+                                            data-toggle-target="hiddenBtn"
+                                            title="Versteckt">
+                                        <i class="fas fa-eye-slash"></i>
+                                    </button>
+                                    <button class="btn btn-sm {{ item.deleted ? 'btn-danger' : 'btn-outline-danger' }}"
+                                            data-action="toggle#toggleDeleted"
+                                            data-toggle-target="deletedBtn"
+                                            title="Gelöscht">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ path('app_item_show', {id: item.id}) }}" class="btn btn-outline-primary" title="Anzeigen">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ path('app_item_edit', {id: item.id}) }}" class="btn btn-outline-secondary" title="Bearbeiten">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% endif %}
                 </tbody>
             </table>
         </div>
 
-        {% include '_partials/_pagination.html.twig' %}
-    {% endif %}
+        <div data-item-list-target="pagination">
+            {% include '_partials/_pagination.html.twig' with { page: page, pages: pages } %}
+        </div>
+
+        {% verbatim %}
+        <template data-item-list-target="itemRowTemplate">
+            <tr id="item-row-{{id}}"
+                class="{{#if deleted}}table-row-deleted{{else}}{{#if hidden}}table-row-hidden{{/if}}{{/if}}"
+                data-controller="toggle"
+                data-toggle-id-value="{{id}}"
+                data-toggle-token-value="{{csrfToken}}">
+                <td>{{id}}</td>
+                <td>
+                    {{#if profile.network}}
+                        <span class="badge badge-network" style="background-color: {{profile.network.backgroundColor}}; color: {{profile.network.textColor}};">
+                            <i class="{{profile.network.icon}} me-1"></i>{{profile.network.name}}
+                        </span>
+                    {{/if}}
+                </td>
+                <td>
+                    {{#if profile}}
+                        <a href="{{profile.showUrl}}">{{truncate profile.identifier 30}}</a>
+                    {{/if}}
+                </td>
+                <td>
+                    <a href="{{showUrl}}">{{truncate text 80}}</a>
+                </td>
+                <td>{{dateTime}}</td>
+                <td>
+                    <button class="btn btn-sm {{#if hidden}}btn-warning{{else}}btn-outline-warning{{/if}}"
+                            data-action="toggle#toggleHidden"
+                            data-toggle-target="hiddenBtn"
+                            title="Versteckt">
+                        <i class="fas fa-eye-slash"></i>
+                    </button>
+                    <button class="btn btn-sm {{#if deleted}}btn-danger{{else}}btn-outline-danger{{/if}}"
+                            data-action="toggle#toggleDeleted"
+                            data-toggle-target="deletedBtn"
+                            title="Gelöscht">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <a href="{{showUrl}}" class="btn btn-outline-primary" title="Anzeigen">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="{{editUrl}}" class="btn btn-outline-secondary" title="Bearbeiten">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                    </div>
+                </td>
+            </tr>
+        </template>
+
+        <template data-item-list-target="emptyTemplate">
+            <tr><td colspan="7" class="text-center text-muted py-4">Keine Items gefunden.</td></tr>
+        </template>
+
+        <template data-item-list-target="paginationTemplate">
+            {{#if (gt pages 1)}}
+            <nav aria-label="Seitennavigation">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {{#if prevDisabled}}disabled{{/if}}">
+                        <a class="page-link" href="#" data-page="{{prevPage}}" data-action="item-list#onPageClick">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    {{#each pageNumbers}}
+                        {{#if this.ellipsis}}
+                            <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+                        {{else}}
+                            <li class="page-item {{#if this.active}}active{{/if}}">
+                                {{#if this.active}}
+                                    <span class="page-link">{{this.num}}</span>
+                                {{else}}
+                                    <a class="page-link" href="#" data-page="{{this.num}}" data-action="item-list#onPageClick">{{this.num}}</a>
+                                {{/if}}
+                            </li>
+                        {{/if}}
+                    {{/each}}
+                    <li class="page-item {{#if nextDisabled}}disabled{{/if}}">
+                        <a class="page-link" href="#" data-page="{{nextPage}}" data-action="item-list#onPageClick">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            {{/if}}
+        </template>
+        {% endverbatim %}
+    </div>
 {% endblock %}

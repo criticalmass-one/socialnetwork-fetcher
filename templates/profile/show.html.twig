@@ -108,6 +108,120 @@
                 </div>
             </div>
 
+            <div class="card mb-4"
+                 data-controller="item-list"
+                 data-item-list-url-value="{{ path('app_item_index') }}"
+                 data-item-list-page-value="1"
+                 data-item-list-pages-value="1"
+                 data-item-list-profile-value="{{ profile.id }}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    Items <span class="badge text-bg-secondary" data-item-list-target="totalBadge">{{ itemCount }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3 g-2">
+                        <div class="col">
+                            <input type="search" class="form-control form-control-sm"
+                                   placeholder="Suche in Items…"
+                                   data-item-list-target="searchInput"
+                                   data-action="input->item-list#onSearchInput">
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover table-striped table-sm">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Text</th>
+                                    <th>Datum</th>
+                                    <th>Status</th>
+                                    <th>Aktionen</th>
+                                </tr>
+                            </thead>
+                            <tbody data-item-list-target="tableBody">
+                                <tr><td colspan="5" class="text-center text-muted py-3"><i class="fas fa-spinner fa-spin me-1"></i>Lade…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div data-item-list-target="pagination"></div>
+                </div>
+
+                {% verbatim %}
+                <template data-item-list-target="itemRowTemplate">
+                    <tr id="item-row-{{id}}"
+                        class="{{#if deleted}}table-row-deleted{{else}}{{#if hidden}}table-row-hidden{{/if}}{{/if}}"
+                        data-controller="toggle"
+                        data-toggle-id-value="{{id}}"
+                        data-toggle-token-value="{{csrfToken}}">
+                        <td>{{id}}</td>
+                        <td>
+                            <a href="{{showUrl}}">{{truncate text 80}}</a>
+                        </td>
+                        <td>{{dateTime}}</td>
+                        <td>
+                            <button class="btn btn-sm {{#if hidden}}btn-warning{{else}}btn-outline-warning{{/if}}"
+                                    data-action="toggle#toggleHidden"
+                                    data-toggle-target="hiddenBtn"
+                                    title="Versteckt">
+                                <i class="fas fa-eye-slash"></i>
+                            </button>
+                            <button class="btn btn-sm {{#if deleted}}btn-danger{{else}}btn-outline-danger{{/if}}"
+                                    data-action="toggle#toggleDeleted"
+                                    data-toggle-target="deletedBtn"
+                                    title="Gelöscht">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{showUrl}}" class="btn btn-outline-primary" title="Anzeigen">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{editUrl}}" class="btn btn-outline-secondary" title="Bearbeiten">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                </template>
+
+                <template data-item-list-target="emptyTemplate">
+                    <tr><td colspan="5" class="text-center text-muted py-4">Keine Items gefunden.</td></tr>
+                </template>
+
+                <template data-item-list-target="paginationTemplate">
+                    {{#if (gt pages 1)}}
+                    <nav aria-label="Seitennavigation">
+                        <ul class="pagination pagination-sm justify-content-center">
+                            <li class="page-item {{#if prevDisabled}}disabled{{/if}}">
+                                <a class="page-link" href="#" data-page="{{prevPage}}" data-action="item-list#onPageClick">
+                                    <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                            {{#each pageNumbers}}
+                                {{#if this.ellipsis}}
+                                    <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+                                {{else}}
+                                    <li class="page-item {{#if this.active}}active{{/if}}">
+                                        {{#if this.active}}
+                                            <span class="page-link">{{this.num}}</span>
+                                        {{else}}
+                                            <a class="page-link" href="#" data-page="{{this.num}}" data-action="item-list#onPageClick">{{this.num}}</a>
+                                        {{/if}}
+                                    </li>
+                                {{/if}}
+                            {{/each}}
+                            <li class="page-item {{#if nextDisabled}}disabled{{/if}}">
+                                <a class="page-link" href="#" data-page="{{nextPage}}" data-action="item-list#onPageClick">
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                    {{/if}}
+                </template>
+                {% endverbatim %}
+            </div>
+
             {% if profile.additionalData %}
                 <div class="card mb-4">
                     <div class="card-header">Zusätzliche Daten</div>

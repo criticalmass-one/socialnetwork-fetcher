@@ -32,4 +32,7 @@ return [
     '@symfony/stimulus-bundle' => [
         'path' => './vendor/symfony/stimulus-bundle/assets/dist/loader.js',
     ],
+    'handlebars' => [
+        'version' => '4.7.8',
+    ],
 ];
