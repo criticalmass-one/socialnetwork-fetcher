@@ -2,15 +2,8 @@
 
 {% block title %}Neues Netzwerk - Social Network Fetcher{% endblock %}
 
+{% block page_title %}Neues Netzwerk{% endblock %}
+
 {% block body %}
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ path('app_network_index') }}">Networks</a></li>
-            <li class="breadcrumb-item active">Neu</li>
-        </ol>
-    </nav>
-
-    <h1 class="mb-4">Neues Netzwerk anlegen</h1>
-
     {% include 'network/_form.html.twig' with {cancel_url: path('app_network_index')} %}
 {% endblock %}

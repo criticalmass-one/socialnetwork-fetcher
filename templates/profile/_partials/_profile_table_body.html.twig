@@ -34,14 +34,14 @@
         </td>
         <td>
             <div class="d-flex gap-1">
-                <a href="{{ path('app_profile_show', {id: profile.id}) }}" class="btn btn-sm btn-outline-primary" title="Anzeigen">
+                <a href="{{ path('app_profile_show', {id: profile.id}) }}" class="action-btn" title="Anzeigen">
                     <i class="fas fa-eye"></i>
                 </a>
-                <a href="{{ path('app_profile_edit', {id: profile.id}) }}" class="btn btn-sm btn-outline-secondary" title="Bearbeiten">
+                <a href="{{ path('app_profile_edit', {id: profile.id}) }}" class="action-btn" title="Bearbeiten">
                     <i class="fas fa-edit"></i>
                 </a>
                 <button type="button"
-                        class="btn btn-sm btn-outline-warning"
+                        class="action-btn"
                         title="Items importieren"
                         data-controller="profile-fetch"
                         data-profile-fetch-url-value="{{ path('app_profile_fetch', {id: profile.id}) }}"
@@ -54,7 +54,7 @@
                       data-controller="confirm"
                       data-confirm-message-value="Profil &quot;{{ profile.identifier }}&quot; wirklich löschen?">
                     <input type="hidden" name="_token" value="{{ csrf_token('delete-profile-' ~ profile.id) }}">
-                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Löschen">
+                    <button type="submit" class="action-btn" title="Löschen">
                         <i class="fas fa-trash"></i>
                     </button>
                 </form>

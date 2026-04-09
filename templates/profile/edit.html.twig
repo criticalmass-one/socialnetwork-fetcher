@@ -2,6 +2,8 @@
 
 {% block title %}Profil bearbeiten - Social Network Fetcher{% endblock %}
 
+{% block page_title %}Profil bearbeiten{% endblock %}
+
 {% block body %}
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
@@ -10,8 +12,6 @@
             <li class="breadcrumb-item active">Bearbeiten</li>
         </ol>
     </nav>
-
-    <h1 class="mb-4">Profil bearbeiten</h1>
 
     {% include 'profile/_form.html.twig' with {cancel_url: path('app_profile_show', {id: profile.id})} %}
 {% endblock %}

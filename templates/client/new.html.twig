@@ -2,6 +2,8 @@
 
 {% block title %}Neuer Client - Social Network Fetcher{% endblock %}
 
+{% block page_title %}Neuer Client{% endblock %}
+
 {% block body %}
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
@@ -10,17 +12,15 @@
         </ol>
     </nav>
 
-    <h1>Neuer Client</h1>
-
-    <div class="card">
-        <div class="card-body">
+    <div class="data-card">
+        <div class="data-card-body">
             <form method="post">
                 <div class="mb-3">
                     <label for="client_name" class="form-label">Name</label>
                     <input type="text" class="form-control" id="client_name" name="name" required
                            placeholder="z.B. wahlkampf.app">
                 </div>
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn-primary-custom">
                     <i class="fas fa-plus me-1"></i>Erstellen
                 </button>
                 <a href="{{ path('app_client_index') }}" class="btn btn-secondary ms-2">Abbrechen</a>

@@ -1,11 +1,11 @@
 {{ form_start(form) }}
     <div class="row g-4">
         <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header">
+            <div class="data-card">
+                <div class="data-card-header">
                     <i class="fas fa-network-wired me-1"></i>Netzwerk-Einstellungen
                 </div>
-                <div class="card-body">
+                <div class="data-card-body">
                     {{ form_row(form.identifier) }}
                     {{ form_row(form.name) }}
                     {{ form_row(form.icon) }}
@@ -23,11 +23,11 @@
         </div>
 
         <div class="col-lg-4">
-            <div class="card">
-                <div class="card-header">
+            <div class="data-card">
+                <div class="data-card-header">
                     <i class="fas fa-clock me-1"></i>Fetch-Zeitplan
                 </div>
-                <div class="card-body">
+                <div class="data-card-body">
                     {{ form_row(form.cronExpression) }}
                     <div class="text-muted small mt-2">
                         <strong>Beispiele:</strong>
@@ -45,9 +45,9 @@
     </div>
 
     <div class="mt-4">
-        <button type="submit" class="btn btn-primary">
+        <button type="submit" class="btn-primary-custom">
             <i class="fas fa-save me-1"></i>Speichern
         </button>
-        <a href="{{ cancel_url }}" class="btn btn-secondary">Abbrechen</a>
+        <a href="{{ cancel_url }}" class="btn btn-outline-secondary">Abbrechen</a>
     </div>
 {{ form_end(form) }}

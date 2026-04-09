@@ -1,0 +1,47 @@
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <div class="sidebar-brand-icon">
+            <i class="fas fa-rss"></i>
+        </div>
+        <div>
+            <div class="sidebar-brand-text">SN-Fetcher</div>
+            <div class="sidebar-brand-sub">Social Network Feeds</div>
+        </div>
+    </div>
+
+    <div class="sidebar-section">Navigation</div>
+    <ul class="sidebar-nav">
+        <li><a href="{{ path('app_dashboard') }}" class="{% if app.request.attributes.get('_route') == 'app_dashboard' %}active{% endif %}">
+            <span class="nav-icon"><i class="fas fa-th-large"></i></span>
+            Dashboard
+        </a></li>
+        <li><a href="{{ path('app_network_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_network' %}active{% endif %}">
+            <span class="nav-icon"><i class="fas fa-network-wired"></i></span>
+            Networks
+        </a></li>
+        <li><a href="{{ path('app_profile_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_profile' %}active{% endif %}">
+            <span class="nav-icon"><i class="fas fa-users"></i></span>
+            Profiles
+        </a></li>
+        <li><a href="{{ path('app_item_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_item' %}active{% endif %}">
+            <span class="nav-icon"><i class="fas fa-stream"></i></span>
+            Items
+        </a></li>
+        <li><a href="{{ path('app_client_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_client' %}active{% endif %}">
+            <span class="nav-icon"><i class="fas fa-id-badge"></i></span>
+            Clients
+        </a></li>
+    </ul>
+
+    <div class="sidebar-footer">
+        <div class="sidebar-user">
+            <div class="sidebar-user-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <div>
+                <div style="color: white; font-weight: 500;">{{ app.user.userIdentifier }}</div>
+                <a href="{{ path('app_logout') }}">Abmelden</a>
+            </div>
+        </div>
+    </div>
+</aside>

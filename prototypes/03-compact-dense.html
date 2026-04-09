@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Prototyp 3: Compact Dense</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0f0f10;
+            --surface: #18181b;
+            --surface-raised: #1f1f23;
+            --surface-hover: #27272b;
+            --border: #2e2e33;
+            --border-subtle: #232328;
+            --text: #fafafa;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --accent: #a78bfa;
+            --accent-dim: rgba(167,139,250,0.12);
+            --green: #4ade80;
+            --green-dim: rgba(74,222,128,0.12);
+            --red: #f87171;
+            --red-dim: rgba(248,113,113,0.12);
+            --amber: #fbbf24;
+            --amber-dim: rgba(251,191,36,0.12);
+            --blue: #60a5fa;
+            --blue-dim: rgba(96,165,250,0.12);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: 'SF Mono', 'JetBrains Mono', 'Fira Code', ui-monospace, monospace;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 13px;
+        }
+
+        /* Header bar */
+        .top-bar {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            height: 44px;
+            gap: 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .top-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-right: 20px;
+            border-right: 1px solid var(--border);
+            margin-right: 4px;
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .top-brand-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 6px var(--green);
+        }
+
+        .top-nav {
+            display: flex;
+            gap: 0;
+            height: 44px;
+            flex: 1;
+        }
+
+        .top-nav a {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0 14px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 500;
+            height: 100%;
+            border-bottom: 2px solid transparent;
+            transition: color 0.1s;
+        }
+
+        .top-nav a:hover { color: var(--text-secondary); }
+
+        .top-nav a.active {
+            color: var(--text);
+            border-bottom-color: var(--accent);
+        }
+
+        .top-nav a .n {
+            background: var(--surface-raised);
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .top-nav a.active .n {
+            background: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        .top-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-left: auto;
+        }
+
+        .cmd-search {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--surface-raised);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 4px 10px;
+            color: var(--text-muted);
+            font-size: 11px;
+            cursor: pointer;
+            transition: border-color 0.15s;
+        }
+
+        .cmd-search:hover { border-color: var(--text-muted); }
+
+        .cmd-search kbd {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 3px;
+            padding: 0px 4px;
+            font-size: 10px;
+            font-family: inherit;
+        }
+
+        .top-user {
+            color: var(--text-muted);
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .top-user:hover { color: var(--text); }
+
+        /* Main layout */
+        .layout {
+            display: flex;
+            min-height: calc(100vh - 44px);
+        }
+
+        /* Left panel (mini stats) */
+        .side-panel {
+            width: 220px;
+            border-right: 1px solid var(--border);
+            background: var(--surface);
+            padding: 16px 0;
+            flex-shrink: 0;
+        }
+
+        .side-section-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            padding: 0 16px;
+            margin-bottom: 8px;
+        }
+
+        .side-stat {
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        .side-stat:hover { background: var(--surface-hover); }
+
+        .side-stat-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        .side-stat-label i {
+            width: 16px;
+            text-align: center;
+            font-size: 11px;
+        }
+
+        .side-stat-value {
+            font-weight: 600;
+            font-size: 12px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .side-divider {
+            height: 1px;
+            background: var(--border-subtle);
+            margin: 12px 0;
+        }
+
+        .side-network {
+            padding: 6px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+
+        .side-network:hover { background: var(--surface-hover); }
+
+        .side-network-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+            flex-shrink: 0;
+        }
+
+        .side-network-name {
+            font-size: 12px;
+            color: var(--text-secondary);
+            flex: 1;
+        }
+
+        .side-network-count {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Main content */
+        .main-panel {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .panel-toolbar {
+            display: flex;
+            align-items: center;
+            padding: 10px 16px;
+            gap: 8px;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+        }
+
+        .toolbar-search {
+            position: relative;
+            flex: 1;
+            max-width: 320px;
+        }
+
+        .toolbar-search input {
+            width: 100%;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 6px 10px 6px 30px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 12px;
+            transition: border-color 0.15s;
+        }
+
+        .toolbar-search input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-dim);
+        }
+
+        .toolbar-search input::placeholder { color: var(--text-muted); }
+
+        .toolbar-search i {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 11px;
+        }
+
+        .toolbar-btn {
+            padding: 5px 10px;
+            border: 1px solid var(--border);
+            background: var(--surface-raised);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 11px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.1s;
+        }
+
+        .toolbar-btn:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+        }
+
+        .toolbar-btn.active {
+            border-color: var(--accent);
+            background: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        .toolbar-separator {
+            width: 1px;
+            height: 20px;
+            background: var(--border);
+        }
+
+        /* Data grid */
+        .data-grid {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-grid th {
+            padding: 6px 16px;
+            text-align: left;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            position: sticky;
+            top: 44px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .data-grid th:hover { color: var(--text-secondary); }
+
+        .data-grid th .sort-icon {
+            margin-left: 4px;
+            font-size: 8px;
+        }
+
+        .data-grid td {
+            padding: 7px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            vertical-align: middle;
+        }
+
+        .data-grid tr:hover td {
+            background: var(--surface);
+        }
+
+        .data-grid tr.muted td { opacity: 0.4; }
+
+        /* Network tag */
+        .net-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        .net-tag-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            color: white;
+        }
+
+        /* Profile link */
+        .profile-link {
+            color: var(--text);
+            text-decoration: none;
+        }
+
+        .profile-link:hover { color: var(--accent); }
+
+        /* Content preview */
+        .content-cell {
+            max-width: 400px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--text-secondary);
+        }
+
+        /* Status tag */
+        .status-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .status-active { background: var(--green-dim); color: var(--green); }
+        .status-hidden { background: var(--amber-dim); color: var(--amber); }
+        .status-deleted { background: var(--red-dim); color: var(--red); }
+
+        /* Time */
+        .ts {
+            color: var(--text-muted);
+            font-size: 11px;
+            white-space: nowrap;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Actions */
+        .row-actions {
+            display: flex;
+            gap: 1px;
+            opacity: 0.3;
+            transition: opacity 0.1s;
+        }
+
+        tr:hover .row-actions { opacity: 1; }
+
+        .row-action {
+            width: 26px;
+            height: 26px;
+            border: none;
+            background: none;
+            border-radius: 4px;
+            color: var(--text-muted);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            transition: all 0.1s;
+        }
+
+        .row-action:hover {
+            background: var(--surface-hover);
+            color: var(--text);
+        }
+
+        .row-action.warn:hover { color: var(--amber); background: var(--amber-dim); }
+        .row-action.del:hover { color: var(--red); background: var(--red-dim); }
+
+        /* Footer bar */
+        .footer-bar {
+            padding: 8px 16px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface);
+            font-size: 11px;
+            color: var(--text-muted);
+            position: sticky;
+            bottom: 0;
+        }
+
+        .footer-pages {
+            display: flex;
+            gap: 2px;
+        }
+
+        .fp-btn {
+            width: 24px;
+            height: 24px;
+            border: 1px solid var(--border);
+            background: none;
+            border-radius: 4px;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 11px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .fp-btn:hover { border-color: var(--text-muted); color: var(--text); }
+        .fp-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+        .footer-info {
+            display: flex;
+            gap: 16px;
+        }
+
+        .footer-info span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Right detail panel */
+        .detail-panel {
+            width: 340px;
+            border-left: 1px solid var(--border);
+            background: var(--surface);
+            flex-shrink: 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .detail-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .detail-title {
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .detail-close {
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+            background: none;
+            border: none;
+        }
+
+        .detail-close:hover { color: var(--text); }
+
+        .detail-section {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .detail-section-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+        }
+
+        .detail-label { color: var(--text-muted); font-size: 12px; }
+        .detail-value { color: var(--text); font-size: 12px; font-weight: 500; }
+
+        .detail-content {
+            padding: 12px 16px;
+            flex: 1;
+        }
+
+        .detail-text {
+            color: var(--text-secondary);
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .detail-actions {
+            padding: 12px 16px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 6px;
+        }
+
+        .detail-btn {
+            flex: 1;
+            padding: 6px;
+            border: 1px solid var(--border);
+            background: var(--surface-raised);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 11px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.1s;
+        }
+
+        .detail-btn:hover { background: var(--surface-hover); color: var(--text); }
+        .detail-btn.primary { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+        .detail-btn.primary:hover { background: var(--accent); color: white; }
+    </style>
+</head>
+<body>
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <a href="#" class="top-brand">
+            <span class="top-brand-dot"></span>
+            SN-Fetcher
+        </a>
+        <div class="top-nav">
+            <a href="#" class="active"><i class="fas fa-th-large"></i> Dashboard</a>
+            <a href="#"><i class="fas fa-network-wired"></i> Networks <span class="n">7</span></a>
+            <a href="#"><i class="fas fa-users"></i> Profiles <span class="n">142</span></a>
+            <a href="#"><i class="fas fa-stream"></i> Items <span class="n">48k</span></a>
+            <a href="#"><i class="fas fa-id-badge"></i> Clients <span class="n">3</span></a>
+        </div>
+        <div class="top-right">
+            <div class="cmd-search">
+                <i class="fas fa-search"></i>
+                Suche…
+                <kbd>&#8984;K</kbd>
+            </div>
+            <span class="top-user"><i class="fas fa-user"></i> admin</span>
+        </div>
+    </div>
+
+    <div class="layout">
+        <!-- Side Panel -->
+        <aside class="side-panel">
+            <div class="side-section-title">Übersicht</div>
+            <div class="side-stat">
+                <span class="side-stat-label"><i class="fas fa-network-wired" style="color: var(--accent);"></i> Networks</span>
+                <span class="side-stat-value">7</span>
+            </div>
+            <div class="side-stat">
+                <span class="side-stat-label"><i class="fas fa-users" style="color: var(--blue);"></i> Profiles</span>
+                <span class="side-stat-value">142</span>
+            </div>
+            <div class="side-stat">
+                <span class="side-stat-label"><i class="fas fa-stream" style="color: var(--green);"></i> Items</span>
+                <span class="side-stat-value">48.291</span>
+            </div>
+            <div class="side-stat">
+                <span class="side-stat-label"><i class="fas fa-id-badge" style="color: var(--amber);"></i> Clients</span>
+                <span class="side-stat-value">3</span>
+            </div>
+
+            <div class="side-divider"></div>
+
+            <div class="side-section-title">Netzwerke</div>
+            <div class="side-network">
+                <div class="side-network-dot" style="background: #6364ff;"></div>
+                <span class="side-network-name">Mastodon</span>
+                <span class="side-network-count">38</span>
+            </div>
+            <div class="side-network">
+                <div class="side-network-dot" style="background: #0085ff;"></div>
+                <span class="side-network-name">Bluesky</span>
+                <span class="side-network-count">24</span>
+            </div>
+            <div class="side-network">
+                <div class="side-network-dot" style="background: #e1306c;"></div>
+                <span class="side-network-name">Instagram</span>
+                <span class="side-network-count">42</span>
+            </div>
+            <div class="side-network">
+                <div class="side-network-dot" style="background: #1877f2;"></div>
+                <span class="side-network-name">Facebook</span>
+                <span class="side-network-count">18</span>
+            </div>
+            <div class="side-network">
+                <div class="side-network-dot" style="background: #000;"></div>
+                <span class="side-network-name">Threads</span>
+                <span class="side-network-count">12</span>
+            </div>
+            <div class="side-network">
+                <div class="side-network-dot" style="background: #ff7800;"></div>
+                <span class="side-network-name">Homepage</span>
+                <span class="side-network-count">8</span>
+            </div>
+
+            <div class="side-divider"></div>
+
+            <div class="side-section-title">Status</div>
+            <div class="side-stat">
+                <span class="side-stat-label"><span style="color: var(--green);">&#9679;</span> Aktiv</span>
+                <span class="side-stat-value" style="color: var(--green);">47.812</span>
+            </div>
+            <div class="side-stat">
+                <span class="side-stat-label"><span style="color: var(--amber);">&#9679;</span> Versteckt</span>
+                <span class="side-stat-value" style="color: var(--amber);">341</span>
+            </div>
+            <div class="side-stat">
+                <span class="side-stat-label"><span style="color: var(--red);">&#9679;</span> Gelöscht</span>
+                <span class="side-stat-value" style="color: var(--red);">138</span>
+            </div>
+        </aside>
+
+        <!-- Main content -->
+        <main class="main-panel">
+            <div class="panel-toolbar">
+                <div class="toolbar-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Items durchsuchen…">
+                </div>
+                <div class="toolbar-separator"></div>
+                <button class="toolbar-btn active"><i class="fas fa-circle" style="font-size: 7px;"></i> Alle</button>
+                <button class="toolbar-btn"><i class="fas fa-check" style="font-size: 9px;"></i> Aktiv</button>
+                <button class="toolbar-btn"><i class="fas fa-eye-slash" style="font-size: 9px;"></i> Versteckt</button>
+                <button class="toolbar-btn"><i class="fas fa-trash" style="font-size: 9px;"></i> Gelöscht</button>
+                <div class="toolbar-separator"></div>
+                <button class="toolbar-btn"><i class="fas fa-filter"></i> Netzwerk</button>
+                <button class="toolbar-btn"><i class="fas fa-user"></i> Profil</button>
+                <div style="flex:1;"></div>
+                <button class="toolbar-btn"><i class="fas fa-download"></i> Export</button>
+            </div>
+
+            <table class="data-grid">
+                <thead>
+                    <tr>
+                        <th style="width: 60px;">ID <i class="fas fa-sort sort-icon"></i></th>
+                        <th style="width: 110px;">Netzwerk</th>
+                        <th style="width: 160px;">Profil</th>
+                        <th>Inhalt</th>
+                        <th style="width: 60px;">Status</th>
+                        <th style="width: 130px;">Datum <i class="fas fa-sort-down sort-icon" style="color: var(--accent);"></i></th>
+                        <th style="width: 100px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="ts">4821</td>
+                        <td>
+                            <span class="net-tag">
+                                <span class="net-tag-icon" style="background: #6364ff;"><i class="fab fa-mastodon"></i></span>
+                                Mastodon
+                            </span>
+                        </td>
+                        <td><a class="profile-link" href="#">@criticalmass</a></td>
+                        <td><span class="content-cell">Heute Abend findet die Critical Mass in Hamburg statt! Treffpunkt um 19 Uhr am Stadtpark.</span></td>
+                        <td><span class="status-tag status-active">aktiv</span></td>
+                        <td><span class="ts">16.03.26 14:32</span></td>
+                        <td>
+                            <div class="row-actions">
+                                <button class="row-action"><i class="fas fa-eye"></i></button>
+                                <button class="row-action"><i class="fas fa-pen"></i></button>
+                                <button class="row-action warn"><i class="fas fa-eye-slash"></i></button>
+                                <button class="row-action del"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="ts">4820</td>
+                        <td>
+                            <span class="net-tag">
+                                <span class="net-tag-icon" style="background: #0085ff;"><i class="fab fa-bluesky"></i></span>
+                                Bluesky
+                            </span>
+                        </td>
+                        <td><a class="profile-link" href="#">@cm.bsky.social</a></td>
+                        <td><span class="content-cell">Die nächste Tour startet am Freitag um 18:30 Uhr. Kommt alle mit! Wir fahren quer durch die City.</span></td>
+                        <td><span class="status-tag status-active">aktiv</span></td>
+                        <td><span class="ts">16.03.26 13:15</span></td>
+                        <td>
+                            <div class="row-actions">
+                                <button class="row-action"><i class="fas fa-eye"></i></button>
+                                <button class="row-action"><i class="fas fa-pen"></i></button>
+                                <button class="row-action warn"><i class="fas fa-eye-slash"></i></button>
+                                <button class="row-action del"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="ts">4819</td>
+                        <td>
+                            <span class="net-tag">
+                                <span class="net-tag-icon" style="background: #1877f2;"><i class="fab fa-facebook"></i></span>
+                                Facebook
+                            </span>
+                        </td>
+                        <td><a class="profile-link" href="#">CM Berlin</a></td>
+                        <td><span class="content-cell">Fotos von der letzten Ausfahrt mit 2000 Radfahrern sind jetzt online!</span></td>
+                        <td><span class="status-tag status-hidden">hidden</span></td>
+                        <td><span class="ts">16.03.26 11:08</span></td>
+                        <td>
+                            <div class="row-actions">
+                                <button class="row-action"><i class="fas fa-eye"></i></button>
+                                <button class="row-action"><i class="fas fa-pen"></i></button>
+                                <button class="row-action warn"><i class="fas fa-eye-slash"></i></button>
+                                <button class="row-action del"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="muted">
+                        <td class="ts">4818</td>
+                        <td>
+                            <span class="net-tag">
+                                <span class="net-tag-icon" style="background: #e1306c;"><i class="fab fa-instagram"></i></span>
+                                Instagram
+                            </span>
+                        </td>
+                        <td><a class="profile-link" href="#">cm_koeln</a></td>
+                        <td><span class="content-cell">Spam-Posting entfernt</span></td>
+                        <td><span class="status-tag status-deleted">del</span></td>
+                        <td><span class="ts">16.03.26 09:44</span></td>
+                        <td>
+                            <div class="row-actions">
+                                <button class="row-action"><i class="fas fa-eye"></i></button>
+                                <button class="row-action"><i class="fas fa-pen"></i></button>
+                                <button class="row-action"><i class="fas fa-undo"></i></button>
+                                <button class="row-action del"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="ts">4817</td>
+                        <td>
+                            <span class="net-tag">
+                                <span class="net-tag-icon" style="background: #ff7800;"><i class="fas fa-rss"></i></span>
+                                Homepage
+                            </span>
+                        </td>
+                        <td><a class="profile-link" href="#">criticalmass.in</a></td>
+                        <td><span class="content-cell">Neuer Blogeintrag: Wie man eine Critical Mass organisiert — Ein Leitfaden für Anfänger.</span></td>
+                        <td><span class="status-tag status-active">aktiv</span></td>
+                        <td><span class="ts">15.03.26 22:10</span></td>
+                        <td>
+                            <div class="row-actions">
+                                <button class="row-action"><i class="fas fa-eye"></i></button>
+                                <button class="row-action"><i class="fas fa-pen"></i></button>
+                                <button class="row-action warn"><i class="fas fa-eye-slash"></i></button>
+                                <button class="row-action del"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="ts">4816</td>
+                        <td>
+                            <span class="net-tag">
+                                <span class="net-tag-icon" style="background: #000;"><i class="fab fa-threads"></i></span>
+                                Threads
+                            </span>
+                        </td>
+                        <td><a class="profile-link" href="#">@cm_muenchen</a></td>
+                        <td><span class="content-cell">Save the date: 28. März, 18 Uhr, Odeonsplatz. Bringt Lichter mit!</span></td>
+                        <td><span class="status-tag status-active">aktiv</span></td>
+                        <td><span class="ts">15.03.26 19:55</span></td>
+                        <td>
+                            <div class="row-actions">
+                                <button class="row-action"><i class="fas fa-eye"></i></button>
+                                <button class="row-action"><i class="fas fa-pen"></i></button>
+                                <button class="row-action warn"><i class="fas fa-eye-slash"></i></button>
+                                <button class="row-action del"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="footer-bar">
+                <div class="footer-info">
+                    <span>1–50 von 48.291</span>
+                    <span><i class="fas fa-circle" style="font-size: 6px; color: var(--green);"></i> 47.812 aktiv</span>
+                    <span><i class="fas fa-circle" style="font-size: 6px; color: var(--amber);"></i> 341 versteckt</span>
+                    <span><i class="fas fa-circle" style="font-size: 6px; color: var(--red);"></i> 138 gelöscht</span>
+                </div>
+                <div class="footer-pages">
+                    <button class="fp-btn" disabled><i class="fas fa-chevron-left" style="font-size: 9px;"></i></button>
+                    <button class="fp-btn active">1</button>
+                    <button class="fp-btn">2</button>
+                    <button class="fp-btn">3</button>
+                    <button class="fp-btn" style="width: auto; padding: 0 4px;">…</button>
+                    <button class="fp-btn">966</button>
+                    <button class="fp-btn"><i class="fas fa-chevron-right" style="font-size: 9px;"></i></button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Detail Panel -->
+        <aside class="detail-panel">
+            <div class="detail-header">
+                <span class="detail-title">Item #4821</span>
+                <button class="detail-close"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="detail-section">
+                <div class="detail-section-title">Details</div>
+                <div class="detail-row">
+                    <span class="detail-label">Netzwerk</span>
+                    <span class="net-tag">
+                        <span class="net-tag-icon" style="background: #6364ff; width: 14px; height: 14px; font-size: 8px;"><i class="fab fa-mastodon"></i></span>
+                        Mastodon
+                    </span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Profil</span>
+                    <a class="profile-link" href="#" style="font-size: 12px;">@criticalmass</a>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Status</span>
+                    <span class="status-tag status-active">aktiv</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Datum</span>
+                    <span class="detail-value">16.03.2026 14:32</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Importiert</span>
+                    <span class="detail-value">16.03.2026 14:35</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Unique ID</span>
+                    <span class="detail-value" style="font-size: 11px; color: var(--text-muted);">113456789012345678</span>
+                </div>
+            </div>
+            <div class="detail-content">
+                <div class="detail-section-title">Inhalt</div>
+                <p class="detail-text">
+                    Heute Abend findet die Critical Mass in Hamburg statt! Treffpunkt wie immer um 19 Uhr am Stadtpark. Kommt zahlreich und bringt gute Laune mit! 🚲✨
+                </p>
+                <p class="detail-text" style="margin-top: 8px;">
+                    <a href="#" style="color: var(--accent); font-size: 11px;">
+                        <i class="fas fa-external-link-alt" style="font-size: 9px;"></i> Permalink öffnen
+                    </a>
+                </p>
+            </div>
+            <div class="detail-actions">
+                <button class="detail-btn"><i class="fas fa-pen"></i> Bearbeiten</button>
+                <button class="detail-btn"><i class="fas fa-eye-slash"></i> Verstecken</button>
+                <button class="detail-btn" style="border-color: var(--red); color: var(--red);"><i class="fas fa-trash"></i> Löschen</button>
+            </div>
+        </aside>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
