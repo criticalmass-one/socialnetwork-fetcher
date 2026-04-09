@@ -294,14 +294,14 @@ class Item
         return $this;
     }
 
-    public function getSource(): ?string
+    public function getParsedSource(): ?string
     {
-        return $this->source;
+        return $this->parsedSource;
     }
 
-    public function setSource(?string $source): self
+    public function setParsedSource(?string $parsedSource): self
     {
-        $this->source = $source;
+        $this->parsedSource = $parsedSource;
 
         return $this;
     }

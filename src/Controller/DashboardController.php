@@ -19,6 +19,14 @@ class DashboardController extends AbstractController
     ): Response {
         $networks = $networkRepository->findAll();
 
+        $now = new \DateTimeImmutable();
+        $intervals = [
+            'last24h' => $now->modify('-24 hours'),
+            'last7d' => $now->modify('-7 days'),
+            'last31d' => $now->modify('-31 days'),
+            'last365d' => $now->modify('-365 days'),
+        ];
+
         $networkStats = [];
         foreach ($networks as $network) {
             $profiles = $profileRepository->findBy(['network' => $network]);
@@ -30,6 +38,7 @@ class DashboardController extends AbstractController
                 'network' => $network,
                 'profileCount' => count($profiles),
                 'itemCount' => $itemCount,
+                'itemCounts' => $itemRepository->countByNetworkSince($network, $intervals),
             ];
         }
 

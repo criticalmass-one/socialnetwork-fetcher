@@ -30,9 +30,7 @@ class MastodonFeedFetcher extends AbstractNetworkFeedFetcher
             $accountInfo = $this->getAccountInfo($account);
             $timeline = $this->fetchTimeline($account, $accountInfo, $fetchInfo->getCount());
 
-            $feedItemList = $this->convertTimeline($profile, $timeline);
-
-            return $feedItemList;
+            return $this->convertTimeline($profile, $timeline);
         } catch (\Exception $exception) {
             $this->markAsFailed($profile, sprintf('Failed to fetch social network profile %d: %s', $profile->getId(), $exception->getMessage()));
 

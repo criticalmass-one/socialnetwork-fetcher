@@ -17,7 +17,8 @@ bin/phpunit                                          # run all tests
 bin/phpunit --filter testParseHandleFormat            # run single test
 bin/phpunit tests/NetworkFeedFetcher/Bluesky/         # run test directory
 
-php bin/console feeds:fetch mastodon -c 50            # fetch feeds
+php bin/console fetch-feed mastodon -c 50              # fetch feeds (actual command name)
+php bin/console fetch-feed bluesky_profile --count=100 # fetch specific network
 php bin/console feed:list instagram_profile           # list profiles
 php bin/console network:list                          # list registered fetchers
 php bin/console app:fetch-scheduled                   # run scheduled fetches (cron-based)
@@ -50,12 +51,14 @@ php bin/console app:download-media --videos-only      # only videos
 ### Feed Fetching Flow
 
 ```
-Command → FeedFetcher → ProfileFetcher (loads profiles from criticalmass.in API)
+Command → FeedFetcher → ProfileFetcher (loads profiles)
                       → NetworkFeedFetcher.fetch() (per profile, network-specific)
-                      → FeedItemPersister (pushes items to criticalmass.in API)
-                      → ProfilePersister (updates profile metadata)
+                      → FeedItemPersister (persists items)
+                      → ProfilePersister (updates profile metadata + fetch timestamps)
                       → MediaDownloadService (downloads photos/videos if profile flags set)
 ```
+
+After each fetch, `FeedFetcher` updates `lastFetchSuccessDateTime` / `lastFetchFailureDateTime` / `lastFetchFailureError` on the profile. Errors caught via exception or `markAsFailed()` (e.g. invalid identifier) are both persisted.
 
 ### Service Wiring
 
@@ -83,10 +86,11 @@ Network fetchers are auto-discovered: any class implementing `NetworkFeedFetcher
 
 Profiles can opt into automatic photo/video downloads via `savePhotos` and `saveVideos` flags. Media is stored via Flysystem (local adapter at `public/media/`).
 
-- **`MediaUrlExtractor`** — extracts photo URLs from `raw` JSON (RSS.app `thumbnail`, Bluesky `embed.images[]`, Mastodon `media_attachments[]`). Supports multiple photos per item. Video URL is the item's `permalink`.
+- **`MediaUrlExtractor`** — extracts photo URLs from `raw` JSON (RSS.app `description_html` img tags, RSS.app `thumbnail` fallback, Bluesky `embed.images[]`, Mastodon `media_attachments[]`). Supports multiple photos per item. Video URL is the item's `permalink`.
 - **`PhotoDownloader`** — downloads images via HttpClient, stores as `{profileId}/{itemId}/photo_{index}.{ext}` in Flysystem
+- **`YtDlpPhotoDownloader`** — extracts photos (including carousel/album images) via `yt-dlp` in original quality. Used for Instagram, Threads, and Facebook where RSS.app only provides a single thumbnail. Falls back to `PhotoDownloader` if `yt-dlp` is unavailable or returns no results.
 - **`VideoDownloader`** — downloads videos via `yt-dlp` process, stores as `{profileId}/{itemId}/video.{ext}` on disk. Requires `yt-dlp` to be installed; gracefully skips if unavailable.
-- **`MediaDownloadService`** — orchestrates downloads, manages `mediaStatus` lifecycle (`downloading` → `completed`/`failed`)
+- **`MediaDownloadService`** — orchestrates downloads, manages `mediaStatus` lifecycle (`downloading` → `completed`/`failed`). Selects download strategy per network: `yt-dlp` for RSS.app-based networks (Instagram, Threads, Facebook), direct URL download for Bluesky/Mastodon.
 - **`DownloadMediaCommand`** — CLI for bulk downloads with `--profile`, `--retry-failed`, `--photos-only`, `--videos-only` options
 - Auto-download triggers after feed fetch when profile has `savePhotos`/`saveVideos` enabled
 - Manual download via button on item detail page (Stimulus `media_download_controller`)

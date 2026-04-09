@@ -52,27 +52,45 @@ class FeedFetcher extends AbstractFeedFetcher
             $fetcher = $this->getFeedFetcherForProfile($profile);
 
             if ($fetcher) {
-                $feedItemList = $fetcher->fetch($profile, $fetchInfo);
+                try {
+                    $failureErrorBefore = $profile->getLastFetchFailureError();
+                    $feedItemList = $fetcher->fetch($profile, $fetchInfo);
 
-                foreach ($feedItemList as $feedItem) {
-                    $this->sourceFetcher->fetch($feedItem, $profile);
+                    // Check if the fetcher marked the profile as failed (e.g. invalid identifier)
+                    $fetcherMarkedAsFailed = $profile->getLastFetchFailureError() !== $failureErrorBefore;
+
+                    foreach ($feedItemList as $feedItem) {
+                        $this->sourceFetcher->fetch($feedItem, $profile);
+                    }
+
+                    $fetchResult = new FetchResult();
+                    $fetchResult
+                        ->setProfile($profile)
+                        ->setCounterFetched(count($feedItemList));
+
+                    $this->feedItemPersister->persistFeedItemList($feedItemList, $fetchResult)->flush();
+
+                    if (!$fetcherMarkedAsFailed) {
+                        $profile->setLastFetchSuccessDateTime(new \DateTimeImmutable());
+                        $profile->setLastFetchFailureDateTime(null);
+                        $profile->setLastFetchFailureError(null);
+                    }
+
+                    $this->profilePersister->persistProfile($profile);
+
+                    // Download media if profile has savePhotos or saveVideos enabled
+                    $entityProfile = $this->profileRepository->find($profile->getId());
+
+                    if ($entityProfile && ($entityProfile->isSavePhotos() || $entityProfile->isSaveVideos())) {
+                        $this->mediaDownloadService->downloadNewItemsForProfile($entityProfile);
+                    }
+
+                    $callback($fetchResult);
+                } catch (\Exception $e) {
+                    $profile->setLastFetchFailureDateTime(new \DateTimeImmutable());
+                    $profile->setLastFetchFailureError($e->getMessage());
+                    $this->profilePersister->persistProfile($profile);
                 }
-
-                $fetchResult = new FetchResult();
-                $fetchResult
-                    ->setProfile($profile)
-                    ->setCounterFetched(count($feedItemList));
-
-                $this->feedItemPersister->persistFeedItemList($feedItemList, $fetchResult)->flush();
-
-                // Download media if profile has savePhotos or saveVideos enabled
-                $entityProfile = $this->profileRepository->find($profile->getId());
-
-                if ($entityProfile && ($entityProfile->isSavePhotos() || $entityProfile->isSaveVideos())) {
-                    $this->mediaDownloadService->downloadNewItemsForProfile($entityProfile);
-                }
-
-                $callback($fetchResult);
             }
         }
 

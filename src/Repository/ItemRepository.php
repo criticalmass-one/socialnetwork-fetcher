@@ -62,6 +62,28 @@ class ItemRepository extends ServiceEntityRepository
     }
 
     /**
+     * @return array<string, int>
+     */
+    public function countByNetworkSince(\App\Entity\Network $network, array $intervals): array
+    {
+        $counts = [];
+
+        foreach ($intervals as $key => $since) {
+            $qb = $this->createQueryBuilder('i')
+                ->select('COUNT(i.id)')
+                ->join('i.profile', 'p')
+                ->where('p.network = :network')
+                ->andWhere('i.dateTime >= :since')
+                ->setParameter('network', $network)
+                ->setParameter('since', $since);
+
+            $counts[$key] = (int) $qb->getQuery()->getSingleScalarResult();
+        }
+
+        return $counts;
+    }
+
+    /**
      * @param list<int> $networkIds
      */
     private function applyFilters(QueryBuilder $qb, ?int $profileId, array $networkIds, string $search, string $status): void

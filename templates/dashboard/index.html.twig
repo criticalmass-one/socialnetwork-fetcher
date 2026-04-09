@@ -66,6 +66,24 @@
                             <div class="network-card-stat-label">Items</div>
                         </div>
                     </div>
+                    <div class="network-card-stats mt-2">
+                        <div class="network-card-stat">
+                            <div class="network-card-stat-value">{{ stat.itemCounts.last24h }}</div>
+                            <div class="network-card-stat-label">24h</div>
+                        </div>
+                        <div class="network-card-stat">
+                            <div class="network-card-stat-value">{{ stat.itemCounts.last7d }}</div>
+                            <div class="network-card-stat-label">7 Tage</div>
+                        </div>
+                        <div class="network-card-stat">
+                            <div class="network-card-stat-value">{{ stat.itemCounts.last31d }}</div>
+                            <div class="network-card-stat-label">31 Tage</div>
+                        </div>
+                        <div class="network-card-stat">
+                            <div class="network-card-stat-value">{{ stat.itemCounts.last365d }}</div>
+                            <div class="network-card-stat-label">365 Tage</div>
+                        </div>
+                    </div>
                 </a>
             </div>
         {% endfor %}

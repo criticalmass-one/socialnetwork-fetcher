@@ -23,7 +23,14 @@ class MediaUrlExtractor
             return [];
         }
 
-        // RSS.app format: single thumbnail field
+        // RSS.app format: extract images from description_html (carousel support + original quality)
+        $htmlUrls = $this->extractImageUrlsFromHtml($data['description_html'] ?? '');
+
+        if (!empty($htmlUrls)) {
+            return $htmlUrls;
+        }
+
+        // RSS.app fallback: single thumbnail field
         if (isset($data['thumbnail']) && is_string($data['thumbnail']) && $data['thumbnail'] !== '') {
             return [$data['thumbnail']];
         }
@@ -66,5 +73,31 @@ class MediaUrlExtractor
     public function extractVideoUrl(Item $item): ?string
     {
         return $item->getPermalink();
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function extractImageUrlsFromHtml(string $html): array
+    {
+        if ($html === '') {
+            return [];
+        }
+
+        if (!preg_match_all('/<img[^>]+src=["\']([^"\']+)["\']/', $html, $matches)) {
+            return [];
+        }
+
+        $urls = [];
+
+        foreach ($matches[1] as $url) {
+            if (!str_starts_with($url, 'http')) {
+                continue;
+            }
+
+            $urls[] = $url;
+        }
+
+        return array_values(array_unique($urls));
     }
 }

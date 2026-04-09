@@ -29,6 +29,7 @@ abstract class Fetcher extends AbstractNetworkFeedFetcher
         $feedId = $additionalData['rss_feed_id'] ?? null;
 
         if ($feedId && !$this->rssApp->feedExists($feedId)) {
+            $this->logger->notice(sprintf('RSS.app Feed %s existiert nicht mehr für %s, suche neu.', $feedId, $sourceUrl));
             $feedId = null;
             unset($additionalData['rss_feed_id']);
         }
@@ -60,7 +61,13 @@ abstract class Fetcher extends AbstractNetworkFeedFetcher
             return $feedItemList;
 
         } catch (\Throwable $e) {
-            $this->markAsFailed($profile, 'Fehler bei RSS.app: ' . $e->getMessage());
+            $this->markAsFailed($profile, sprintf(
+                'RSS.app-Fehler für %s (Feed-ID: %s, URL: https://api.rss.app/v1/feeds/%s): %s',
+                $sourceUrl,
+                $feedId,
+                $feedId,
+                $e->getMessage(),
+            ));
             return [];
         }
     }

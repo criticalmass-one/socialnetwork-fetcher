@@ -31,6 +31,10 @@ class ProfileController extends AbstractController
         $page = max(1, $request->query->getInt('page', 1));
         $search = trim($request->query->getString('search', ''));
         $networkIds = array_map('intval', (array) $request->query->all('networks'));
+
+        if ($networkIds === [] && $request->query->has('network')) {
+            $networkIds = [$request->query->getInt('network')];
+        }
         $status = $request->query->getString('status', '');
 
         $total = $profileRepository->countFiltered($networkIds, $search, $status);

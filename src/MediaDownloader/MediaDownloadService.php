@@ -9,10 +9,13 @@ use Doctrine\ORM\EntityManagerInterface;
 
 class MediaDownloadService
 {
+    private const YTDLP_PHOTO_NETWORKS = ['instagram_profile', 'threads_profile', 'facebook_page'];
+
     public function __construct(
         private readonly MediaUrlExtractor $mediaUrlExtractor,
         private readonly PhotoDownloader $photoDownloader,
         private readonly VideoDownloader $videoDownloader,
+        private readonly YtDlpPhotoDownloader $ytDlpPhotoDownloader,
         private readonly EntityManagerInterface $entityManager,
         private readonly ItemRepository $itemRepository,
     ) {
@@ -34,15 +37,8 @@ class MediaDownloadService
 
         if ($photo) {
             try {
-                $photoUrls = $this->mediaUrlExtractor->extractPhotoUrls($item);
-
-                if (!empty($photoUrls)) {
-                    $paths = [];
-
-                    foreach ($photoUrls as $index => $url) {
-                        $paths[] = $this->photoDownloader->download($url, $profile->getId(), $item->getId(), $index);
-                    }
-
+                $paths = $this->downloadPhotos($item, $profile);
+                if (!empty($paths)) {
                     $item->setPhotoPaths($paths);
                 }
             } catch (\Exception $e) {
@@ -71,6 +67,38 @@ class MediaDownloadService
         }
 
         $this->entityManager->flush();
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function downloadPhotos(Item $item, Profile $profile): array
+    {
+        $networkIdentifier = $profile->getNetwork()?->getIdentifier();
+        $permalink = $item->getPermalink();
+
+        // Use yt-dlp for networks where it can extract carousel/original photos
+        if ($permalink
+            && $networkIdentifier
+            && in_array($networkIdentifier, self::YTDLP_PHOTO_NETWORKS, true)
+            && $this->ytDlpPhotoDownloader->isAvailable()
+        ) {
+            $paths = $this->ytDlpPhotoDownloader->download($permalink, $profile->getId(), $item->getId());
+
+            if (!empty($paths)) {
+                return $paths;
+            }
+        }
+
+        // Fallback: extract URLs from raw data and download directly
+        $photoUrls = $this->mediaUrlExtractor->extractPhotoUrls($item);
+        $paths = [];
+
+        foreach ($photoUrls as $index => $url) {
+            $paths[] = $this->photoDownloader->download($url, $profile->getId(), $item->getId(), $index);
+        }
+
+        return $paths;
     }
 
     public function downloadNewItemsForProfile(Profile $profile): void
