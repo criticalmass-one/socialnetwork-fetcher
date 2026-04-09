@@ -1,0 +1,53 @@
+{{ form_start(form) }}
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-network-wired me-1"></i>Netzwerk-Einstellungen
+                </div>
+                <div class="card-body">
+                    {{ form_row(form.identifier) }}
+                    {{ form_row(form.name) }}
+                    {{ form_row(form.icon) }}
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ form_row(form.backgroundColor) }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form_row(form.textColor) }}
+                        </div>
+                    </div>
+                    {{ form_row(form.profileUrlPattern) }}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <i class="fas fa-clock me-1"></i>Fetch-Zeitplan
+                </div>
+                <div class="card-body">
+                    {{ form_row(form.cronExpression) }}
+                    <div class="text-muted small mt-2">
+                        <strong>Beispiele:</strong>
+                        <ul class="mb-0 mt-1">
+                            <li><code>* * * * *</code> — Jede Minute</li>
+                            <li><code>*/5 * * * *</code> — Alle 5 Minuten</li>
+                            <li><code>*/15 * * * *</code> — Alle 15 Minuten</li>
+                            <li><code>0 * * * *</code> — Stündlich</li>
+                            <li><code>0 */6 * * *</code> — Alle 6 Stunden</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save me-1"></i>Speichern
+        </button>
+        <a href="{{ cancel_url }}" class="btn btn-secondary">Abbrechen</a>
+    </div>
+{{ form_end(form) }}

@@ -1,0 +1,71 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Networks - Social Network Fetcher{% endblock %}
+
+{% block body %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Networks</h1>
+        <a href="{{ path('app_network_new') }}" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>Neues Netzwerk
+        </a>
+    </div>
+
+    {% if networks is empty %}
+        <div class="alert alert-info">
+            Keine Netzwerke gefunden.
+            <a href="{{ path('app_network_new') }}">Erstes Netzwerk anlegen?</a>
+        </div>
+    {% else %}
+        <table class="table table-hover table-striped"
+               data-controller="datatable"
+               data-datatable-page-length-value="50"
+               data-datatable-order-value='[[1, "asc"]]'>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Identifier</th>
+                    <th>Icon</th>
+                    <th class="no-sort">Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for network in networks %}
+                    <tr>
+                        <td>{{ network.id }}</td>
+                        <td>
+                            <span class="badge badge-network" style="background-color: {{ network.backgroundColor }}; color: {{ network.textColor }};">
+                                <i class="{{ network.icon }} me-1"></i>{{ network.name }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{{ path('app_network_show', {id: network.id}) }}">
+                                {{ network.identifier }}
+                            </a>
+                        </td>
+                        <td><code>{{ network.icon }}</code></td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ path('app_network_show', {id: network.id}) }}" class="btn btn-outline-primary" title="Anzeigen">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{{ path('app_network_edit', {id: network.id}) }}" class="btn btn-outline-secondary" title="Bearbeiten">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <form method="post" action="{{ path('app_network_delete', {id: network.id}) }}"
+                                      class="d-inline"
+                                      data-controller="confirm"
+                                      data-confirm-message-value="Netzwerk &quot;{{ network.name }}&quot; wirklich löschen?">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('delete-network-' ~ network.id) }}">
+                                    <button type="submit" class="btn btn-outline-danger" title="Löschen">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}
