@@ -14,7 +14,7 @@ class IdentifierParser
 
     public static function parse(Profile $profile): ?Account
     {
-        preg_match('/@?\b([A-Z0-9._%+-]+)@([A-Z0-9.-]+\.[A-Z]{2,})/U', $profile->getIdentifier(), $matches);
+        preg_match('/@?\b([A-Z0-9._%+-]+)@([A-Z0-9.-]+\.[A-Z]{2,})/i', $profile->getIdentifier(), $matches);
 
         if (3 === count($matches)) {
             return new Account($matches[2], $matches[1]);
