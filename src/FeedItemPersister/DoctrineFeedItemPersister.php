@@ -12,6 +12,9 @@ use Doctrine\ORM\EntityManagerInterface;
 
 class DoctrineFeedItemPersister implements FeedItemPersisterInterface
 {
+    private int $newCount = 0;
+    private int $duplicateCount = 0;
+
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly ProfileRepository $profileRepository,
@@ -46,6 +49,9 @@ class DoctrineFeedItemPersister implements FeedItemPersisterInterface
             $entity
                 ->setProfile($profileEntity)
                 ->setUniqueIdentifier($uniqueIdentifier);
+            $this->newCount++;
+        } else {
+            $this->duplicateCount++;
         }
 
         $dateTime = $feedItem->getDateTime();
@@ -68,6 +74,24 @@ class DoctrineFeedItemPersister implements FeedItemPersisterInterface
     public function flush(): FeedItemPersisterInterface
     {
         $this->entityManager->flush();
+
+        return $this;
+    }
+
+    public function getNewCount(): int
+    {
+        return $this->newCount;
+    }
+
+    public function getDuplicateCount(): int
+    {
+        return $this->duplicateCount;
+    }
+
+    public function resetCounters(): self
+    {
+        $this->newCount = 0;
+        $this->duplicateCount = 0;
 
         return $this;
     }

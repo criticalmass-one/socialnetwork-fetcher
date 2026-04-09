@@ -14,6 +14,7 @@ use App\Repository\ProfileRepository;
 use App\RssApp\RssAppInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -135,10 +136,36 @@ class ProfileController extends AbstractController
         return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
     }
 
+    #[Route('/{id}/toggle-{field}', name: 'app_profile_toggle', requirements: ['id' => '\d+', 'field' => 'autoFetch|fetchSource'], methods: ['POST'])]
+    public function toggle(Request $request, Profile $profile, string $field, EntityManagerInterface $em): JsonResponse
+    {
+        if (!$this->isCsrfTokenValid('toggle-profile-' . $profile->getId(), $request->request->getString('_token'))) {
+            return new JsonResponse(['error' => 'Invalid CSRF token'], Response::HTTP_FORBIDDEN);
+        }
+
+        $setter = 'set' . ucfirst($field);
+        $getter = match ($field) {
+            'autoFetch' => 'isAutoFetch',
+            'fetchSource' => 'isFetchSource',
+        };
+
+        $newValue = !$profile->$getter();
+        $profile->$setter($newValue);
+        $em->flush();
+
+        return new JsonResponse([$field => $newValue]);
+    }
+
     #[Route('/{id}/fetch', name: 'app_profile_fetch', requirements: ['id' => '\d+'], methods: ['POST'])]
     public function fetch(Request $request, Profile $profile, FeedFetcher $feedFetcher, FeedItemPersisterInterface $feedItemPersister, EntityManagerInterface $em): Response
     {
+        $isAjax = $request->headers->get('X-Requested-With') === 'XMLHttpRequest';
+
         if (!$this->isCsrfTokenValid('fetch-profile-' . $profile->getId(), $request->request->getString('_token'))) {
+            if ($isAjax) {
+                return new JsonResponse(['error' => 'Invalid CSRF token'], Response::HTTP_FORBIDDEN);
+            }
+
             return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
         }
 
@@ -146,6 +173,7 @@ class ProfileController extends AbstractController
         $modelProfile->setId($profile->getId());
         $modelProfile->setIdentifier($profile->getIdentifier());
         $modelProfile->setNetwork($profile->getNetwork()->getIdentifier());
+        $modelProfile->setFetchSource($profile->isFetchSource());
 
         $fetcher = null;
         foreach ($feedFetcher->getNetworkFetcherList() as $networkFetcher) {
@@ -156,25 +184,73 @@ class ProfileController extends AbstractController
         }
 
         if (!$fetcher) {
+            if ($isAjax) {
+                return new JsonResponse([
+                    'error' => sprintf('Kein Fetcher für Netzwerk "%s" verfügbar.', $profile->getNetwork()->getIdentifier()),
+                ], Response::HTTP_BAD_REQUEST);
+            }
+
             $this->addFlash('warning', sprintf('Kein Fetcher für Netzwerk "%s" verfügbar.', $profile->getNetwork()->getIdentifier()));
 
             return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
         }
 
-        $fetchInfo = new FetchInfo();
-        $feedItemList = $fetcher->fetch($modelProfile, $fetchInfo);
+        $fetcherName = (new \ReflectionClass($fetcher))->getShortName();
 
-        $fetchResult = new FetchResult();
-        $fetchResult->setProfile($modelProfile)->setCounterFetched(count($feedItemList));
+        try {
+            $fetchInfo = new FetchInfo();
+            $feedItemList = $fetcher->fetch($modelProfile, $fetchInfo);
 
-        $feedItemPersister->persistFeedItemList($feedItemList, $fetchResult)->flush();
+            $fetchResult = new FetchResult();
+            $fetchResult->setProfile($modelProfile)->setCounterFetched(count($feedItemList));
 
-        $profile->setLastFetchSuccessDateTime(new \DateTimeImmutable());
-        $profile->setLastFetchFailureDateTime(null);
-        $profile->setLastFetchFailureError(null);
-        $em->flush();
+            if ($feedItemPersister instanceof \App\FeedItemPersister\DoctrineFeedItemPersister) {
+                $feedItemPersister->resetCounters();
+            }
 
-        $this->addFlash('success', sprintf('%d Items wurden importiert.', count($feedItemList)));
+            $feedItemPersister->persistFeedItemList($feedItemList, $fetchResult)->flush();
+
+            $profile->setLastFetchSuccessDateTime(new \DateTimeImmutable());
+            $profile->setLastFetchFailureDateTime(null);
+            $profile->setLastFetchFailureError(null);
+            $em->flush();
+
+            if ($isAjax) {
+                $newCount = 0;
+                $duplicateCount = 0;
+
+                if ($feedItemPersister instanceof \App\FeedItemPersister\DoctrineFeedItemPersister) {
+                    $newCount = $feedItemPersister->getNewCount();
+                    $duplicateCount = $feedItemPersister->getDuplicateCount();
+                }
+
+                return new JsonResponse([
+                    'success' => true,
+                    'fetcher' => $fetcherName,
+                    'fetched' => count($feedItemList),
+                    'new' => $newCount,
+                    'duplicates' => $duplicateCount,
+                    'lastFetchDateTime' => $profile->getLastFetchSuccessDateTime()->format('d.m.Y H:i'),
+                    'lastFetchDateTimeFull' => $profile->getLastFetchSuccessDateTime()->format('d.m.Y H:i:s'),
+                ]);
+            }
+
+            $this->addFlash('success', sprintf('%d Items wurden importiert.', count($feedItemList)));
+        } catch (\Exception $e) {
+            $profile->setLastFetchFailureDateTime(new \DateTimeImmutable());
+            $profile->setLastFetchFailureError($e->getMessage());
+            $em->flush();
+
+            if ($isAjax) {
+                return new JsonResponse([
+                    'success' => false,
+                    'fetcher' => $fetcherName,
+                    'error' => $e->getMessage(),
+                ], Response::HTTP_INTERNAL_SERVER_ERROR);
+            }
+
+            $this->addFlash('danger', sprintf('Fehler beim Import: %s', $e->getMessage()));
+        }
 
         return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
     }

@@ -28,7 +28,7 @@
                     <th>Netzwerk</th>
                     <th>Identifier</th>
                     <th>Auto-Fetch</th>
-                    <th>Auto-Publish</th>
+                    <th>Quelltext</th>
                     <th>Letzter Fetch</th>
                     <th class="no-sort">Aktionen</th>
                 </tr>
@@ -50,20 +50,12 @@
                             </a>
                         </td>
                         <td>
-                            {% if profile.autoFetch %}
-                                <span class="badge text-bg-success">Ja</span>
-                            {% else %}
-                                <span class="badge text-bg-secondary">Nein</span>
-                            {% endif %}
+                            {% include '_partials/_profile_toggle.html.twig' with { profile: profile, field: 'autoFetch', state: profile.autoFetch } %}
                         </td>
                         <td>
-                            {% if profile.autoPublish %}
-                                <span class="badge text-bg-success">Ja</span>
-                            {% else %}
-                                <span class="badge text-bg-secondary">Nein</span>
-                            {% endif %}
+                            {% include '_partials/_profile_toggle.html.twig' with { profile: profile, field: 'fetchSource', state: profile.fetchSource } %}
                         </td>
-                        <td>
+                        <td data-fetch-status>
                             {% if profile.lastFetchSuccessDateTime %}
                                 <span class="text-success" title="{{ profile.lastFetchSuccessDateTime|date('d.m.Y H:i:s') }}">
                                     <i class="fas fa-check me-1"></i>{{ profile.lastFetchSuccessDateTime|date('d.m.Y H:i') }}
@@ -84,6 +76,16 @@
                                 <a href="{{ path('app_profile_edit', {id: profile.id}) }}" class="btn btn-outline-secondary" title="Bearbeiten">
                                     <i class="fas fa-edit"></i>
                                 </a>
+                                <button type="button"
+                                        class="btn btn-outline-warning"
+                                        title="Items importieren"
+                                        data-controller="profile-fetch"
+                                        data-profile-fetch-url-value="{{ path('app_profile_fetch', {id: profile.id}) }}"
+                                        data-profile-fetch-token-value="{{ csrf_token('fetch-profile-' ~ profile.id) }}"
+                                        data-profile-fetch-identifier-value="{{ profile.identifier }}"
+                                        data-action="profile-fetch#fetch">
+                                    <i class="fas fa-download"></i>
+                                </button>
                                 <form method="post" action="{{ path('app_profile_delete', {id: profile.id}) }}"
                                       class="d-inline"
                                       data-controller="confirm"
@@ -102,4 +104,19 @@
     {% endif %}
 
     {% include '_partials/_delete_modal.html.twig' %}
+
+    <div class="modal fade" id="fetchModal" tabindex="-1" aria-labelledby="fetchModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="fetchModalLabel">Items importieren</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body"></div>
+                <div class="modal-footer d-none">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

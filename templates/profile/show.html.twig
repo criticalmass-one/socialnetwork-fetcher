@@ -56,21 +56,13 @@
                         <tr>
                             <th>Auto-Fetch</th>
                             <td>
-                                {% if profile.autoFetch %}
-                                    <span class="badge text-bg-success">Aktiv</span>
-                                {% else %}
-                                    <span class="badge text-bg-secondary">Inaktiv</span>
-                                {% endif %}
+                                {% include '_partials/_profile_toggle.html.twig' with { profile: profile, field: 'autoFetch', state: profile.autoFetch } %}
                             </td>
                         </tr>
                         <tr>
-                            <th>Auto-Publish</th>
+                            <th>Quelltext laden</th>
                             <td>
-                                {% if profile.autoPublish %}
-                                    <span class="badge text-bg-success">Aktiv</span>
-                                {% else %}
-                                    <span class="badge text-bg-secondary">Inaktiv</span>
-                                {% endif %}
+                                {% include '_partials/_profile_toggle.html.twig' with { profile: profile, field: 'fetchSource', state: profile.fetchSource } %}
                             </td>
                         </tr>
                         <tr>
@@ -94,7 +86,7 @@
         <div class="col-md-4">
             <div class="card mb-4">
                 <div class="card-header">Fetch-Status</div>
-                <div class="card-body">
+                <div class="card-body" data-fetch-status>
                     {% if profile.lastFetchSuccessDateTime %}
                         <div class="mb-3">
                             <small class="text-muted d-block">Letzter erfolgreicher Fetch</small>
@@ -134,12 +126,15 @@
                     <a href="{{ path('app_profile_edit', {id: profile.id}) }}" class="btn btn-outline-primary">
                         <i class="fas fa-edit me-1"></i>Bearbeiten
                     </a>
-                    <form method="post" action="{{ path('app_profile_fetch', {id: profile.id}) }}">
-                        <input type="hidden" name="_token" value="{{ csrf_token('fetch-profile-' ~ profile.id) }}">
-                        <button type="submit" class="btn btn-outline-warning w-100">
-                            <i class="fas fa-download me-1"></i>Items importieren
-                        </button>
-                    </form>
+                    <button type="button"
+                            class="btn btn-outline-warning w-100"
+                            data-controller="profile-fetch"
+                            data-profile-fetch-url-value="{{ path('app_profile_fetch', {id: profile.id}) }}"
+                            data-profile-fetch-token-value="{{ csrf_token('fetch-profile-' ~ profile.id) }}"
+                            data-profile-fetch-identifier-value="{{ profile.identifier }}"
+                            data-action="profile-fetch#fetch">
+                        <i class="fas fa-download me-1"></i>Items importieren
+                    </button>
                     {% set rssAppFeedId = profile.additionalData.rss_feed_id|default(null) %}
                     {% if rssAppFeedId %}
                         <form method="post" action="{{ path('app_profile_rssapp_delete', {id: profile.id}) }}"
@@ -172,4 +167,19 @@
     </div>
 
     {% include '_partials/_delete_modal.html.twig' %}
+
+    <div class="modal fade" id="fetchModal" tabindex="-1" aria-labelledby="fetchModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="fetchModalLabel">Items importieren</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body"></div>
+                <div class="modal-footer d-none">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}

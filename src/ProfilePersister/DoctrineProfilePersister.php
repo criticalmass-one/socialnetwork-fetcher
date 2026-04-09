@@ -54,7 +54,6 @@ class DoctrineProfilePersister implements ProfilePersisterInterface
         $additionalData = $profile->getAdditionalData();
 
         $entity
-            ->setAutoPublish($profile->isAutoPublish())
             ->setAutoFetch((bool) $profile->getAutoFetch())
             ->setLastFetchSuccessDateTime($profile->getLastFetchSuccessDateTime() ? \DateTimeImmutable::createFromInterface($profile->getLastFetchSuccessDateTime()) : null)
             ->setLastFetchFailureDateTime($profile->getLastFetchFailureDateTime() ? \DateTimeImmutable::createFromInterface($profile->getLastFetchFailureDateTime()) : null)
