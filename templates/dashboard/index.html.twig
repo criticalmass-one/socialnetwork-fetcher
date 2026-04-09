@@ -103,7 +103,7 @@
                                     <td>
                                         {% if item.profile %}
                                             <a href="{{ path('app_profile_show', {id: item.profile.id}) }}" class="link-subtle">
-                                                {{ item.profile.identifier|length > 30 ? item.profile.identifier[:30] ~ '…' : item.profile.identifier }}
+                                                {{ item.profile.displayName|length > 30 ? item.profile.displayName[:30] ~ '…' : item.profile.displayName }}
                                             </a>
                                         {% endif %}
                                     </td>

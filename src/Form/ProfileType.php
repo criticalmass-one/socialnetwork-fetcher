@@ -36,6 +36,11 @@ class ProfileType extends AbstractType
                 'label' => 'Identifier',
                 'help' => 'URL oder Benutzername im Netzwerk',
             ])
+            ->add('title', TextType::class, [
+                'label' => 'Titel',
+                'required' => false,
+                'help' => 'Anzeigename für dieses Profil (optional)',
+            ])
             ->add('autoFetch', CheckboxType::class, [
                 'label' => 'Auto-Fetch',
                 'required' => false,

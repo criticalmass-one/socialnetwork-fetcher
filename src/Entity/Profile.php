@@ -61,6 +61,11 @@ class Profile
     #[ApiProperty(description: 'Network-specific identifier, typically a URL. Example: "https://mastodon.social/@username" for Mastodon or "username.bsky.social" for Bluesky.')]
     private ?string $identifier = null;
 
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(['profile:read', 'profile:write'])]
+    #[ApiProperty(description: 'Human-readable display name for the profile. Falls back to identifier if not set.')]
+    private ?string $title = null;
+
     #[ORM\ManyToOne(targetEntity: Network::class)]
     #[ORM\JoinColumn(name: 'network_id', referencedColumnName: 'id', nullable: false)]
     #[Groups(['profile:read', 'profile:write'])]
@@ -143,6 +148,23 @@ class Profile
         $this->identifier = $identifier;
 
         return $this;
+    }
+
+    public function getTitle(): ?string
+    {
+        return $this->title;
+    }
+
+    public function setTitle(?string $title): self
+    {
+        $this->title = $title;
+
+        return $this;
+    }
+
+    public function getDisplayName(): string
+    {
+        return $this->title ?? $this->identifier ?? '';
     }
 
     public function getNetwork(): ?Network

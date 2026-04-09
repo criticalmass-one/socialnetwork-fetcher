@@ -1,8 +1,8 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Profil {{ profile.identifier }} - Social Network Fetcher{% endblock %}
+{% block title %}Profil {{ profile.displayName }} - Social Network Fetcher{% endblock %}
 
-{% block page_title %}{{ profile.identifier }}{% endblock %}
+{% block page_title %}{{ profile.displayName }}{% endblock %}
 
 {% block topbar_actions %}
     <a href="{{ path('app_profile_edit', {id: profile.id}) }}" class="action-btn" title="Bearbeiten">
@@ -17,7 +17,7 @@
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ path('app_profile_index') }}">Profiles</a></li>
-            <li class="breadcrumb-item active">{{ profile.identifier }}</li>
+            <li class="breadcrumb-item active">{{ profile.displayName }}</li>
         </ol>
     </nav>
 
@@ -44,6 +44,10 @@
                         <tr>
                             <th>Identifier</th>
                             <td>{{ profile.identifier }}</td>
+                        </tr>
+                        <tr>
+                            <th>Titel</th>
+                            <td>{{ profile.title ?? '-' }}</td>
                         </tr>
                         <tr>
                             <th>Auto-Fetch</th>
