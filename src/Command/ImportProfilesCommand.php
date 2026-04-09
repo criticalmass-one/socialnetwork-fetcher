@@ -20,6 +20,8 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 )]
 class ImportProfilesCommand extends Command
 {
+    private const BATCH_SIZE = 50;
+
     public function __construct(
         private readonly HttpClientInterface $httpClient,
         private readonly EntityManagerInterface $entityManager,
@@ -56,31 +58,46 @@ class ImportProfilesCommand extends Command
             $networkMap[$network->getIdentifier()] = $network;
         }
 
-        $created = 0;
-        $updated = 0;
-        $skipped = 0;
-        $seen = [];
+        // Deduplicate API data: by network+identifier (DB constraint) AND by API id (Doctrine identity map)
+        $uniqueProfiles = [];
+        $seenIds = [];
+        $duplicatesRemoved = 0;
 
         foreach ($apiProfiles as $data) {
             $networkIdentifier = $data['network'] ?? null;
 
             if (!$networkIdentifier || !isset($networkMap[$networkIdentifier])) {
                 $io->warning(sprintf('Netzwerk "%s" nicht gefunden, überspringe Profil #%d (%s)', $networkIdentifier, $data['id'], $data['identifier'] ?? ''));
-                $skipped++;
                 continue;
             }
 
             $network = $networkMap[$networkIdentifier];
-            $uniqueKey = $network->getId() . '::' . $data['identifier'];
+            $constraintKey = $network->getId() . '::' . mb_strtolower($data['identifier']);
+            $apiId = $data['id'];
 
-            if (isset($seen[$uniqueKey])) {
-                $skipped++;
+            if (isset($uniqueProfiles[$constraintKey]) || isset($seenIds[$apiId])) {
+                $duplicatesRemoved++;
                 continue;
             }
-            $seen[$uniqueKey] = true;
 
-            $existing = $this->profileRepository->find($data['id'])
-                ?? $this->profileRepository->findOneByNetworkAndIdentifier($network, $data['identifier']);
+            $uniqueProfiles[$constraintKey] = $data;
+            $seenIds[$apiId] = true;
+        }
+
+        if ($duplicatesRemoved > 0) {
+            $io->note(sprintf('%d Duplikate in API-Daten entfernt.', $duplicatesRemoved));
+        }
+
+        $io->info(sprintf('%d eindeutige Profile zum Import.', count($uniqueProfiles)));
+
+        $created = 0;
+        $updated = 0;
+        $batchCount = 0;
+
+        foreach ($uniqueProfiles as $data) {
+            $network = $networkMap[$data['network']];
+
+            $existing = $this->profileRepository->findOneByNetworkAndIdentifier($network, $data['identifier']);
 
             if ($existing) {
                 $profile = $existing;
@@ -129,6 +146,12 @@ class ImportProfilesCommand extends Command
             } else {
                 $updated++;
             }
+
+            $batchCount++;
+            if (!$dryRun && $batchCount >= self::BATCH_SIZE) {
+                $this->entityManager->flush();
+                $batchCount = 0;
+            }
         }
 
         if (!$dryRun) {
@@ -136,11 +159,10 @@ class ImportProfilesCommand extends Command
         }
 
         $io->success(sprintf(
-            '%s%d erstellt, %d aktualisiert, %d übersprungen.',
+            '%s%d erstellt, %d aktualisiert.',
             $dryRun ? '[Dry-Run] ' : '',
             $created,
             $updated,
-            $skipped,
         ));
 
         return Command::SUCCESS;
