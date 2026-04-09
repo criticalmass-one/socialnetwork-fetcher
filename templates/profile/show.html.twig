@@ -69,7 +69,42 @@
                             <th>Erstellt am</th>
                             <td>{{ profile.createdAt ? profile.createdAt|date('d.m.Y H:i:s') : '-' }}</td>
                         </tr>
+                        <tr>
+                            <th>Status</th>
+                            <td>
+                                {% if profile.deleted %}
+                                    <span class="badge bg-danger">Gelöscht</span>
+                                    {% if profile.deletedAt %}
+                                        <small class="text-muted ms-1">seit {{ profile.deletedAt|date('d.m.Y H:i:s') }}</small>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="badge bg-success">Aktiv</span>
+                                {% endif %}
+                            </td>
+                        </tr>
                     </table>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">Clients ({{ profile.clients|length }})</div>
+                <div class="card-body">
+                    {% if profile.clients|length > 0 %}
+                        <ul class="list-unstyled mb-0">
+                            {% for client in profile.clients %}
+                                <li>
+                                    <a href="{{ path('app_client_show', {id: client.id}) }}">
+                                        <i class="fas fa-id-badge me-1"></i>{{ client.name }}
+                                    </a>
+                                    {% if not client.enabled %}
+                                        <span class="badge bg-danger ms-1">deaktiviert</span>
+                                    {% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="text-muted mb-0">Kein Client verknüpft.</p>
+                    {% endif %}
                 </div>
             </div>
 

@@ -1,0 +1,28 @@
+security:
+    password_hashers:
+        Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
+
+    providers:
+        client_token_provider:
+            id: App\Security\ClientTokenUserProvider
+
+    firewalls:
+        dev:
+            pattern: ^/(_(profiler|wdt)|css|images|js)/
+            security: false
+
+        api:
+            pattern: ^/api
+            stateless: true
+            custom_authenticators:
+                - App\Security\ApiTokenAuthenticator
+            provider: client_token_provider
+
+        web:
+            pattern: ^/
+            security: false
+
+    access_control:
+        - { path: ^/api/doc, roles: PUBLIC_ACCESS }
+        - { path: ^/api/docs, roles: PUBLIC_ACCESS }
+        - { path: ^/api, roles: ROLE_API_CLIENT }

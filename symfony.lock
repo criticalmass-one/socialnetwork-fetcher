@@ -19,6 +19,9 @@
     "container-interop/container-interop": {
         "version": "1.2.0"
     },
+    "dama/doctrine-test-bundle": {
+        "version": "v8.6.0"
+    },
     "doctrine/annotations": {
         "version": "1.0",
         "recipe": {
@@ -125,6 +128,15 @@
     },
     "mashape/unirest-php": {
         "version": "v3.0.4"
+    },
+    "nelmio/api-doc-bundle": {
+        "version": "5.9",
+        "recipe": {
+            "repo": "github.com/symfony/recipes-contrib",
+            "branch": "main",
+            "version": "3.0",
+            "ref": "c8e0c38e1a280ab9e37587a8fa32b251d5bc1c94"
+        }
     },
     "php": {
         "version": "7.4"
@@ -338,6 +350,9 @@
             "config/packages/routing.yaml",
             "config/routes.yaml"
         ]
+    },
+    "symfony/security-bundle": {
+        "version": "v8.0.6"
     },
     "symfony/service-contracts": {
         "version": "v2.1.3"

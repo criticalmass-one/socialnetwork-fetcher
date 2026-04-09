@@ -24,6 +24,11 @@
                     </a>
                 </li>
                 <li class="nav-item">
+                    <a class="nav-link {% if app.request.attributes.get('_route') starts with 'app_client' %}active{% endif %}" href="{{ path('app_client_index') }}">
+                        <i class="fas fa-id-badge me-1"></i>Clients
+                    </a>
+                </li>
+                <li class="nav-item">
                     <a class="nav-link {% if app.request.attributes.get('_route') starts with 'app_item' %}active{% endif %}" href="{{ path('app_item_index') }}">
                         <i class="fas fa-list me-1"></i>Items
                     </a>

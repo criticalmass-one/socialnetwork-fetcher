@@ -1,5 +1,34 @@
 api_platform:
     title: Social Network Fetcher API
+    description: |
+        REST API for managing social network profiles and their feed items.
+
+        ## Authentication
+
+        All endpoints under `/api/` (except `/api/docs`) require a Bearer token.
+        Tokens are issued per client via the CLI command `app:client:create <name>`.
+
+        Include the token in the `Authorization` header:
+
+            Authorization: Bearer <token>
+
+        Requests without a valid token receive a `401 Unauthorized` response.
+
+        ## Multi-Tenancy
+
+        Each API client sees only its own profiles and their items.
+        Profiles can be shared between clients — a profile is only soft-deleted
+        when the last client removes it.
+
+        ## Profile Lifecycle
+
+        - **POST /api/profiles** — Creates a new profile or links an existing one to the authenticated client.
+          If a profile with the same network + identifier already exists, it is linked (idempotent).
+          If the existing profile was soft-deleted, it is reactivated.
+        - **DELETE /api/profiles/{id}** — Unlinks the profile from the client.
+          If no other client references it, the profile is soft-deleted and its RSS.app feed is removed.
+        - Profiles and items are never physically deleted — historical data is preserved.
+
     version: 1.0.0
     defaults:
         stateless: true
@@ -11,4 +40,10 @@ api_platform:
     docs_formats:
         jsonld: ['application/ld+json']
         jsonopenapi: ['application/vnd.openapi+json']
+        json: ['application/json']
         html: ['text/html']
+    swagger:
+        api_keys:
+            Bearer:
+                name: Authorization
+                type: header

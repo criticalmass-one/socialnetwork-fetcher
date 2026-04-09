@@ -1,0 +1,77 @@
+nelmio_api_doc:
+    documentation:
+        info:
+            title: Social Network Fetcher API
+            version: 1.0.0
+            description: |
+                REST API for managing social network profiles and their feed items.
+
+                ## Authentication
+
+                All endpoints under `/api/` (except documentation) require a Bearer token.
+                Tokens are issued per client via the CLI command:
+
+                    bin/console app:client:create <name>
+
+                Include the token in every request:
+
+                    Authorization: Bearer <your-token>
+
+                Requests without a valid token receive a **401 Unauthorized** response.
+                Disabled clients also receive **401**, even with a correct token.
+
+                ## Multi-Tenancy
+
+                Each API client sees **only its own profiles** and their items.
+
+                - Profiles can be shared between clients — the same profile may appear in multiple client scopes.
+                - A profile is only soft-deleted when the **last** client removes it.
+                - Items belong to profiles and inherit the client scope transitively.
+
+                ## Profile Lifecycle
+
+                | Action | Behavior |
+                |--------|----------|
+                | **POST /api/profiles** | Creates a new profile **or** links an existing one to the authenticated client (idempotent). Reactivates soft-deleted profiles. |
+                | **DELETE /api/profiles/{id}** | Unlinks the profile from the client. If no other client references it, the profile is soft-deleted and its RSS.app feed is removed. |
+                | **PUT /api/profiles/{id}** | Updates profile properties (identifier, network, flags). |
+
+                Profiles and items are **never physically deleted** — historical data is preserved.
+
+                ## Filtering & Sorting
+
+                - **Profiles**: Filter by network: `?network=<id>`
+                - **Items**: Filter by profile: `?profile=<id>`, order by `dateTime` or `createdAt`
+                - **Pagination**: Items are paginated (50 per page by default)
+
+                ## Response Formats
+
+                The API supports the following response formats via the `Accept` header:
+
+                - `application/json` — plain JSON
+                - `application/ld+json` — JSON-LD (Hydra)
+
+                ## Error Responses
+
+                | Status | Meaning |
+                |--------|---------|
+                | 400 | Invalid request body or parameters |
+                | 401 | Missing or invalid Bearer token |
+                | 404 | Resource not found or not linked to the authenticated client |
+                | 422 | Validation error |
+
+            contact:
+                name: criticalmass.in
+        components:
+            securitySchemes:
+                Bearer:
+                    type: http
+                    scheme: bearer
+                    bearerFormat: "hex token (64 characters)"
+                    description: "API token issued via `bin/console app:client:create <name>`"
+        security:
+            - Bearer: []
+
+    areas:
+        path_patterns:
+            - ^/api(?!/doc)
