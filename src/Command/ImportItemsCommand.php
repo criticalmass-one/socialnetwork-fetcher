@@ -24,6 +24,7 @@ use Symfony\Contracts\HttpClient\HttpClientInterface;
 class ImportItemsCommand extends Command
 {
     private const BATCH_SIZE = 200;
+    private const MAX_ITEMS_PER_PROFILE = 5000;
 
     public function __construct(
         private readonly HttpClientInterface $httpClient,
@@ -41,7 +42,7 @@ class ImportItemsCommand extends Command
     {
         $this
             ->addOption('dry-run', null, InputOption::VALUE_NONE, 'Nur anzeigen, was importiert würde')
-            ->addOption('city', null, InputOption::VALUE_REQUIRED, 'Nur eine bestimmte Stadt importieren (Slug)')
+            ->addOption('network', null, InputOption::VALUE_REQUIRED, 'Nur ein bestimmtes Netzwerk importieren')
         ;
     }
 
@@ -49,136 +50,111 @@ class ImportItemsCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
         $dryRun = $input->getOption('dry-run');
-        $cityFilter = $input->getOption('city');
+        $networkFilter = $input->getOption('network');
 
         $baseUrl = sprintf('https://%s', $this->criticalmassHostname);
 
-        // 1. Load all cities → id-to-slug map
-        $io->info('Lade Städte...');
-        $cityMap = $this->loadCityMap($baseUrl);
-        $io->info(sprintf('%d Städte geladen.', count($cityMap)));
+        // 1. Load local profiles — extract data before clearing EntityManager
+        $profiles = $this->profileRepository->findAll();
+        $io->info(sprintf('%d lokale Profile geladen.', count($profiles)));
 
-        // 2. Load all API profiles → group by city_id
-        $io->info('Lade Profile von der API...');
-        $apiProfiles = $this->httpClient->request('GET', $baseUrl . '/api/socialnetwork-profiles?size=10000')->toArray();
-        $io->info(sprintf('%d Profile geladen.', count($apiProfiles)));
-
-        $profilesByCityAndNetwork = [];
-        foreach ($apiProfiles as $ap) {
-            $cityId = $ap['city_id'] ?? null;
-            $network = $ap['network'] ?? null;
-            if ($cityId && $network) {
-                $profilesByCityAndNetwork[$cityId][$network][] = $ap;
+        $profileInfos = [];
+        foreach ($profiles as $profile) {
+            $networkIdentifier = $profile->getNetwork()->getIdentifier();
+            if ($networkFilter && $networkIdentifier !== $networkFilter) {
+                continue;
             }
+            $profileInfos[] = ['id' => $profile->getId(), 'network' => $networkIdentifier];
         }
 
-        // 3. Collect local profile IDs
-        $localProfileIds = [];
-        foreach ($this->profileRepository->findAll() as $profile) {
-            $localProfileIds[$profile->getId()] = true;
-        }
         $this->entityManager->clear();
 
-        // 4. Iterate cities and import items
         $totalCreated = 0;
         $totalUpdated = 0;
         $totalSkipped = 0;
         $batchCount = 0;
-        $citiesProcessed = 0;
+        $profilesProcessed = 0;
 
-        foreach ($profilesByCityAndNetwork as $cityId => $networkGroups) {
-            $slug = $cityMap[$cityId] ?? null;
-            if (!$slug) {
+        $progressBar = $io->createProgressBar(count($profileInfos));
+        $progressBar->setFormat(' %current%/%max% [%bar%] %percent:3s%% — %message%');
+        $progressBar->setMessage('Starte...');
+        $progressBar->start();
+
+        foreach ($profileInfos as $profileInfo) {
+            $profileId = $profileInfo['id'];
+            $progressBar->setMessage(sprintf('#%d %s', $profileId, $profileInfo['network']));
+            $profilesProcessed++;
+
+            try {
+                $apiItems = $this->loadFeedItemsForProfile($baseUrl, $profileId);
+            } catch (\Throwable $e) {
+                $io->warning(sprintf('Profil #%d: Fehler beim Laden: %s', $profileId, $e->getMessage()));
+                $progressBar->advance();
                 continue;
             }
 
-            if ($cityFilter && $slug !== $cityFilter) {
+            if (empty($apiItems)) {
+                $progressBar->advance();
                 continue;
             }
 
-            $citiesProcessed++;
+            $itemCount = count($apiItems);
 
-            foreach ($networkGroups as $networkIdentifier => $cityProfiles) {
-                $url = sprintf('%s/api/%s/socialnetwork-feeditems?networkIdentifier=%s', $baseUrl, $slug, $networkIdentifier);
+            if ($itemCount > self::MAX_ITEMS_PER_PROFILE) {
+                $io->warning(sprintf('Profil #%d: %d Items, limitiert auf %d', $profileId, $itemCount, self::MAX_ITEMS_PER_PROFILE));
+                $apiItems = array_slice($apiItems, 0, self::MAX_ITEMS_PER_PROFILE);
+                $itemCount = self::MAX_ITEMS_PER_PROFILE;
+            }
 
-                try {
-                    $apiItems = $this->httpClient->request('GET', $url)->toArray();
-                } catch (\Throwable $e) {
-                    $io->warning(sprintf('%s/%s: Fehler beim Laden: %s', $slug, $networkIdentifier, $e->getMessage()));
+            $progressBar->setMessage(sprintf('#%d %s (%d Items)', $profileId, $profileInfo['network'], $itemCount));
+
+            $profileEntity = null;
+
+            foreach ($apiItems as $data) {
+                $text = $data['text'] ?? null;
+                if ($text === null || $text === '') {
+                    $totalSkipped++;
                     continue;
                 }
 
-                if (empty($apiItems)) {
+                $uniqueId = $data['unique_identifier'] ?? null;
+                if (!$uniqueId) {
+                    $totalSkipped++;
                     continue;
                 }
 
-                // Resolve which local profile ID to assign items to
-                $resolvedProfileId = $this->resolveProfileId($cityProfiles, $localProfileIds);
+                $existing = $this->itemRepository->findOneByProfileAndUniqueIdentifier($profileId, $uniqueId);
 
-                if (!$resolvedProfileId) {
-                    $totalSkipped += count($apiItems);
-                    continue;
+                if ($existing) {
+                    $this->updateItem($existing, $data);
+                    $totalUpdated++;
+                } else {
+                    if (!$profileEntity || !$this->entityManager->contains($profileEntity)) {
+                        $profileEntity = $this->entityManager->find(Profile::class, $profileId);
+                    }
+                    $item = $this->createItem($profileEntity, $data);
+                    if (!$dryRun) {
+                        $this->entityManager->persist($item);
+                    }
+                    $totalCreated++;
                 }
 
-                foreach ($apiItems as $data) {
-                    $profileId = $resolvedProfileId;
-
-                    // If multiple profiles: try to match by URL
-                    if (count($cityProfiles) > 1) {
-                        $matchedId = $this->matchItemToProfileId($data, $cityProfiles, $localProfileIds);
-                        if ($matchedId) {
-                            $profileId = $matchedId;
-                        }
-                    }
-
-                    $text = $data['text'] ?? null;
-                    if ($text === null || $text === '') {
-                        $totalSkipped++;
-                        continue;
-                    }
-
-                    $uniqueId = $data['unique_identifier'] ?? null;
-                    if (!$uniqueId) {
-                        $totalSkipped++;
-                        continue;
-                    }
-
-                    // Use getReference() for a lightweight proxy — survives clear()
-                    $profileRef = $this->entityManager->getReference(Profile::class, $profileId);
-
-                    $existing = $this->itemRepository->findOneByProfileAndUniqueIdentifier($profileRef, $uniqueId);
-
-                    if ($existing) {
-                        $this->updateItem($existing, $data);
-                        $totalUpdated++;
-                    } else {
-                        $item = $this->createItem($profileRef, $data);
-                        if (!$dryRun) {
-                            $this->entityManager->persist($item);
-                        }
-                        $totalCreated++;
-                    }
-
-                    $batchCount++;
-                    if (!$dryRun && $batchCount >= self::BATCH_SIZE) {
-                        $this->entityManager->flush();
-                        $this->entityManager->clear();
-                        $this->debugDataHolder?->reset();
-                        $batchCount = 0;
-                    }
+                $batchCount++;
+                if (!$dryRun && $batchCount >= self::BATCH_SIZE) {
+                    $this->entityManager->flush();
+                    $this->entityManager->clear();
+                    $this->debugDataHolder?->reset();
+                    $profileEntity = null;
+                    $batchCount = 0;
                 }
             }
 
-            if ($citiesProcessed % 25 === 0) {
-                $io->info(sprintf(
-                    '%d Städte verarbeitet — %d erstellt, %d aktualisiert, %d übersprungen',
-                    $citiesProcessed,
-                    $totalCreated,
-                    $totalUpdated,
-                    $totalSkipped,
-                ));
-            }
+            $progressBar->advance();
         }
+
+        $progressBar->setMessage('Fertig.');
+        $progressBar->finish();
+        $io->newLine(2);
 
         if (!$dryRun) {
             $this->entityManager->flush();
@@ -186,9 +162,9 @@ class ImportItemsCommand extends Command
         }
 
         $io->success(sprintf(
-            '%s%d Städte verarbeitet: %d Items erstellt, %d aktualisiert, %d übersprungen.',
+            '%s%d Profile verarbeitet: %d Items erstellt, %d aktualisiert, %d übersprungen.',
             $dryRun ? '[Dry-Run] ' : '',
-            $citiesProcessed,
+            $profilesProcessed,
             $totalCreated,
             $totalUpdated,
             $totalSkipped,
@@ -197,63 +173,34 @@ class ImportItemsCommand extends Command
         return Command::SUCCESS;
     }
 
-    private function loadCityMap(string $baseUrl): array
+    private function loadFeedItemsForProfile(string $baseUrl, int $profileId): array
     {
-        $cityMap = [];
+        $allItems = [];
+        $page = 0;
+        $size = 1000;
+        $maxPages = (int) ceil(self::MAX_ITEMS_PER_PROFILE / $size);
 
-        foreach (['asc', 'desc'] as $direction) {
-            $url = sprintf('%s/api/city?extended=true&size=500&orderBy=id&orderDirection=%s', $baseUrl, $direction);
-            $cities = $this->httpClient->request('GET', $url)->toArray();
+        do {
+            $url = sprintf('%s/api/socialnetwork-feeditems?profileId=%d&page=%d&size=%d', $baseUrl, $profileId, $page, $size);
+            $response = $this->httpClient->request('GET', $url, [
+                'timeout' => 10,
+                'max_duration' => 30,
+            ]);
 
-            foreach ($cities as $city) {
-                $cityMap[$city['id']] = $city['main_slug']['slug'];
-            }
-        }
+            $responseData = $response->toArray();
 
-        return $cityMap;
-    }
-
-    private function resolveProfileId(array $cityProfiles, array $localProfileIds): ?int
-    {
-        foreach ($cityProfiles as $ap) {
-            if (isset($localProfileIds[$ap['id']])) {
-                return $ap['id'];
-            }
-        }
-
-        return null;
-    }
-
-    private function matchItemToProfileId(array $itemData, array $cityProfiles, array $localProfileIds): ?int
-    {
-        $itemUrl = $itemData['unique_identifier'] ?? '';
-        $itemUrlLower = strtolower($itemUrl);
-
-        foreach ($cityProfiles as $ap) {
-            $profileId = $ap['id'];
-            if (!isset($localProfileIds[$profileId])) {
-                continue;
+            if (!is_array($responseData) || !isset($responseData['data'])) {
+                break;
             }
 
-            $profileIdentifier = strtolower($ap['identifier']);
+            $items = $responseData['data'];
+            $totalPages = $responseData['meta']['totalPages'] ?? 1;
 
-            $profileHost = (string) parse_url($profileIdentifier, PHP_URL_HOST);
-            $profilePath = trim((string) parse_url($profileIdentifier, PHP_URL_PATH), '/');
+            $allItems = array_merge($allItems, $items);
+            $page++;
+        } while ($page < $totalPages && $page < $maxPages);
 
-            $itemHost = (string) parse_url($itemUrlLower, PHP_URL_HOST);
-
-            if ($profileHost && $itemHost && str_contains($itemHost, str_replace('www.', '', $profileHost))) {
-                if ($profilePath && str_contains($itemUrlLower, '/' . $profilePath . '/')) {
-                    return $profileId;
-                }
-                if ($profilePath && str_starts_with(ltrim((string) parse_url($itemUrlLower, PHP_URL_PATH), '/'), $profilePath . '/')) {
-                    return $profileId;
-                }
-            }
-        }
-
-        // Fallback: first available local profile
-        return $this->resolveProfileId($cityProfiles, $localProfileIds);
+        return $allItems;
     }
 
     private function createItem(Profile $profile, array $data): Item

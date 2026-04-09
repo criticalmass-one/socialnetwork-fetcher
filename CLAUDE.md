@@ -73,4 +73,4 @@ Keep `README.md` up to date when adding new networks, commands, or changing proj
 
 ## Environment Variables
 
-Key vars in `.env`: `CRITICALMASS_HOSTNAME` (API base URL), `RSS_APP_API_KEY`, `RSS_APP_API_SECRET`. The `$criticalmassHostname` binding in `services.yaml` injects into `ProfileFetcher`, `ApiPusher`, and `ProfilePersister`.
+Key vars in `.env`: `CRITICALMASS_HOSTNAME` (API base URL), `RSS_APP_API_KEY`, `RSS_APP_API_SECRET`. The `$criticalmassHostname` binding in `services.yaml` injects into `ProfileFetcher`, `ImportProfilesCommand`, and `ProfilePersister`.
