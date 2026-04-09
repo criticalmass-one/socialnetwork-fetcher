@@ -1,0 +1,26 @@
+{{ form_start(form) }}
+    <div class="card">
+        <div class="card-body">
+            {{ form_row(form.network) }}
+            {% if form.id is defined %}
+                {{ form_row(form.id) }}
+            {% endif %}
+            {{ form_row(form.identifier) }}
+            <div class="row">
+                <div class="col-md-6">
+                    {{ form_row(form.autoFetch) }}
+                </div>
+                <div class="col-md-6">
+                    {{ form_row(form.autoPublish) }}
+                </div>
+            </div>
+            {{ form_row(form.additionalData) }}
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-1"></i>Speichern
+            </button>
+            <a href="{{ cancel_url }}" class="btn btn-secondary">Abbrechen</a>
+        </div>
+    </div>
+{{ form_end(form) }}

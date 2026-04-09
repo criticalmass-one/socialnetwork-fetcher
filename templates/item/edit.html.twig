@@ -1,0 +1,52 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Item bearbeiten - Social Network Fetcher{% endblock %}
+
+{% block body %}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ path('app_item_index', item.profile ? {profile: item.profile.id} : {}) }}">Items</a></li>
+            <li class="breadcrumb-item"><a href="{{ path('app_item_show', {id: item.id}) }}">#{{ item.id }}</a></li>
+            <li class="breadcrumb-item active">Bearbeiten</li>
+        </ol>
+    </nav>
+
+    <h1 class="mb-4">Item #{{ item.id }} bearbeiten</h1>
+
+    <div class="row">
+        <div class="col-md-8">
+            {% include 'item/_form.html.twig' with {cancel_url: path('app_item_show', {id: item.id})} %}
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">Info</div>
+                <div class="card-body">
+                    <table class="table table-borderless table-sm mb-0">
+                        <tr>
+                            <th>Profil</th>
+                            <td>
+                                {% if item.profile %}
+                                    <a href="{{ path('app_profile_show', {id: item.profile.id}) }}">
+                                        {{ item.profile.identifier }}
+                                    </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Unique-ID</th>
+                            <td><code>{{ item.uniqueIdentifier }}</code></td>
+                        </tr>
+                        <tr>
+                            <th>Datum</th>
+                            <td>{{ item.dateTime|date('d.m.Y H:i:s') }}</td>
+                        </tr>
+                        <tr>
+                            <th>Erstellt am</th>
+                            <td>{{ item.createdAt|date('d.m.Y H:i:s') }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

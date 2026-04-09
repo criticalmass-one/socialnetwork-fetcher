@@ -9,12 +9,11 @@ class RssApp implements RssAppInterface
     private readonly string $bearer;
 
     public function __construct(
-        private readonly HttpClientInterface $httpClient
-    )
-    {
-        $apiKey = $_ENV['RSS_APP_API_KEY'] ?? null;
-        $apiSecret = $_ENV['RSS_APP_API_SECRET'] ?? null;
-        $this->bearer = sprintf('Bearer %s:%s', $apiKey, $apiSecret);
+        private readonly HttpClientInterface $httpClient,
+        string $rssAppApiKey,
+        string $rssAppApiSecret,
+    ) {
+        $this->bearer = sprintf('Bearer %s:%s', $rssAppApiKey, $rssAppApiSecret);
     }
 
     public function getItems(string $feedId, int $count = 100): array
@@ -26,9 +25,8 @@ class RssApp implements RssAppInterface
         ]);
 
         $data = $response->toArray();
-        $items = $data['items'] ?? [];
 
-        return $items;
+        return $data['items'] ?? [];
     }
 
     public function feedExists(string $feedId): bool
@@ -46,8 +44,9 @@ class RssApp implements RssAppInterface
         }
     }
 
-    public function findRssAppFeedIdBySourceUrl(string $sourceUrl): ?string
+    public function listFeeds(): array
     {
+        $allFeeds = [];
         $offset = 0;
         $limit = 100;
 
@@ -60,14 +59,43 @@ class RssApp implements RssAppInterface
             $feeds = $data['data'] ?? [];
 
             foreach ($feeds as $feed) {
-                if (($feed['source_url'] ?? '') === $sourceUrl) {
-                    return $feed['id'];
-                }
+                $allFeeds[] = $feed;
             }
 
             $offset += $limit;
         } while (($data['total'] ?? 0) > $offset);
 
+        return $allFeeds;
+    }
+
+    public function findRssAppFeedIdBySourceUrl(string $sourceUrl): ?string
+    {
+        foreach ($this->listFeeds() as $feed) {
+            if (($feed['source_url'] ?? '') === $sourceUrl) {
+                return $feed['id'];
+            }
+        }
+
         return null;
+    }
+
+    public function createFeed(string $url): array
+    {
+        $response = $this->httpClient->request('POST', 'https://api.rss.app/v1/feeds', [
+            'headers' => [
+                'Authorization' => $this->bearer,
+                'Content-Type' => 'application/json',
+            ],
+            'json' => ['url' => $url],
+        ]);
+
+        return $response->toArray();
+    }
+
+    public function deleteFeed(string $feedId): void
+    {
+        $this->httpClient->request('DELETE', sprintf('https://api.rss.app/v1/feeds/%s', $feedId), [
+            'headers' => ['Authorization' => $this->bearer],
+        ]);
     }
 }

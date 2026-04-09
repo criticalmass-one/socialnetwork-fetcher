@@ -1,0 +1,23 @@
+{{ form_start(form) }}
+    <div class="card">
+        <div class="card-body">
+            {{ form_row(form.title) }}
+            {{ form_row(form.text) }}
+            {{ form_row(form.permalink) }}
+            <div class="row">
+                <div class="col-md-6">
+                    {{ form_row(form.hidden) }}
+                </div>
+                <div class="col-md-6">
+                    {{ form_row(form.deleted) }}
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-1"></i>Speichern
+            </button>
+            <a href="{{ cancel_url }}" class="btn btn-secondary">Abbrechen</a>
+        </div>
+    </div>
+{{ form_end(form) }}
