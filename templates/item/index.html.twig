@@ -117,6 +117,7 @@
                                 <th>Profil</th>
                                 <th>Text</th>
                                 <th>Datum</th>
+                                <th>Medien</th>
                                 <th>Status</th>
                                 <th>Aktionen</th>
                             </tr>
@@ -124,7 +125,7 @@
                         <tbody data-item-list-target="tableBody">
                             {% set toggleToken = csrf_token('toggle-item') %}
                             {% if items is empty %}
-                                <tr><td colspan="7" class="text-center text-muted py-4">Keine Items gefunden.</td></tr>
+                                <tr><td colspan="8" class="text-center text-muted py-4">Keine Items gefunden.</td></tr>
                             {% else %}
                                 {% for item in items %}
                                     <tr id="item-row-{{ item.id }}"
@@ -154,6 +155,17 @@
                                         </td>
                                         <td>{{ item.dateTime|date('d.m.Y H:i') }}</td>
                                         <td>
+                                            {% if item.hasPhoto %}
+                                                <i class="fas fa-camera text-success" title="{{ item.photoCount }} Foto(s) heruntergeladen"></i>
+                                                {% if item.photoCount > 1 %}
+                                                    <small class="text-success">{{ item.photoCount }}</small>
+                                                {% endif %}
+                                            {% endif %}
+                                            {% if item.hasVideo %}
+                                                <i class="fas fa-video text-success" title="Video heruntergeladen"></i>
+                                            {% endif %}
+                                        </td>
+                                        <td>
                                             <button class="btn btn-sm {{ item.hidden ? 'btn-warning' : 'btn-outline-warning' }}"
                                                     data-action="toggle#toggleHidden"
                                                     data-toggle-target="hiddenBtn"
@@ -175,6 +187,14 @@
                                                 <a href="{{ path('app_item_edit', {id: item.id}) }}" class="btn btn-outline-secondary" title="Bearbeiten">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
+                                                <button class="btn btn-outline-info"
+                                                        title="Medien herunterladen"
+                                                        data-controller="media-download"
+                                                        data-media-download-url-value="{{ path('app_item_download_media', {id: item.id}) }}"
+                                                        data-media-download-token-value="{{ csrf_token('download-media-' ~ item.id) }}"
+                                                        data-action="media-download#download">
+                                                    <i class="fas fa-download"></i>
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
@@ -215,6 +235,13 @@
                 </td>
                 <td>{{dateTime}}</td>
                 <td>
+                    {{#if hasPhoto}}
+                        <i class="fas fa-camera text-success" title="{{photoCount}} Foto(s) heruntergeladen"></i>
+                        {{#if (gt photoCount 1)}}<small class="text-success">{{photoCount}}</small>{{/if}}
+                    {{/if}}
+                    {{#if hasVideo}}<i class="fas fa-video text-success" title="Video heruntergeladen"></i>{{/if}}
+                </td>
+                <td>
                     <button class="btn btn-sm {{#if hidden}}btn-warning{{else}}btn-outline-warning{{/if}}"
                             data-action="toggle#toggleHidden"
                             data-toggle-target="hiddenBtn"
@@ -236,13 +263,21 @@
                         <a href="{{editUrl}}" class="btn btn-outline-secondary" title="Bearbeiten">
                             <i class="fas fa-edit"></i>
                         </a>
+                        <button class="btn btn-outline-info"
+                                title="Medien herunterladen"
+                                data-controller="media-download"
+                                data-media-download-url-value="{{downloadMediaUrl}}"
+                                data-media-download-token-value="{{downloadMediaToken}}"
+                                data-action="media-download#download">
+                            <i class="fas fa-download"></i>
+                        </button>
                     </div>
                 </td>
             </tr>
         </template>
 
         <template data-item-list-target="emptyTemplate">
-            <tr><td colspan="7" class="text-center text-muted py-4">Keine Items gefunden.</td></tr>
+            <tr><td colspan="8" class="text-center text-muted py-4">Keine Items gefunden.</td></tr>
         </template>
 
         <template data-item-list-target="paginationTemplate">
@@ -277,5 +312,20 @@
             {{/if}}
         </template>
         {% endverbatim %}
+    </div>
+
+    <div class="modal fade" id="mediaDownloadModal" tabindex="-1" aria-labelledby="mediaDownloadModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="mediaDownloadModalLabel">Medien herunterladen</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body"></div>
+                <div class="modal-footer d-none">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Schließen</button>
+                </div>
+            </div>
+        </div>
     </div>
 {% endblock %}

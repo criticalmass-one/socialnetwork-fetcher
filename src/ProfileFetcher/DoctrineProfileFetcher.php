@@ -69,6 +69,8 @@ class DoctrineProfileFetcher implements ProfileFetcherInterface
 
         $model->setLastFetchFailureError($entity->getLastFetchFailureError());
         $model->setFetchSource($entity->isFetchSource());
+        $model->setSavePhotos($entity->isSavePhotos());
+        $model->setSaveVideos($entity->isSaveVideos());
 
         $additionalData = $entity->getAdditionalData();
         if ($additionalData) {

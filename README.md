@@ -7,6 +7,7 @@ Symfony 8 application that fetches social media feeds from various networks and 
 - PHP 8.5+
 - Composer
 - Docker & Docker Compose (for PostgreSQL)
+- yt-dlp (optional, for video downloads)
 
 ## Installation
 
@@ -147,14 +148,28 @@ php bin/console app:rssapp:sync-feed-ids --network=instagram_profile
 php bin/console app:rssapp:sync-feed-ids --force      # re-check existing feed IDs
 ```
 
+### Media download
+
+Download photos and videos for feed items. Photos are extracted from the raw API response (supports multiple photos per post for Bluesky and Mastodon). Videos are downloaded via `yt-dlp` from the item's permalink URL.
+
+```bash
+php bin/console app:download-media                    # all profiles with savePhotos/saveVideos enabled
+php bin/console app:download-media --profile=42       # specific profile
+php bin/console app:download-media --retry-failed     # retry previously failed downloads
+php bin/console app:download-media --photos-only      # only photos
+php bin/console app:download-media --videos-only      # only videos (requires yt-dlp)
+```
+
+Media files are stored in `public/media/{profileId}/{itemId}/`. Profiles must have `savePhotos` and/or `saveVideos` enabled (toggle in Web UI or API). When enabled, media is also downloaded automatically after each feed fetch.
+
 ## Web UI
 
 The admin interface is accessible after login at `/login`. It provides:
 
 - **Dashboard** — Overview with network statistics, profile/item counts, and a table of recent items
 - **Networks** — CRUD for social networks (name, icon, color, cron schedule)
-- **Profiles** — Searchable/filterable list with auto-fetch toggle, fetch status, manual fetch trigger, RSS.app registration
-- **Items** — Searchable/filterable list with hide/delete toggles, network and profile filters
+- **Profiles** — Searchable/filterable list with auto-fetch toggle, save photos/videos toggles, fetch status, manual fetch trigger, RSS.app registration
+- **Items** — Searchable/filterable list with hide/delete toggles, media status indicators, network and profile filters, manual media download
 - **Clients** — API client management with token display, enable/disable
 
 The frontend uses Bootstrap 5, Stimulus controllers for interactive features (toggles, AJAX pagination, search), and Handlebars for client-side template rendering. Assets are managed via Symfony Asset Mapper (no build step needed).
@@ -241,8 +256,8 @@ src/NetworkFeedFetcher/YourNetwork/
 
 | Entity | Purpose |
 |---|---|
-| `Profile` | Social network profile (URL identifier, optional title, network reference, fetch metadata) |
-| `Item` | Feed item (text, title, permalink, timestamps, hidden/deleted flags) |
+| `Profile` | Social network profile (URL identifier, optional title, network reference, fetch metadata, savePhotos/saveVideos flags) |
+| `Item` | Feed item (text, title, permalink, timestamps, hidden/deleted flags, photoPaths, videoPath, mediaStatus) |
 | `Network` | Social network definition (name, icon, colors, cron expression) |
 | `Client` | API client (name, Bearer token, enabled flag, linked profiles) |
 

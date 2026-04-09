@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Item;
 use App\Form\ItemType;
+use App\MediaDownloader\MediaDownloadService;
 use App\Repository\ItemRepository;
 use App\Repository\NetworkRepository;
 use App\Repository\ProfileRepository;
@@ -42,7 +43,7 @@ class ItemController extends AbstractController
 
         if ($request->headers->get('X-Requested-With') === 'XMLHttpRequest') {
             return new JsonResponse([
-                'items' => $this->serializeItems($items),
+                'items' => $this->serializeItems($items, $csrfTokenManager),
                 'csrfToken' => $csrfTokenManager->getToken('toggle-item')->getValue(),
                 'page' => $page,
                 'pages' => $pages,
@@ -68,9 +69,9 @@ class ItemController extends AbstractController
      * @param list<Item> $items
      * @return list<array<string, mixed>>
      */
-    private function serializeItems(array $items): array
+    private function serializeItems(array $items, CsrfTokenManagerInterface $csrfTokenManager): array
     {
-        return array_map(function (Item $item): array {
+        return array_map(function (Item $item) use ($csrfTokenManager): array {
             $profile = $item->getProfile();
             $network = $profile?->getNetwork();
 
@@ -81,8 +82,14 @@ class ItemController extends AbstractController
                 'dateTime' => $item->getDateTime()?->format('d.m.Y H:i'),
                 'hidden' => $item->isHidden(),
                 'deleted' => $item->isDeleted(),
+                'hasPhoto' => $item->hasPhoto(),
+                'hasVideo' => $item->hasVideo(),
+                'photoCount' => $item->getPhotoCount(),
+                'mediaStatus' => $item->getMediaStatus(),
                 'showUrl' => $this->generateUrl('app_item_show', ['id' => $item->getId()]),
                 'editUrl' => $this->generateUrl('app_item_edit', ['id' => $item->getId()]),
+                'downloadMediaUrl' => $this->generateUrl('app_item_download_media', ['id' => $item->getId()]),
+                'downloadMediaToken' => $csrfTokenManager->getToken('download-media-' . $item->getId())->getValue(),
                 'profile' => $profile ? [
                     'id' => $profile->getId(),
                     'identifier' => $profile->getIdentifier(),
@@ -155,5 +162,30 @@ class ItemController extends AbstractController
         return new JsonResponse([
             'deleted' => $item->isDeleted(),
         ]);
+    }
+
+    #[Route('/{id}/download-media', name: 'app_item_download_media', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function downloadMedia(Request $request, Item $item, MediaDownloadService $mediaDownloadService): JsonResponse
+    {
+        if (!$this->isCsrfTokenValid('download-media-' . $item->getId(), $request->request->getString('_token'))) {
+            return new JsonResponse(['error' => 'Invalid CSRF token'], Response::HTTP_FORBIDDEN);
+        }
+
+        try {
+            $mediaDownloadService->downloadMedia($item);
+
+            return new JsonResponse([
+                'success' => true,
+                'photoPaths' => $item->getPhotoPaths(),
+                'videoPath' => $item->getVideoPath(),
+                'mediaStatus' => $item->getMediaStatus(),
+            ]);
+        } catch (\Exception $e) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => $e->getMessage(),
+                'mediaStatus' => $item->getMediaStatus(),
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 }

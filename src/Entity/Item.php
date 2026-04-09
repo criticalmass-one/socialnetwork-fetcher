@@ -132,6 +132,26 @@ class Item
     #[ApiProperty(description: 'Parsed/processed version of the source content.')]
     private ?string $parsedSource = null;
 
+    #[ORM\Column(type: 'json', nullable: true)]
+    #[Groups(['item:read'])]
+    #[ApiProperty(description: 'Relative paths to downloaded photo files.', readable: true, writable: false)]
+    private ?array $photoPaths = null;
+
+    #[ORM\Column(type: 'string', length: 255, nullable: true)]
+    #[Groups(['item:read'])]
+    #[ApiProperty(description: 'Relative path to the downloaded video file.', readable: true, writable: false)]
+    private ?string $videoPath = null;
+
+    #[ORM\Column(type: 'string', length: 20, nullable: true)]
+    #[Groups(['item:read'])]
+    #[ApiProperty(description: 'Media download status: null, pending, downloading, completed, failed.', readable: true, writable: false)]
+    private ?string $mediaStatus = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['item:read'])]
+    #[ApiProperty(description: 'Error message from a failed media download attempt.', readable: true, writable: false)]
+    private ?string $mediaError = null;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
@@ -284,5 +304,82 @@ class Item
         $this->source = $source;
 
         return $this;
+    }
+
+    public function getPhotoPaths(): array
+    {
+        return $this->photoPaths ?? [];
+    }
+
+    public function setPhotoPaths(?array $photoPaths): self
+    {
+        $this->photoPaths = $photoPaths;
+
+        return $this;
+    }
+
+    public function addPhotoPath(string $path): self
+    {
+        $paths = $this->getPhotoPaths();
+        $paths[] = $path;
+        $this->photoPaths = $paths;
+
+        return $this;
+    }
+
+    public function getVideoPath(): ?string
+    {
+        return $this->videoPath;
+    }
+
+    public function setVideoPath(?string $videoPath): self
+    {
+        $this->videoPath = $videoPath;
+
+        return $this;
+    }
+
+    public function getMediaStatus(): ?string
+    {
+        return $this->mediaStatus;
+    }
+
+    public function setMediaStatus(?string $mediaStatus): self
+    {
+        $this->mediaStatus = $mediaStatus;
+
+        return $this;
+    }
+
+    public function getMediaError(): ?string
+    {
+        return $this->mediaError;
+    }
+
+    public function setMediaError(?string $mediaError): self
+    {
+        $this->mediaError = $mediaError;
+
+        return $this;
+    }
+
+    public function hasPhoto(): bool
+    {
+        return !empty($this->photoPaths);
+    }
+
+    public function getPhotoCount(): int
+    {
+        return count($this->getPhotoPaths());
+    }
+
+    public function hasVideo(): bool
+    {
+        return $this->videoPath !== null;
+    }
+
+    public function hasMedia(): bool
+    {
+        return $this->hasPhoto() || $this->hasVideo();
     }
 }

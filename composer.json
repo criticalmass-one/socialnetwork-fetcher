@@ -14,6 +14,8 @@
         "halaxa/json-machine": "^1.2",
         "laminas/laminas-feed": "^2.12",
         "laminas/laminas-http": "^2.11",
+        "league/flysystem-bundle": "^3.6",
+        "nelmio/api-doc-bundle": "^5.9",
         "symfony/apache-pack": "*",
         "symfony/asset": "^8.0",
         "symfony/asset-mapper": "*",

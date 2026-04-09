@@ -11,8 +11,16 @@
                 <div class="col-md-6">
                     {{ form_row(form.autoFetch) }}
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     {{ form_row(form.fetchSource) }}
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    {{ form_row(form.savePhotos) }}
+                </div>
+                <div class="col-md-4">
+                    {{ form_row(form.saveVideos) }}
                 </div>
             </div>
             {{ form_row(form.additionalData) }}

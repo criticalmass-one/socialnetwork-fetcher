@@ -108,6 +108,16 @@ class Profile
     private ?string $additionalData = null;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    #[Groups(['profile:read', 'profile:write'])]
+    #[ApiProperty(description: 'Whether to automatically download photos for new feed items.')]
+    private bool $savePhotos = false;
+
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    #[Groups(['profile:read', 'profile:write'])]
+    #[ApiProperty(description: 'Whether to automatically download videos for new feed items.')]
+    private bool $saveVideos = false;
+
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
     #[Groups(['profile:read'])]
     #[ApiProperty(description: 'Whether this profile has been soft-deleted. Soft-deleted profiles are excluded from collection responses.', readable: true, writable: false)]
     private bool $deleted = false;
@@ -259,6 +269,30 @@ class Profile
     public function setAdditionalData(?array $additionalData): self
     {
         $this->additionalData = $additionalData !== null ? json_encode($additionalData) : null;
+
+        return $this;
+    }
+
+    public function isSavePhotos(): bool
+    {
+        return $this->savePhotos;
+    }
+
+    public function setSavePhotos(bool $savePhotos): self
+    {
+        $this->savePhotos = $savePhotos;
+
+        return $this;
+    }
+
+    public function isSaveVideos(): bool
+    {
+        return $this->saveVideos;
+    }
+
+    public function setSaveVideos(bool $saveVideos): self
+    {
+        $this->saveVideos = $saveVideos;
 
         return $this;
     }

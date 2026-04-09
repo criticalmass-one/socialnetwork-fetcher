@@ -37,6 +37,12 @@ php bin/console app:rssapp:sync-feed-ids --dry-run    # preview without writing
 php bin/console app:rssapp:sync-feed-ids --network=instagram_profile  # only one network
 php bin/console app:rssapp:sync-feed-ids --force      # re-check profiles with existing feed IDs
 php bin/console app:rssapp:sync-feed-ids -v           # show all profiles including skipped
+
+php bin/console app:download-media                    # download media for all enabled profiles
+php bin/console app:download-media --profile=42       # download for specific profile
+php bin/console app:download-media --retry-failed     # retry previously failed downloads
+php bin/console app:download-media --photos-only      # only photos
+php bin/console app:download-media --videos-only      # only videos
 ```
 
 ## Architecture
@@ -48,6 +54,7 @@ Command → FeedFetcher → ProfileFetcher (loads profiles from criticalmass.in 
                       → NetworkFeedFetcher.fetch() (per profile, network-specific)
                       → FeedItemPersister (pushes items to criticalmass.in API)
                       → ProfilePersister (updates profile metadata)
+                      → MediaDownloadService (downloads photos/videos if profile flags set)
 ```
 
 ### Service Wiring
@@ -67,10 +74,23 @@ Network fetchers are auto-discovered: any class implementing `NetworkFeedFetcher
 
 ### Entities
 
-- **Profile** — Social network profile: `id`, `identifier` (URL), `title` (optional display name), `network` (FK), `autoFetch`, `fetchSource`, `additionalData` (JSON), `deleted`/`deletedAt` (soft delete). `getDisplayName()` returns `title` if set, otherwise `identifier`.
-- **Item** — Feed item: `id`, `profile` (FK), `uniqueIdentifier`, `text`, `title`, `dateTime`, `permalink`, `raw`, `hidden`, `deleted`. Supports soft-delete and hide toggles.
+- **Profile** — Social network profile: `id`, `identifier` (URL), `title` (optional display name), `network` (FK), `autoFetch`, `fetchSource`, `savePhotos`, `saveVideos`, `additionalData` (JSON), `deleted`/`deletedAt` (soft delete). `getDisplayName()` returns `title` if set, otherwise `identifier`.
+- **Item** — Feed item: `id`, `profile` (FK), `uniqueIdentifier`, `text`, `title`, `dateTime`, `permalink`, `raw`, `hidden`, `deleted`, `photoPaths` (JSON array), `videoPath`, `mediaStatus`, `mediaError`. Supports soft-delete, hide toggles, and media downloads.
 - **Network** — Social network definition: `id`, `identifier`, `name`, `icon`, `backgroundColor`, `textColor`, `cronExpression`.
 - **Client** — API client: `id`, `name`, `token`, `enabled`, `profiles` (ManyToMany via `client_profile` join table), `createdAt`.
+
+### Media Download System
+
+Profiles can opt into automatic photo/video downloads via `savePhotos` and `saveVideos` flags. Media is stored via Flysystem (local adapter at `public/media/`).
+
+- **`MediaUrlExtractor`** — extracts photo URLs from `raw` JSON (RSS.app `thumbnail`, Bluesky `embed.images[]`, Mastodon `media_attachments[]`). Supports multiple photos per item. Video URL is the item's `permalink`.
+- **`PhotoDownloader`** — downloads images via HttpClient, stores as `{profileId}/{itemId}/photo_{index}.{ext}` in Flysystem
+- **`VideoDownloader`** — downloads videos via `yt-dlp` process, stores as `{profileId}/{itemId}/video.{ext}` on disk. Requires `yt-dlp` to be installed; gracefully skips if unavailable.
+- **`MediaDownloadService`** — orchestrates downloads, manages `mediaStatus` lifecycle (`downloading` → `completed`/`failed`)
+- **`DownloadMediaCommand`** — CLI for bulk downloads with `--profile`, `--retry-failed`, `--photos-only`, `--videos-only` options
+- Auto-download triggers after feed fetch when profile has `savePhotos`/`saveVideos` enabled
+- Manual download via button on item detail page (Stimulus `media_download_controller`)
+- Item entity stores `photoPaths` (JSON array of relative paths), `videoPath` (string), `mediaStatus`, `mediaError`
 
 ### Serializer
 
@@ -92,7 +112,7 @@ Custom `App\Serializer\Serializer` (not Symfony's framework serializer). Uses `N
 - **Authentication**: Form login at `/login`, in-memory admin user via `WEB_ADMIN_USERNAME`/`WEB_ADMIN_PASSWORD_HASH` env vars, implemented in `WebUserProvider`
 - **Controllers**: `DashboardController`, `NetworkController`, `ProfileController`, `ItemController`, `ClientController`, `LoginController`
 - **Frontend stack**: Bootstrap 5.3, Stimulus controllers, Handlebars templates, Symfony Asset Mapper (no build step)
-- **Stimulus controllers** (`assets/controllers/`): `profile_list_controller`, `item_list_controller`, `profile_fetch_controller`, `profile_toggle_controller`, `toggle_controller`, `confirm_controller`, `flash_controller`
+- **Stimulus controllers** (`assets/controllers/`): `profile_list_controller`, `item_list_controller`, `profile_fetch_controller`, `profile_toggle_controller`, `toggle_controller`, `confirm_controller`, `flash_controller`, `media_download_controller`
 - **CSS**: Custom design system in `assets/styles/app.css` (dark sidebar, stat cards, network cards, data tables)
 - **AJAX patterns**: Profile and item lists use Stimulus + Handlebars for client-side rendering with AJAX pagination, search, and filtering. Controllers return JSON when `X-Requested-With: XMLHttpRequest` header is present.
 
