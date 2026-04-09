@@ -56,7 +56,9 @@ class DoctrineFeedItemPersister implements FeedItemPersisterInterface
             ->setDateTime($dateTime ? \DateTimeImmutable::createFromInterface($dateTime) : new \DateTimeImmutable())
             ->setHidden((bool) $feedItem->getHidden())
             ->setDeleted((bool) $feedItem->getDeleted())
-            ->setRaw($feedItem->getRaw());
+            ->setRaw($feedItem->getRaw())
+            ->setRawSource($feedItem->getRawSource())
+            ->setSource($feedItem->getSource());
 
         $this->entityManager->persist($entity);
 

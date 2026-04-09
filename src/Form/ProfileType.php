@@ -44,6 +44,10 @@ class ProfileType extends AbstractType
                 'label' => 'Auto-Fetch',
                 'required' => false,
             ])
+            ->add('fetchSource', CheckboxType::class, [
+                'label' => 'Quelltext laden',
+                'required' => false,
+            ])
             ->add('additionalData', TextareaType::class, [
                 'label' => 'Zusätzliche Daten (JSON)',
                 'required' => false,

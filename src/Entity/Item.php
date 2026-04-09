@@ -80,6 +80,14 @@ class Item
     #[Groups(['item:read', 'item:write'])]
     private ?string $raw = null;
 
+    #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['item:read', 'item:write'])]
+    private ?string $rawSource = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['item:read', 'item:write'])]
+    private ?string $source = null;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
@@ -206,6 +214,30 @@ class Item
     public function setRaw(?string $raw): self
     {
         $this->raw = $raw;
+
+        return $this;
+    }
+
+    public function getRawSource(): ?string
+    {
+        return $this->rawSource;
+    }
+
+    public function setRawSource(?string $rawSource): self
+    {
+        $this->rawSource = $rawSource;
+
+        return $this;
+    }
+
+    public function getSource(): ?string
+    {
+        return $this->source;
+    }
+
+    public function setSource(?string $source): self
+    {
+        $this->source = $source;
 
         return $this;
     }

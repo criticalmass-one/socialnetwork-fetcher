@@ -13,6 +13,7 @@ class Profile
     protected ?\DateTime $lastFetchFailureDateTime = null;
     protected ?string $lastFetchFailureError = null;
     protected bool $autoFetch = true;
+    protected bool $fetchSource = false;
     protected ?string $additionalData = null;
 
     public function getId(): ?int
@@ -130,6 +131,18 @@ class Profile
         return $this;
     }
 
+    public function isFetchSource(): bool
+    {
+        return $this->fetchSource;
+    }
+
+    public function setFetchSource(bool $fetchSource): self
+    {
+        $this->fetchSource = $fetchSource;
+
+        return $this;
+    }
+
     public function getAdditionalData(): ?string
     {
         return $this->additionalData;
@@ -145,4 +158,5 @@ class Profile
 
         return $this;
     }
+
 }

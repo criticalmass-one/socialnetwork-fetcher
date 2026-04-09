@@ -15,6 +15,8 @@ class Item
     protected ?bool $deleted = false;
     protected ?\DateTime $createdAt = null;
     protected ?string $raw = null;
+    protected ?string $rawSource = null;
+    protected ?string $source = null;
 
     public function __construct()
     {
@@ -149,6 +151,30 @@ class Item
     public function setRaw(string $raw): Item
     {
         $this->raw = $raw;
+
+        return $this;
+    }
+
+    public function getRawSource(): ?string
+    {
+        return $this->rawSource;
+    }
+
+    public function setRawSource(?string $rawSource): Item
+    {
+        $this->rawSource = $rawSource;
+
+        return $this;
+    }
+
+    public function getSource(): ?string
+    {
+        return $this->source;
+    }
+
+    public function setSource(?string $source): Item
+    {
+        $this->source = $source;
 
         return $this;
     }

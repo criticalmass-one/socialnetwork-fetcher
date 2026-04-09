@@ -33,6 +33,10 @@ class FeedFetcher extends AbstractFeedFetcher
             if ($fetcher) {
                 $feedItemList = $fetcher->fetch($profile, $fetchInfo);
 
+                foreach ($feedItemList as $feedItem) {
+                    $this->sourceFetcher->fetch($feedItem, $profile);
+                }
+
                 $fetchResult = new FetchResult();
                 $fetchResult
                     ->setProfile($profile)
