@@ -23,7 +23,7 @@ services:
     # please note that last definitions always *replace* previous ones
 
     App\FeedItemPersister\FeedItemPersisterInterface:
-        alias: App\FeedItemPersister\ApiPusher
+        alias: App\FeedItemPersister\DoctrineFeedItemPersister
 
-    App\FeedFetcher\FeedFetcherInterface:
-        alias: App\FeedFetcher\FeedFetcher
+    App\ProfilePersister\ProfilePersisterInterface:
+        alias: App\ProfilePersister\DoctrineProfilePersister

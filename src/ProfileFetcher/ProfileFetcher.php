@@ -4,7 +4,7 @@ namespace App\ProfileFetcher;
 
 use App\FeedFetcher\FetchInfo;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
-use App\Model\SocialNetworkProfile;
+use App\Model\Profile;
 use App\Serializer\SerializerInterface;
 
 class ProfileFetcher implements ProfileFetcherInterface
@@ -21,16 +21,12 @@ class ProfileFetcher implements ProfileFetcherInterface
         ]);
     }
 
-    public function fetchByNetworkIdentifier(string $networkIdentifier, string $citySlug = null): array
+    public function fetchByNetworkIdentifier(string $networkIdentifier): array
     {
         $parameters = [
             'networkIdentifier' => $networkIdentifier,
             'entities' => 'city',
         ];
-
-        if ($citySlug) {
-            $parameters['citySlug'] = $citySlug;
-        }
 
         $query = sprintf('/api/socialnetwork-profiles?%s', http_build_query($parameters));
 
@@ -38,17 +34,15 @@ class ProfileFetcher implements ProfileFetcherInterface
 
         $jsonContent = $result->getContent();
 
-        $profileList = $this->serializer->deserialize($jsonContent, sprintf('%s[]', SocialNetworkProfile::class), 'json');
-
-        return $profileList;
+        return $this->serializer->deserialize($jsonContent, sprintf('%s[]', Profile::class), 'json');
     }
 
-    public function fetchByNetworkIdentifiers(array $networkIdentifiers = [], string $citySlug = null): array
+    public function fetchByNetworkIdentifiers(array $networkIdentifiers = []): array
     {
         $profileList = [];
 
         foreach ($networkIdentifiers as $networkIdentifier) {
-            $profileList += $this->fetchByNetworkIdentifier($networkIdentifier, $citySlug);
+            $profileList += $this->fetchByNetworkIdentifier($networkIdentifier);
         }
 
         return $profileList;
@@ -56,6 +50,6 @@ class ProfileFetcher implements ProfileFetcherInterface
 
     public function fetchByFetchInfo(FetchInfo $fetchInfo): array
     {
-        return $this->fetchByNetworkIdentifiers($fetchInfo->getNetworkList(), $fetchInfo->getCitySlug());
+        return $this->fetchByNetworkIdentifiers($fetchInfo->getNetworkList());
     }
 }

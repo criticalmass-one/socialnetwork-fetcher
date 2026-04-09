@@ -2,7 +2,7 @@
 
 namespace App\NetworkFeedFetcher\Bluesky;
 
-use App\Model\SocialNetworkProfile;
+use App\Model\Profile;
 
 class IdentifierParser
 {
@@ -10,9 +10,9 @@ class IdentifierParser
     {
     }
 
-    public static function parse(SocialNetworkProfile $socialNetworkProfile): ?string
+    public static function parse(Profile $profile): ?string
     {
-        $identifier = trim($socialNetworkProfile->getIdentifier() ?? '');
+        $identifier = trim($profile->getIdentifier() ?? '');
 
         if ('' === $identifier) {
             return null;

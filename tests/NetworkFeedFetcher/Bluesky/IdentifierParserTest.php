@@ -2,7 +2,7 @@
 
 namespace App\Tests\NetworkFeedFetcher\Bluesky;
 
-use App\Model\SocialNetworkProfile;
+use App\Model\Profile;
 use App\NetworkFeedFetcher\Bluesky\IdentifierParser;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -12,7 +12,7 @@ class IdentifierParserTest extends TestCase
     #[DataProvider('validIdentifierProvider')]
     public function testParseValidIdentifier(string $identifier, string $expectedHandle): void
     {
-        $profile = new SocialNetworkProfile();
+        $profile = new Profile();
         $profile->setIdentifier($identifier);
 
         $this->assertEquals($expectedHandle, IdentifierParser::parse($profile));
@@ -47,7 +47,7 @@ class IdentifierParserTest extends TestCase
     #[DataProvider('invalidIdentifierProvider')]
     public function testParseInvalidIdentifier(?string $identifier): void
     {
-        $profile = new SocialNetworkProfile();
+        $profile = new Profile();
 
         if (null !== $identifier) {
             $profile->setIdentifier($identifier);

@@ -3,7 +3,7 @@
 namespace App\Command;
 
 use App\FeedFetcher\FeedFetcherInterface;
-use App\Model\SocialNetworkProfile;
+use App\Model\Profile;
 use App\NetworkFeedFetcher\NetworkFeedFetcherInterface;
 use App\ProfileFetcher\ProfileFetcherInterface;
 use Symfony\Component\Console\Command\Command;
@@ -51,7 +51,7 @@ class FeedListCommand extends Command
 
         $rows = [];
 
-        /** @var SocialNetworkProfile $profile */
+        /** @var Profile $profile */
         foreach ($profiles as $profile) {
             $rows[] = [
                 $profile->getId(),

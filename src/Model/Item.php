@@ -2,10 +2,10 @@
 
 namespace App\Model;
 
-class SocialNetworkFeedItem
+class Item
 {
     protected ?int $id = null;
-    protected ?int $socialNetworkProfileId = null;
+    protected ?int $profileId = null;
     protected ?string $uniqueIdentifier = null;
     protected ?string $permalink = null;
     protected ?string $title = null;
@@ -26,21 +26,21 @@ class SocialNetworkFeedItem
         return $this->id;
     }
 
-    public function setId(int $id): SocialNetworkFeedItem
+    public function setId(int $id): Item
     {
         $this->id = $id;
 
         return $this;
     }
 
-    public function getSocialNetworkProfileId(): int
+    public function getProfileId(): int
     {
-        return $this->socialNetworkProfileId;
+        return $this->profileId;
     }
 
-    public function setSocialNetworkProfileId(int $socialNetworkProfile): SocialNetworkFeedItem
+    public function setProfileId(int $profileId): Item
     {
-        $this->socialNetworkProfileId = $socialNetworkProfile;
+        $this->profileId = $profileId;
 
         return $this;
     }
@@ -50,7 +50,7 @@ class SocialNetworkFeedItem
         return $this->uniqueIdentifier;
     }
 
-    public function setUniqueIdentifier(string $uniqueIdentifier): SocialNetworkFeedItem
+    public function setUniqueIdentifier(string $uniqueIdentifier): Item
     {
         $this->uniqueIdentifier = $uniqueIdentifier;
 
@@ -62,7 +62,7 @@ class SocialNetworkFeedItem
         return $this->permalink;
     }
 
-    public function setPermalink(string $permalink): SocialNetworkFeedItem
+    public function setPermalink(string $permalink): Item
     {
         $this->permalink = $permalink;
 
@@ -74,7 +74,7 @@ class SocialNetworkFeedItem
         return $this->title;
     }
 
-    public function setTitle(string $title): SocialNetworkFeedItem
+    public function setTitle(string $title): Item
     {
         $this->title = $title;
 
@@ -86,7 +86,7 @@ class SocialNetworkFeedItem
         return $this->text;
     }
 
-    public function setText(string $text): SocialNetworkFeedItem
+    public function setText(string $text): Item
     {
         $this->text = $text;
 
@@ -98,7 +98,7 @@ class SocialNetworkFeedItem
         return $this->dateTime;
     }
 
-    public function setDateTime(\DateTime $dateTime): SocialNetworkFeedItem
+    public function setDateTime(\DateTime $dateTime): Item
     {
         $this->dateTime = $dateTime;
 
@@ -110,7 +110,7 @@ class SocialNetworkFeedItem
         return $this->hidden;
     }
 
-    public function setHidden(bool $hidden): SocialNetworkFeedItem
+    public function setHidden(bool $hidden): Item
     {
         $this->hidden = $hidden;
 
@@ -122,7 +122,7 @@ class SocialNetworkFeedItem
         return $this->deleted;
     }
 
-    public function setDeleted(bool $deleted): SocialNetworkFeedItem
+    public function setDeleted(bool $deleted): Item
     {
         $this->deleted = $deleted;
 
@@ -134,7 +134,7 @@ class SocialNetworkFeedItem
         return $this->createdAt;
     }
 
-    public function setCreatedAt(\DateTime $createdAt): SocialNetworkFeedItem
+    public function setCreatedAt(\DateTime $createdAt): Item
     {
         $this->createdAt = $createdAt;
 
@@ -146,11 +146,10 @@ class SocialNetworkFeedItem
         return $this->raw;
     }
 
-    public function setRaw(string $raw): SocialNetworkFeedItem
+    public function setRaw(string $raw): Item
     {
         $this->raw = $raw;
-        
+
         return $this;
     }
-
 }
