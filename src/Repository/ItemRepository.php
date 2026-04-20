@@ -62,6 +62,35 @@ class ItemRepository extends ServiceEntityRepository
     }
 
     /**
+     * @param list<int> $profileIds
+     * @return array<int, \DateTimeImmutable> map of profile id => last item dateTime
+     */
+    public function findLastItemDateByProfileIds(array $profileIds): array
+    {
+        if ($profileIds === []) {
+            return [];
+        }
+
+        $rows = $this->createQueryBuilder('i')
+            ->select('IDENTITY(i.profile) AS profileId, MAX(i.dateTime) AS lastDate')
+            ->where('i.profile IN (:profileIds)')
+            ->setParameter('profileIds', $profileIds)
+            ->groupBy('i.profile')
+            ->getQuery()
+            ->getArrayResult();
+
+        $dates = [];
+        foreach ($rows as $row) {
+            if ($row['lastDate'] === null) {
+                continue;
+            }
+            $dates[(int) $row['profileId']] = new \DateTimeImmutable((string) $row['lastDate']);
+        }
+
+        return $dates;
+    }
+
+    /**
      * @return array<string, int>
      */
     public function countByNetworkSince(\App\Entity\Network $network, array $intervals): array
