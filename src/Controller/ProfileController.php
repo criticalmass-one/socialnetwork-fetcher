@@ -158,22 +158,39 @@ class ProfileController extends AbstractController
     #[Route('/{id}/rssapp-delete', name: 'app_profile_rssapp_delete', requirements: ['id' => '\d+'], methods: ['POST'])]
     public function rssappDelete(Request $request, Profile $profile, RssAppInterface $rssApp, EntityManagerInterface $em): Response
     {
-        if ($this->isCsrfTokenValid('rssapp-' . $profile->getId(), $request->request->getString('_token'))) {
-            $additionalData = $profile->getAdditionalData() ?? [];
-
-            if (isset($additionalData['rss_feed_id'])) {
-                $rssApp->deleteFeed($additionalData['rss_feed_id']);
-
-                unset($additionalData['rss_feed_id']);
-                $profile->setAdditionalData($additionalData);
-
-                $em->flush();
-
-                $this->addFlash('success', 'Feed wurde von RSS.app entfernt.');
-            }
-        }
+        $this->unlinkRssAppFeed($request, $profile, $rssApp, $em);
 
         return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
+    }
+
+    #[Route('/{id}/rssapp-delete-from-list', name: 'app_rssapp_profile_delete', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function rssappDeleteFromList(Request $request, Profile $profile, RssAppInterface $rssApp, EntityManagerInterface $em): Response
+    {
+        $this->unlinkRssAppFeed($request, $profile, $rssApp, $em);
+
+        return $this->redirectToRoute('app_rssapp_profile_index');
+    }
+
+    private function unlinkRssAppFeed(Request $request, Profile $profile, RssAppInterface $rssApp, EntityManagerInterface $em): void
+    {
+        if (!$this->isCsrfTokenValid('rssapp-' . $profile->getId(), $request->request->getString('_token'))) {
+            return;
+        }
+
+        $additionalData = $profile->getAdditionalData() ?? [];
+
+        if (!isset($additionalData['rss_feed_id'])) {
+            return;
+        }
+
+        $rssApp->deleteFeed($additionalData['rss_feed_id']);
+
+        unset($additionalData['rss_feed_id']);
+        $profile->setAdditionalData($additionalData);
+
+        $em->flush();
+
+        $this->addFlash('success', 'Feed wurde von RSS.app entfernt.');
     }
 
     #[Route('/{id}/toggle-{field}', name: 'app_profile_toggle', requirements: ['id' => '\d+', 'field' => 'autoFetch|fetchSource|savePhotos|saveVideos'], methods: ['POST'])]
