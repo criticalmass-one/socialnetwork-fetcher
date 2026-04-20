@@ -35,4 +35,17 @@ return [
     'handlebars' => [
         'version' => '4.7.8',
     ],
+    'datatables.net' => [
+        'version' => '2.3.7',
+    ],
+    'datatables.net-bs5' => [
+        'version' => '2.3.7',
+    ],
+    'jquery' => [
+        'version' => '4.0.0',
+    ],
+    'datatables.net-bs5/css/dataTables.bootstrap5.min.css' => [
+        'version' => '2.3.7',
+        'type' => 'css',
+    ],
 ];
