@@ -91,6 +91,32 @@ class ItemRepository extends ServiceEntityRepository
     }
 
     /**
+     * @param list<int> $profileIds
+     * @return array<int, int> map of profile id => item count (missing keys mean zero)
+     */
+    public function countByProfileIds(array $profileIds): array
+    {
+        if ($profileIds === []) {
+            return [];
+        }
+
+        $rows = $this->createQueryBuilder('i')
+            ->select('IDENTITY(i.profile) AS profileId, COUNT(i.id) AS itemCount')
+            ->where('i.profile IN (:profileIds)')
+            ->setParameter('profileIds', $profileIds)
+            ->groupBy('i.profile')
+            ->getQuery()
+            ->getArrayResult();
+
+        $counts = [];
+        foreach ($rows as $row) {
+            $counts[(int) $row['profileId']] = (int) $row['itemCount'];
+        }
+
+        return $counts;
+    }
+
+    /**
      * @return array<string, int>
      */
     public function countByNetworkSince(\App\Entity\Network $network, array $intervals): array

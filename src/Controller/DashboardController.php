@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\FeedFetcher\FeedFetcher;
 use App\Repository\ItemRepository;
 use App\Repository\NetworkRepository;
 use App\Repository\ProfileRepository;
@@ -16,6 +17,7 @@ class DashboardController extends AbstractController
         NetworkRepository $networkRepository,
         ProfileRepository $profileRepository,
         ItemRepository $itemRepository,
+        FeedFetcher $feedFetcher,
     ): Response {
         $networks = $networkRepository->findAll();
 
@@ -30,6 +32,9 @@ class DashboardController extends AbstractController
         $networkStats = [];
         foreach ($networks as $network) {
             $profiles = $profileRepository->findBy(['network' => $network]);
+            if (count($profiles) === 0) {
+                continue;
+            }
             $itemCount = 0;
             foreach ($profiles as $profile) {
                 $itemCount += $itemRepository->count(['profile' => $profile]);
@@ -44,12 +49,18 @@ class DashboardController extends AbstractController
 
         $latestItems = $itemRepository->findBy([], ['createdAt' => 'DESC'], 10);
 
+        $fetchableNetworkIdentifiers = [];
+        foreach ($feedFetcher->getNetworkFetcherList() as $fetcher) {
+            $fetchableNetworkIdentifiers[] = $fetcher->getNetworkIdentifier();
+        }
+
         return $this->render('dashboard/index.html.twig', [
             'networkCount' => count($networks),
             'profileCount' => $profileRepository->count([]),
             'itemCount' => $itemRepository->count([]),
             'networkStats' => $networkStats,
             'latestItems' => $latestItems,
+            'fetchableNetworkIdentifiers' => $fetchableNetworkIdentifiers,
         ]);
     }
 }

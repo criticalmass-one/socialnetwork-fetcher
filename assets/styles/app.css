@@ -261,6 +261,35 @@ body.login-page .main {
 }
 
 /* ===== Network Cards ===== */
+.network-card-wrapper {
+    position: relative;
+}
+
+.network-card-menu {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 2;
+}
+
+.network-card-menu-btn {
+    background: transparent;
+    border: 0;
+    padding: 6px 10px;
+    border-radius: 8px;
+    color: #9ca3af;
+    cursor: pointer;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+}
+
+.network-card-menu-btn:hover,
+.network-card-menu-btn:focus {
+    background: rgba(0, 0, 0, 0.05);
+    color: #4b5563;
+    outline: none;
+}
+
 .network-card {
     background: white;
     border-radius: 12px;

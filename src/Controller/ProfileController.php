@@ -26,7 +26,7 @@ class ProfileController extends AbstractController
     private const PROFILES_PER_PAGE = 50;
 
     #[Route('', name: 'app_profile_index')]
-    public function index(Request $request, ProfileRepository $profileRepository, NetworkRepository $networkRepository): Response
+    public function index(Request $request, ProfileRepository $profileRepository, NetworkRepository $networkRepository, ItemRepository $itemRepository): Response
     {
         $page = max(1, $request->query->getInt('page', 1));
         $search = trim($request->query->getString('search', ''));
@@ -42,10 +42,14 @@ class ProfileController extends AbstractController
         $page = min($page, $pages);
         $profiles = $profileRepository->findPaginated($page, self::PROFILES_PER_PAGE, $networkIds, $search, $status);
 
+        $profileIds = array_map(static fn ($p) => $p->getId(), $profiles);
+        $itemCounts = $itemRepository->countByProfileIds($profileIds);
+
         if ($request->headers->get('X-Requested-With') === 'XMLHttpRequest') {
             return new JsonResponse([
                 'html' => $this->renderView('profile/_partials/_profile_table_body.html.twig', [
                     'profiles' => $profiles,
+                    'itemCounts' => $itemCounts,
                 ]),
                 'paginationHtml' => $this->renderView('_partials/_pagination.html.twig', [
                     'page' => $page,
@@ -60,6 +64,7 @@ class ProfileController extends AbstractController
 
         return $this->render('profile/index.html.twig', [
             'profiles' => $profiles,
+            'itemCounts' => $itemCounts,
             'networks' => $networkRepository->findBy([], ['name' => 'ASC']),
             'page' => $page,
             'pages' => $pages,

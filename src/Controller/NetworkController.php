@@ -84,4 +84,26 @@ class NetworkController extends AbstractController
 
         return $this->redirectToRoute('app_network_index');
     }
+
+    #[Route('/{id}/fetch-all', name: 'app_network_fetch_all', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function fetchAll(Request $request, Network $network): Response
+    {
+        if (!$this->isCsrfTokenValid('fetch-all-' . $network->getId(), $request->request->getString('_token'))) {
+            $this->addFlash('danger', 'Ungültiges CSRF-Token.');
+
+            return $this->redirectToRoute('app_dashboard');
+        }
+
+        $projectDir = $this->getParameter('kernel.project_dir');
+        $cmd = sprintf(
+            'nohup php %s fetch-feed %s > /dev/null 2>&1 &',
+            escapeshellarg($projectDir . '/bin/console'),
+            escapeshellarg($network->getIdentifier()),
+        );
+        exec($cmd);
+
+        $this->addFlash('success', sprintf('Import für Netzwerk "%s" wurde im Hintergrund gestartet.', $network->getName()));
+
+        return $this->redirectToRoute('app_dashboard');
+    }
 }

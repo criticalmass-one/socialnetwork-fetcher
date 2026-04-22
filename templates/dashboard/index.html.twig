@@ -47,44 +47,65 @@
     <div class="row g-3 mb-4">
         {% for stat in networkStats %}
             <div class="col-md-4 col-lg-3">
-                <a href="{{ path('app_profile_index', {network: stat.network.id}) }}" class="network-card">
-                    <div class="network-card-header">
-                        <div class="network-card-icon" style="background: {{ stat.network.backgroundColor }};">
-                            <i class="{{ stat.network.icon }}"></i>
-                        </div>
-                        <div class="network-card-info">
-                            <h5>{{ stat.network.name }}</h5>
-                        </div>
+                <div class="network-card-wrapper">
+                    <div class="network-card-menu dropdown">
+                        <button class="network-card-menu-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Aktionen">
+                            <i class="fas fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            {% if stat.network.identifier in fetchableNetworkIdentifiers %}
+                                <li>
+                                    <form method="post" action="{{ path('app_network_fetch_all', {id: stat.network.id}) }}" class="m-0">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('fetch-all-' ~ stat.network.id) }}">
+                                        <button type="submit" class="dropdown-item">
+                                            <i class="fas fa-sync-alt me-2"></i>Alle Profile abrufen
+                                        </button>
+                                    </form>
+                                </li>
+                            {% else %}
+                                <li><span class="dropdown-item-text text-muted small">Keine Aktionen verfügbar</span></li>
+                            {% endif %}
+                        </ul>
                     </div>
-                    <div class="network-card-stats">
-                        <div class="network-card-stat">
-                            <div class="network-card-stat-value">{{ stat.profileCount }}</div>
-                            <div class="network-card-stat-label">Profile</div>
+                    <a href="{{ path('app_profile_index', {network: stat.network.id}) }}" class="network-card">
+                        <div class="network-card-header">
+                            <div class="network-card-icon" style="background: {{ stat.network.backgroundColor }};">
+                                <i class="{{ stat.network.icon }}"></i>
+                            </div>
+                            <div class="network-card-info">
+                                <h5>{{ stat.network.name }}</h5>
+                            </div>
                         </div>
-                        <div class="network-card-stat">
-                            <div class="network-card-stat-value">{{ stat.itemCount }}</div>
-                            <div class="network-card-stat-label">Items</div>
+                        <div class="network-card-stats">
+                            <div class="network-card-stat">
+                                <div class="network-card-stat-value">{{ stat.profileCount }}</div>
+                                <div class="network-card-stat-label">Profile</div>
+                            </div>
+                            <div class="network-card-stat">
+                                <div class="network-card-stat-value">{{ stat.itemCount }}</div>
+                                <div class="network-card-stat-label">Items</div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="network-card-stats mt-2">
-                        <div class="network-card-stat">
-                            <div class="network-card-stat-value">{{ stat.itemCounts.last24h }}</div>
-                            <div class="network-card-stat-label">24h</div>
+                        <div class="network-card-stats mt-2">
+                            <div class="network-card-stat">
+                                <div class="network-card-stat-value">{{ stat.itemCounts.last24h }}</div>
+                                <div class="network-card-stat-label">24h</div>
+                            </div>
+                            <div class="network-card-stat">
+                                <div class="network-card-stat-value">{{ stat.itemCounts.last7d }}</div>
+                                <div class="network-card-stat-label">7 Tage</div>
+                            </div>
+                            <div class="network-card-stat">
+                                <div class="network-card-stat-value">{{ stat.itemCounts.last31d }}</div>
+                                <div class="network-card-stat-label">31 Tage</div>
+                            </div>
+                            <div class="network-card-stat">
+                                <div class="network-card-stat-value">{{ stat.itemCounts.last365d }}</div>
+                                <div class="network-card-stat-label">365 Tage</div>
+                            </div>
                         </div>
-                        <div class="network-card-stat">
-                            <div class="network-card-stat-value">{{ stat.itemCounts.last7d }}</div>
-                            <div class="network-card-stat-label">7 Tage</div>
-                        </div>
-                        <div class="network-card-stat">
-                            <div class="network-card-stat-value">{{ stat.itemCounts.last31d }}</div>
-                            <div class="network-card-stat-label">31 Tage</div>
-                        </div>
-                        <div class="network-card-stat">
-                            <div class="network-card-stat-value">{{ stat.itemCounts.last365d }}</div>
-                            <div class="network-card-stat-label">365 Tage</div>
-                        </div>
-                    </div>
-                </a>
+                    </a>
+                </div>
             </div>
         {% endfor %}
     </div>

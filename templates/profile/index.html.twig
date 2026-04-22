@@ -111,6 +111,7 @@
                         <th>ID</th>
                         <th>Netzwerk</th>
                         <th>Profil</th>
+                        <th>Beiträge</th>
                         <th>Auto-Fetch</th>
                         <th>Quelltext</th>
                         <th>Fotos</th>
@@ -120,7 +121,7 @@
                     </tr>
                 </thead>
                 <tbody data-profile-list-target="tableBody">
-                    {% include 'profile/_partials/_profile_table_body.html.twig' with { profiles: profiles } %}
+                    {% include 'profile/_partials/_profile_table_body.html.twig' with { profiles: profiles, itemCounts: itemCounts } %}
                 </tbody>
             </table>
         </div>

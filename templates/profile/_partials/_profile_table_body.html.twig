@@ -13,6 +13,9 @@
                 {{ profile.displayName }}
             </a>
         </td>
+        <td class="text-end">
+            {{ itemCounts[profile.id]|default(0)|number_format(0, ',', '.') }}
+        </td>
         <td>
             {% include '_partials/_profile_toggle.html.twig' with { profile: profile, field: 'autoFetch', state: profile.autoFetch } %}
         </td>
@@ -69,6 +72,6 @@
     </tr>
 {% else %}
     <tr>
-        <td colspan="9" class="text-center text-muted py-4">Keine Profile gefunden.</td>
+        <td colspan="10" class="text-center text-muted py-4">Keine Profile gefunden.</td>
     </tr>
 {% endfor %}
