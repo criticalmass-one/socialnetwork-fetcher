@@ -21,6 +21,22 @@ class ProfileRepository extends ServiceEntityRepository
     }
 
     /**
+     * @return list<Profile>
+     */
+    public function findWithRssAppFeedId(): array
+    {
+        return $this->createQueryBuilder('p')
+            ->leftJoin('p.network', 'n')
+            ->addSelect('n')
+            ->where('p.additionalData LIKE :key')
+            ->andWhere('p.deleted = false')
+            ->setParameter('key', '%"rss_feed_id"%')
+            ->orderBy('p.identifier', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * @param list<int> $networkIds
      * @return list<Profile>
      */

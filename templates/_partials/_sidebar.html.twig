@@ -23,6 +23,10 @@
             <span class="nav-icon"><i class="fas fa-users"></i></span>
             Profiles
         </a></li>
+        <li><a href="{{ path('app_rssapp_profile_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_rssapp_profile' %}active{% endif %}">
+            <span class="nav-icon"><i class="fas fa-rss-square"></i></span>
+            RSS.app
+        </a></li>
         <li><a href="{{ path('app_item_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_item' %}active{% endif %}">
             <span class="nav-icon"><i class="fas fa-stream"></i></span>
             Items
