@@ -31,6 +31,10 @@
             <span class="nav-icon"><i class="fas fa-id-badge"></i></span>
             Clients
         </a></li>
+        <li><a href="{{ path('app_rssapp_orphan_feed_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_rssapp_orphan_feed' %}active{% endif %}">
+            <span class="nav-icon"><i class="fas fa-unlink"></i></span>
+            RSS.app Verwaiste Feeds
+        </a></li>
     </ul>
 
     <div class="sidebar-footer">

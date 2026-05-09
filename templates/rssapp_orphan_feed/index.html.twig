@@ -1,0 +1,70 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}RSS.app Verwaiste Feeds - Social Network Fetcher{% endblock %}
+
+{% block page_title %}RSS.app Verwaiste Feeds{% endblock %}
+
+{% block body %}
+    <div class="alert alert-info mb-3">
+        <i class="fas fa-info-circle me-1"></i>
+        {{ orphans|length }} von {{ totalFeeds }} Feed{{ totalFeeds == 1 ? '' : 's' }} bei RSS.app haben kein passendes Profil in dieser Anwendung.
+    </div>
+
+    {% if orphans is empty %}
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle me-1"></i>
+            Alle RSS.app-Feeds haben ein passendes Profil.
+        </div>
+    {% else %}
+        <div class="data-card">
+            <div class="data-card-body">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Feed-ID</th>
+                            <th>Titel</th>
+                            <th>Source URL</th>
+                            <th>Erstellt</th>
+                            <th>Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for feed in orphans %}
+                            <tr>
+                                <td><code>{{ feed.id ?? '-' }}</code></td>
+                                <td>{{ feed.title ?? '-' }}</td>
+                                <td>
+                                    {% if feed.source_url is defined and feed.source_url %}
+                                        <a href="{{ feed.source_url }}" target="_blank" rel="noopener noreferrer">
+                                            {{ feed.source_url }}
+                                        </a>
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if feed.created_at is defined and feed.created_at %}
+                                        {{ feed.created_at }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <form method="post" action="{{ path('app_rssapp_orphan_feed_delete', {feedId: feed.id}) }}"
+                                          class="d-inline"
+                                          data-controller="confirm"
+                                          data-confirm-message-value="Feed &quot;{{ feed.id }}&quot; wirklich bei RSS.app löschen?">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('rssapp-orphan-' ~ feed.id) }}">
+                                        <button type="submit" class="action-btn" title="Bei RSS.app entfernen">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
