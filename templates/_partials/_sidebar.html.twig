@@ -27,6 +27,10 @@
             <span class="nav-icon"><i class="fas fa-rss-square"></i></span>
             RSS.app
         </a></li>
+        <li><a href="{{ path('app_rssapp_orphan_feed_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_rssapp_orphan_feed' %}active{% endif %}">
+            <span class="nav-icon"><i class="fas fa-unlink"></i></span>
+            RSS.app Verwaiste Feeds
+        </a></li>
         <li><a href="{{ path('app_item_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_item' %}active{% endif %}">
             <span class="nav-icon"><i class="fas fa-stream"></i></span>
             Items
