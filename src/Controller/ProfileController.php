@@ -12,6 +12,7 @@ use App\Model\Profile as ModelProfile;
 use App\Repository\ItemRepository;
 use App\Repository\NetworkRepository;
 use App\Repository\ProfileRepository;
+use App\RssApp\FeedRegistrar;
 use App\RssApp\RssAppInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -76,7 +77,7 @@ class ProfileController extends AbstractController
     }
 
     #[Route('/new', name: 'app_profile_new')]
-    public function new(Request $request, EntityManagerInterface $em): Response
+    public function new(Request $request, EntityManagerInterface $em, FeedRegistrar $feedRegistrar): Response
     {
         $profile = new Profile();
         $profile->setCreatedAt(new \DateTimeImmutable());
@@ -86,9 +87,15 @@ class ProfileController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $em->persist($profile);
+
+            $registered = $feedRegistrar->registerIfNeeded($profile);
+
             $em->flush();
 
-            $this->addFlash('success', 'Profil wurde erstellt.');
+            $this->addFlash('success', $registered
+                ? 'Profil wurde erstellt und bei RSS.app registriert.'
+                : 'Profil wurde erstellt.'
+            );
 
             return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
         }

@@ -9,6 +9,7 @@ use App\Entity\Client;
 use App\Entity\Profile;
 use App\Repository\NetworkRepository;
 use App\Repository\ProfileRepository;
+use App\RssApp\FeedRegistrar;
 use App\RssApp\RssAppInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
@@ -18,14 +19,13 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 /** @implements ProcessorInterface<Profile, Profile|null> */
 class ClientScopedProfileProcessor implements ProcessorInterface
 {
-    private const RSS_APP_NETWORKS = ['instagram_profile', 'facebook_profile', 'thread'];
-
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly Security $security,
         private readonly ProfileRepository $profileRepository,
         private readonly NetworkRepository $networkRepository,
         private readonly RssAppInterface $rssApp,
+        private readonly FeedRegistrar $feedRegistrar,
     ) {
     }
 
@@ -72,7 +72,7 @@ class ClientScopedProfileProcessor implements ProcessorInterface
             $existingProfile->setDeletedAt(null);
             $client->addProfile($existingProfile);
 
-            $this->registerRssAppIfNeeded($existingProfile);
+            $this->feedRegistrar->registerIfNeeded($existingProfile);
 
             $this->em->flush();
 
@@ -83,7 +83,7 @@ class ClientScopedProfileProcessor implements ProcessorInterface
         $this->em->persist($data);
         $client->addProfile($data);
 
-        $this->registerRssAppIfNeeded($data);
+        $this->feedRegistrar->registerIfNeeded($data);
 
         $this->em->flush();
 
@@ -118,29 +118,6 @@ class ClientScopedProfileProcessor implements ProcessorInterface
         }
 
         return null;
-    }
-
-    private function registerRssAppIfNeeded(Profile $profile): void
-    {
-        $networkIdentifier = $profile->getNetwork()?->getIdentifier();
-
-        if (!in_array($networkIdentifier, self::RSS_APP_NETWORKS, true)) {
-            return;
-        }
-
-        $additionalData = $profile->getAdditionalData() ?? [];
-
-        if (isset($additionalData['rss_feed_id'])) {
-            return;
-        }
-
-        try {
-            $feedData = $this->rssApp->createFeed($profile->getIdentifier());
-            $additionalData['rss_feed_id'] = $feedData['id'];
-            $profile->setAdditionalData($additionalData);
-        } catch (\Throwable) {
-            // RSS.app registration failure should not block profile creation
-        }
     }
 
     private function deleteRssAppFeedIfNeeded(Profile $profile): void
