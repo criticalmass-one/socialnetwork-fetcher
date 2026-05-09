@@ -82,6 +82,7 @@ class ClientScopedProfileProcessor implements ProcessorInterface
         $data->setCreatedAt(new \DateTimeImmutable());
         $this->em->persist($data);
         $client->addProfile($data);
+        $this->em->flush();
 
         $this->feedRegistrar->registerIfNeeded($data);
 

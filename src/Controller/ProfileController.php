@@ -13,6 +13,7 @@ use App\Repository\ItemRepository;
 use App\Repository\NetworkRepository;
 use App\Repository\ProfileRepository;
 use App\RssApp\FeedRegistrar;
+use App\RssApp\RegistrationResult;
 use App\RssApp\RssAppInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -87,15 +88,13 @@ class ProfileController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $em->persist($profile);
+            $em->flush();
 
-            $registered = $feedRegistrar->registerIfNeeded($profile);
+            $result = $feedRegistrar->registerIfNeeded($profile);
 
             $em->flush();
 
-            $this->addFlash('success', $registered
-                ? 'Profil wurde erstellt und bei RSS.app registriert.'
-                : 'Profil wurde erstellt.'
-            );
+            $this->addFlash('success', $this->buildCreationFlashMessage($result));
 
             return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
         }
@@ -103,6 +102,23 @@ class ProfileController extends AbstractController
         return $this->render('profile/new.html.twig', [
             'form' => $form,
         ]);
+    }
+
+    private function buildCreationFlashMessage(RegistrationResult $result): string
+    {
+        if (!$result->registered) {
+            return 'Profil wurde erstellt.';
+        }
+
+        if ($result->linkedToExistingFeed) {
+            return sprintf(
+                'Profil wurde erstellt, mit bestehendem RSS.app-Feed verknüpft und %d Item%s importiert.',
+                $result->importedItems,
+                $result->importedItems === 1 ? '' : 's',
+            );
+        }
+
+        return 'Profil wurde erstellt und bei RSS.app registriert.';
     }
 
     #[Route('/{id}', name: 'app_profile_show', requirements: ['id' => '\d+'])]
