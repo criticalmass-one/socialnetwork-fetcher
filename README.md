@@ -168,10 +168,11 @@ The admin interface is accessible after login at `/login`. It provides:
 - **Dashboard** — Overview with network statistics (item counts per 24h/7d/31d/365d by publication date), profile/item counts, and a table of recent items
 - **Networks** — CRUD for social networks (name, icon, color, cron schedule)
 - **Profiles** — Searchable/filterable list with auto-fetch toggle, save photos/videos toggles, fetch status, manual fetch trigger, RSS.app registration
+- **RSS.app** — Overview of all profiles linked to an RSS.app feed (sortable DataTable), showing feed ID and last-post date. Per-row button to delete the feed at RSS.app and unlink it locally.
 - **Items** — Searchable/filterable list with hide/delete toggles, media status indicators, network and profile filters, manual media download
 - **Clients** — API client management with token display, enable/disable
 
-The frontend uses Bootstrap 5, Stimulus controllers for interactive features (toggles, AJAX pagination, search), and Handlebars for client-side template rendering. Assets are managed via Symfony Asset Mapper (no build step needed).
+The frontend uses Bootstrap 5, Stimulus controllers for interactive features (toggles, AJAX pagination, search), Handlebars for client-side template rendering, and DataTables for client-side sortable tables (RSS.app overview). Assets are managed via Symfony Asset Mapper (no build step needed).
 
 ## REST API
 
