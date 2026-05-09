@@ -1,0 +1,74 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}RSS.app-Profile - Social Network Fetcher{% endblock %}
+
+{% block page_title %}RSS.app-Profile <span class="badge text-bg-secondary fs-6">{{ profiles|length }}</span>{% endblock %}
+
+{% block body %}
+    <div class="data-card">
+        <div class="data-card-body">
+            <table class="data-table table" data-controller="rssapp-table">
+                <thead>
+                    <tr>
+                        <th>Netzwerk</th>
+                        <th>Profil</th>
+                        <th>Identifier</th>
+                        <th>RSS-Feed-ID</th>
+                        <th>Letzter Beitrag</th>
+                        <th data-orderable="false">Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for profile in profiles %}
+                        {% set feedId = profile.additionalData.rss_feed_id|default('') %}
+                        {% set lastDate = lastItemDates[profile.id]|default(null) %}
+                        <tr>
+                            <td>
+                                {% if profile.network %}
+                                    <span class="badge badge-network" style="background-color: {{ profile.network.backgroundColor }}; color: {{ profile.network.textColor }};">
+                                        <i class="{{ profile.network.icon }} me-1"></i>{{ profile.network.name }}
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{ path('app_profile_show', {id: profile.id}) }}">
+                                    {{ profile.displayName }}
+                                </a>
+                            </td>
+                            <td>
+                                <a href="{{ profile.identifier }}" target="_blank" rel="noopener" class="text-muted">
+                                    {{ profile.identifier }}
+                                </a>
+                            </td>
+                            <td><code>{{ feedId }}</code></td>
+                            <td data-order="{{ lastDate ? lastDate.timestamp : 0 }}">
+                                {% if lastDate %}
+                                    <span title="{{ lastDate|date('d.m.Y H:i:s') }}">{{ lastDate|date('d.m.Y H:i') }}</span>
+                                {% else %}
+                                    <span class="text-muted">–</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="d-flex gap-1">
+                                    <a href="{{ path('app_profile_show', {id: profile.id}) }}" class="action-btn" title="Profil anzeigen">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <form method="post" action="{{ path('app_rssapp_profile_delete', {id: profile.id}) }}"
+                                          data-controller="confirm"
+                                          data-confirm-message-value="Feed für &quot;{{ profile.displayName }}&quot; bei RSS.app wirklich löschen?">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('rssapp-' ~ profile.id) }}">
+                                        <button type="submit" class="action-btn" title="Bei RSS.app löschen">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% include '_partials/_delete_modal.html.twig' %}
+{% endblock %}
