@@ -441,6 +441,7 @@ body.login-page .main {
 
 .data-card-body {
     padding: 24px;
+    overflow-x: auto;
 }
 
 /* ===== Data Table ===== */
