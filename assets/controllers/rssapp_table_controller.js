@@ -1,14 +1,21 @@
 import { Controller } from '@hotwired/stimulus';
 import DataTable from 'datatables.net-bs5';
 
+const initialized = new WeakSet();
+
 export default class extends Controller {
     connect() {
+        if (initialized.has(this.element)) {
+            return;
+        }
+        initialized.add(this.element);
         this.dt = new DataTable(this.element, {
             paging: true,
             pageLength: 50,
             lengthMenu: [25, 50, 100, 200],
             searching: true,
             order: [[4, 'desc']],
+            deferRender: true,
             language: {
                 search: 'Suche:',
                 lengthMenu: '_MENU_ Einträge anzeigen',
@@ -20,12 +27,5 @@ export default class extends Controller {
                 zeroRecords: 'Keine passenden Einträge gefunden.',
             },
         });
-    }
-
-    disconnect() {
-        if (this.dt) {
-            this.dt.destroy();
-            this.dt = null;
-        }
     }
 }
