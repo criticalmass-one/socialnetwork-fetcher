@@ -23,6 +23,13 @@ class NetworkRepository extends ServiceEntityRepository
     {
         $networks = $this->findAll();
 
+        // Prefer specific patterns over catch-alls: longer patterns are tried first.
+        // Without this, a network with a permissive pattern (e.g. homepage's
+        // ^https?://.+$) can shadow a more specific match like instagram_profile.
+        usort($networks, static fn(Network $a, Network $b): int =>
+            strlen($b->getProfileUrlPattern() ?? '') <=> strlen($a->getProfileUrlPattern() ?? '')
+        );
+
         foreach ($networks as $network) {
             if ($network->isValidProfileUrl($url)) {
                 return $network;

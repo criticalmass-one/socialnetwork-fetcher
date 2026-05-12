@@ -18,20 +18,30 @@
     {% else %}
         <div class="data-card">
             <div class="data-card-body">
-                <table class="data-table">
+                <table class="data-table table" data-controller="rssapp-table">
                     <thead>
                         <tr>
                             <th>Feed-ID</th>
+                            <th>Netzwerk</th>
                             <th>Titel</th>
                             <th>Source URL</th>
                             <th>Erstellt</th>
-                            <th>Aktionen</th>
+                            <th data-orderable="false">Aktionen</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for feed in orphans %}
                             <tr>
                                 <td><code>{{ feed.id ?? '-' }}</code></td>
+                                <td>
+                                    {% if feed.detected_network %}
+                                        <span class="net-badge" style="background-color: {{ feed.detected_network.backgroundColor }}; color: {{ feed.detected_network.textColor }};">
+                                            <i class="{{ feed.detected_network.icon }} me-1"></i>{{ feed.detected_network.name }}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">–</span>
+                                    {% endif %}
+                                </td>
                                 <td>{{ feed.title ?? '-' }}</td>
                                 <td>
                                     {% if feed.source_url is defined and feed.source_url %}
@@ -42,14 +52,26 @@
                                         -
                                     {% endif %}
                                 </td>
-                                <td>
-                                    {% if feed.created_at is defined and feed.created_at %}
-                                        {{ feed.created_at }}
+                                <td data-order="{{ feed.created_at_dt ? feed.created_at_dt.timestamp : 0 }}">
+                                    {% if feed.created_at_dt %}
+                                        <span title="{{ feed.created_at_dt|date('d.m.Y H:i:s') }}">{{ feed.created_at_dt|date('d.m.Y H:i') }}</span>
                                     {% else %}
-                                        -
+                                        <span class="text-muted">–</span>
                                     {% endif %}
                                 </td>
                                 <td>
+                                    {% if feed.detected_network and feed.source_url is defined and feed.source_url %}
+                                        <form method="post" action="{{ path('app_rssapp_orphan_feed_adopt', {feedId: feed.id}) }}"
+                                              class="d-inline"
+                                              data-controller="confirm"
+                                              data-confirm-message-value="Feed &quot;{{ feed.id }}&quot; als {{ feed.detected_network.name }}-Profil anlegen und Items importieren?">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('rssapp-adopt-' ~ feed.id) }}">
+                                            <input type="hidden" name="source_url" value="{{ feed.source_url }}">
+                                            <button type="submit" class="action-btn" title="Als Profil anlegen und Items importieren">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </form>
+                                    {% endif %}
                                     <form method="post" action="{{ path('app_rssapp_orphan_feed_delete', {feedId: feed.id}) }}"
                                           class="d-inline"
                                           data-controller="confirm"

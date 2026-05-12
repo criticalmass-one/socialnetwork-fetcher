@@ -155,6 +155,39 @@ class FeedRegistrarTest extends TestCase
         $this->assertFalse($result->registered);
     }
 
+    public function testLinkExistingFeedAndImportSetsFeedIdAndImports(): void
+    {
+        $profile = $this->makeProfile('instagram_profile', 'https://instagram.com/foo', 99);
+
+        $items = [new ItemModel(), new ItemModel()];
+
+        $networkFetcher = $this->createMock(NetworkFeedFetcherInterface::class);
+        $networkFetcher->method('supports')->willReturn(true);
+        $networkFetcher->expects($this->once())
+            ->method('fetch')
+            ->willReturnCallback(function (ModelProfile $modelProfile, $fetchInfo) use ($items): array {
+                $this->assertSame(99, $modelProfile->getId());
+                $this->assertSame(FeedRegistrar::INITIAL_IMPORT_COUNT, $fetchInfo->getCount());
+                return $items;
+            });
+
+        $this->feedFetcher->method('getNetworkFetcherList')->willReturn([$networkFetcher]);
+
+        $this->feedItemPersister->expects($this->once())
+            ->method('persistFeedItemList')
+            ->with($items)
+            ->willReturnSelf();
+        $this->feedItemPersister->expects($this->once())->method('flush')->willReturnSelf();
+
+        $this->rssApp->expects($this->never())->method('findRssAppFeedIdBySourceUrl');
+        $this->rssApp->expects($this->never())->method('createFeed');
+
+        $imported = $this->registrar->linkExistingFeedAndImport($profile, 'adopted-feed-42');
+
+        $this->assertSame(2, $imported);
+        $this->assertSame('adopted-feed-42', $profile->getAdditionalData()['rss_feed_id']);
+    }
+
     private function makeProfile(string $networkIdentifier, string $url, ?int $id = null): Profile
     {
         $network = new Network();
