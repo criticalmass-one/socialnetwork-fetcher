@@ -20,6 +20,16 @@ class ProfileRepository extends ServiceEntityRepository
         return $this->findOneBy(['network' => $network, 'identifier' => $identifier]);
     }
 
+    public function findNextFreeId(): int
+    {
+        $maxId = $this->createQueryBuilder('p')
+            ->select('MAX(p.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return ((int) $maxId) + 1;
+    }
+
     /**
      * @return list<Profile>
      */

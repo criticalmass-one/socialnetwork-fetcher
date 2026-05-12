@@ -130,6 +130,7 @@ class RssAppOrphanFeedController extends AbstractController
         }
 
         $profile = new Profile();
+        $profile->setId($this->profileRepository->findNextFreeId());
         $profile->setNetwork($network);
         $profile->setIdentifier($sourceUrl);
         $profile->setCreatedAt(new \DateTimeImmutable());
