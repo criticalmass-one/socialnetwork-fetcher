@@ -62,6 +62,8 @@ class RssAppOrphanFeedController extends AbstractController
                 ? $this->networkRepository->findNetworkForProfileUrl($sourceUrl)
                 : null;
 
+            $feed['created_at_dt'] = $this->parseDate($feed['created_at'] ?? null);
+
             $orphans[] = $feed;
         }
 
@@ -154,5 +156,18 @@ class RssAppOrphanFeedController extends AbstractController
         $url = preg_replace('#^https?://(www\.)?#', '', $url);
 
         return $url;
+    }
+
+    private function parseDate(mixed $value): ?\DateTimeImmutable
+    {
+        if (!is_string($value) || $value === '') {
+            return null;
+        }
+
+        try {
+            return new \DateTimeImmutable($value);
+        } catch (\Exception) {
+            return null;
+        }
     }
 }
