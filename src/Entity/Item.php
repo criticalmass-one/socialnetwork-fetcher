@@ -26,22 +26,31 @@ use Symfony\Component\Serializer\Attribute\Groups;
 #[ApiResource(
     operations: [
         new GetCollection(
-            description: 'Returns feed items for profiles linked to the authenticated client. Hidden and soft-deleted items are excluded by default; pass ?hidden=true or ?deleted=true to include them. Ordered by dateTime descending. See available filters below.',
+            description: <<<'TEXT'
+            Returns feed items for profiles linked to the authenticated client. Hidden and soft-deleted items are excluded by default; pass ?hidden=true or ?deleted=true to include them. Ordered by dateTime descending. Paginated 50 items per page.
+
+            **Incremental sync pattern**: store the latest `createdAt` you've seen, then on the next poll request `?createdAt[strictly_after]={lastCreatedAt}&order[createdAt]=asc`. `createdAt` is the import-into-DB timestamp; using it (instead of `dateTime`, which is the social-network publication time) guarantees stable ordering even when an old item is re-discovered.
+
+            See available filters below for full query options.
+            TEXT,
         ),
         new GetCollection(
             uriTemplate: '/timeline',
             provider: TimelineProvider::class,
-            description: 'Chronological timeline of all feed items across the authenticated client\'s profiles. Defaults to the last 24 hours, max 100 items. Hidden and soft-deleted items are excluded. Use query parameters to customize: ?limit=50&since=2025-01-01T00:00:00Z&until=2025-01-31T23:59:59Z&network=mastodon',
+            description: 'Chronological timeline of all feed items across the authenticated client\'s profiles. Defaults to the last 24 hours, paginated 50 items per page (max 200). Hidden and soft-deleted items are excluded. For incremental sync against a WordPress site etc., prefer /api/items with ?createdAt[strictly_after]=… and ?order[createdAt]=asc.',
             openapi: new OpenApiOperation(
                 summary: 'Get client timeline',
                 parameters: [
-                    new Parameter(name: 'limit', in: 'query', description: 'Maximum number of items to return (default: 100, max: 500).', schema: ['type' => 'integer', 'default' => 100, 'minimum' => 1, 'maximum' => 500]),
+                    new Parameter(name: 'page', in: 'query', description: 'Page number (default: 1).', schema: ['type' => 'integer', 'default' => 1, 'minimum' => 1]),
+                    new Parameter(name: 'itemsPerPage', in: 'query', description: 'Items per page (default: 50, max: 200). The legacy ?limit= parameter is accepted as a synonym for backwards compatibility.', schema: ['type' => 'integer', 'default' => 50, 'minimum' => 1, 'maximum' => 200]),
                     new Parameter(name: 'since', in: 'query', description: 'Return items published after this timestamp (default: 24 hours ago). ISO 8601 format.', schema: ['type' => 'string', 'format' => 'date-time']),
                     new Parameter(name: 'until', in: 'query', description: 'Return items published before this timestamp. ISO 8601 format.', schema: ['type' => 'string', 'format' => 'date-time']),
                     new Parameter(name: 'network', in: 'query', description: 'Filter by network identifier (e.g. "mastodon", "bluesky", "instagram_profile").', schema: ['type' => 'string']),
                 ],
             ),
-            paginationEnabled: false,
+            paginationEnabled: true,
+            paginationItemsPerPage: 50,
+            paginationMaximumItemsPerPage: 200,
         ),
         new Get(
             description: 'Returns a single feed item by ID, including the heavy raw/rawSource/parsedSource payloads (item:detail group). Returns 404 if the item belongs to a profile not linked to the authenticated client.',

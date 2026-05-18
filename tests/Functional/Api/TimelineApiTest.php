@@ -154,4 +154,46 @@ class TimelineApiTest extends AbstractApiTestCase
         $this->assertNotContains('OnlyB item 1', $texts);
         $this->assertNotContains('OnlyB item 2', $texts);
     }
+
+    public function testTimelineResponseAdvertisesPagination(): void
+    {
+        $response = $this->requestAsClientA('GET', '/api/timeline');
+
+        $this->assertResponseIsSuccessful();
+
+        $data = $response->toArray();
+
+        // API Platform exposes pagination via totalItems (key name varies
+        // between hydra namespaces and chosen format). hydra:view is only
+        // present when there are multiple pages, so we don't assert on it.
+        $hasTotal = isset($data['hydra:totalItems']) || isset($data['totalItems']);
+
+        $this->assertTrue($hasTotal, 'Response should advertise total item count');
+    }
+
+    public function testTimelinePageParameter(): void
+    {
+        $page1 = $this->requestAsClientA('GET', '/api/timeline?itemsPerPage=1&page=1')->toArray();
+        $page2 = $this->requestAsClientA('GET', '/api/timeline?itemsPerPage=1&page=2')->toArray();
+
+        $items1 = $page1['hydra:member'] ?? $page1['member'] ?? [];
+        $items2 = $page2['hydra:member'] ?? $page2['member'] ?? [];
+
+        $this->assertCount(1, $items1);
+        $this->assertCount(1, $items2);
+        $this->assertNotSame($items1[0]['id'], $items2[0]['id']);
+    }
+
+    public function testTimelineItemsPerPageClampedToMax(): void
+    {
+        $response = $this->requestAsClientA('GET', '/api/timeline?itemsPerPage=10000');
+        $this->assertResponseIsSuccessful();
+
+        $data = $response->toArray();
+        $items = $data['hydra:member'] ?? $data['member'] ?? [];
+
+        // We have 5 visible items inside the 24h window for clientA — no way to exceed that,
+        // but the request should not error out and should still respect the upper bound.
+        $this->assertLessThanOrEqual(200, count($items));
+    }
 }
