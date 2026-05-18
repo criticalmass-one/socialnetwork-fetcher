@@ -49,6 +49,7 @@ class TestFixtures extends Fixture implements DependentFixtureInterface
         $profileShared->setIdentifier('https://mastodon.social/@shared');
         $profileShared->setNetwork($networkMastodon);
         $profileShared->setCreatedAt(new \DateTimeImmutable());
+        $profileShared->setAdditionalData(['rss_feed_id' => 'fixture-feed-shared']);
         $manager->persist($profileShared);
         $clientA->addProfile($profileShared);
         $clientB->addProfile($profileShared);
@@ -89,6 +90,12 @@ class TestFixtures extends Fixture implements DependentFixtureInterface
             $item->setPermalink(sprintf('https://mastodon.social/@shared/%d', $i + 1));
             $item->setText(sprintf('Shared item %d', $i + 1));
             $item->setDateTime($now->modify(sprintf('-%d hours', $hoursAgo)));
+            // First item carries raw payloads so the item:detail group is testable
+            if ($i === 0) {
+                $item->setRaw('{"raw":"shared-1"}');
+                $item->setRawSource('<html>shared-1</html>');
+                $item->setParsedSource('parsed-shared-1');
+            }
             $manager->persist($item);
         }
 

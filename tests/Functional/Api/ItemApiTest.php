@@ -157,6 +157,48 @@ class ItemApiTest extends AbstractApiTestCase
         }
     }
 
+    public function testCollectionResponseExcludesRawPayloads(): void
+    {
+        $response = $this->requestAsClientA('GET', '/api/items');
+        $data = $response->toArray();
+        $items = $data['hydra:member'] ?? $data['member'] ?? [];
+
+        $this->assertNotEmpty($items);
+        foreach ($items as $item) {
+            $this->assertArrayNotHasKey('raw', $item);
+            $this->assertArrayNotHasKey('rawSource', $item);
+            $this->assertArrayNotHasKey('parsedSource', $item);
+        }
+    }
+
+    public function testSingleItemResponseIncludesRawPayloads(): void
+    {
+        $response = $this->requestAsClientA('GET', '/api/items');
+        $data = $response->toArray();
+        $items = $data['hydra:member'] ?? $data['member'] ?? [];
+        $itemId = $items[0]['id'];
+
+        $detail = $this->requestAsClientA('GET', '/api/items/' . $itemId)->toArray();
+
+        $this->assertArrayHasKey('raw', $detail);
+        $this->assertArrayHasKey('rawSource', $detail);
+        $this->assertArrayHasKey('parsedSource', $detail);
+    }
+
+    public function testCollectionResponseIncludesMediaUrlFields(): void
+    {
+        $response = $this->requestAsClientA('GET', '/api/items');
+        $data = $response->toArray();
+        $items = $data['hydra:member'] ?? $data['member'] ?? [];
+
+        $this->assertNotEmpty($items);
+        foreach ($items as $item) {
+            $this->assertArrayHasKey('photoUrls', $item);
+            $this->assertIsArray($item['photoUrls']);
+            $this->assertArrayHasKey('videoUrl', $item);
+        }
+    }
+
     public function testFilterByDateTimeAfter(): void
     {
         $cutoff = (new \DateTimeImmutable('-6 hours'))->format(\DateTimeImmutable::ATOM);
