@@ -199,6 +199,30 @@ class ProfileApiTest extends AbstractApiTestCase
         }
     }
 
+    public function testFilterProfilesByNetworkIdentifier(): void
+    {
+        $response = $this->requestAsClientA('GET', '/api/profiles?network.identifier=bluesky_profile');
+        $data = $response->toArray();
+        $members = $data['hydra:member'] ?? $data['member'] ?? [];
+
+        $this->assertNotEmpty($members);
+        foreach ($members as $profile) {
+            $this->assertSame('bluesky_profile', $profile['network']['identifier']);
+        }
+    }
+
+    public function testFilterProfilesByIdentifierPartial(): void
+    {
+        $response = $this->requestAsClientA('GET', '/api/profiles?identifier=shared');
+        $data = $response->toArray();
+        $members = $data['hydra:member'] ?? $data['member'] ?? [];
+
+        $this->assertNotEmpty($members);
+        foreach ($members as $profile) {
+            $this->assertStringContainsString('shared', $profile['identifier']);
+        }
+    }
+
     private function getMastodonNetworkIri(): string
     {
         return $this->getNetworkIri('mastodon');

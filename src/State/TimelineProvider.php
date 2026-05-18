@@ -54,6 +54,8 @@ class TimelineProvider implements ProviderInterface
             ->innerJoin('p.clients', 'c')
             ->where('c.id = :clientId')
             ->andWhere('p.deleted = false')
+            ->andWhere('i.hidden = false')
+            ->andWhere('i.deleted = false')
             ->andWhere('i.dateTime >= :since')
             ->setParameter('clientId', $client->getId())
             ->setParameter('since', $since)

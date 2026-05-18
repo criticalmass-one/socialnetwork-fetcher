@@ -10,9 +10,9 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
+use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use App\State\ClientScopedProfileProcessor;
-use App\State\ClientScopedProfileProvider;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -24,11 +24,9 @@ use Symfony\Component\Serializer\Attribute\Groups;
 #[ApiResource(
     operations: [
         new GetCollection(
-            provider: ClientScopedProfileProvider::class,
-            description: 'Returns all profiles linked to the authenticated client. Soft-deleted profiles are excluded.',
+            description: 'Returns all profiles linked to the authenticated client. Soft-deleted profiles are excluded. See available filters below.',
         ),
         new Get(
-            provider: ClientScopedProfileProvider::class,
             description: 'Returns a single profile by ID. Returns 404 if the profile is not linked to the authenticated client.',
         ),
         new Post(
@@ -46,8 +44,16 @@ use Symfony\Component\Serializer\Attribute\Groups;
     description: 'A social network profile (e.g. a Mastodon account, Instagram page). Profiles are scoped to the authenticated API client.',
     normalizationContext: ['groups' => ['profile:read']],
     denormalizationContext: ['groups' => ['profile:write']],
+    order: ['identifier' => 'ASC'],
 )]
-#[ApiFilter(SearchFilter::class, properties: ['network' => 'exact'])]
+#[ApiFilter(SearchFilter::class, properties: [
+    'network' => 'exact',
+    'network.identifier' => 'exact',
+    'identifier' => 'partial',
+    'title' => 'partial',
+    'autoFetch' => 'exact',
+])]
+#[ApiFilter(OrderFilter::class, properties: ['identifier', 'title', 'createdAt', 'lastFetchSuccessDateTime'])]
 class Profile
 {
     #[ORM\Id]
