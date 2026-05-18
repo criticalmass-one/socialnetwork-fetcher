@@ -114,6 +114,25 @@ class TestFixtures extends Fixture implements DependentFixtureInterface
             $manager->persist($item);
         }
 
+        // profileShared: one hidden and one soft-deleted item, both inside the 24h window
+        $hidden = new Item();
+        $hidden->setProfile($profileShared);
+        $hidden->setUniqueIdentifier('shared-item-hidden');
+        $hidden->setPermalink('https://mastodon.social/@shared/hidden');
+        $hidden->setText('Shared hidden item');
+        $hidden->setDateTime($now->modify('-4 hours'));
+        $hidden->setHidden(true);
+        $manager->persist($hidden);
+
+        $softDeleted = new Item();
+        $softDeleted->setProfile($profileShared);
+        $softDeleted->setUniqueIdentifier('shared-item-soft-deleted');
+        $softDeleted->setPermalink('https://mastodon.social/@shared/soft-deleted');
+        $softDeleted->setText('Shared soft-deleted item');
+        $softDeleted->setDateTime($now->modify('-5 hours'));
+        $softDeleted->setDeleted(true);
+        $manager->persist($softDeleted);
+
         $manager->flush();
     }
 }

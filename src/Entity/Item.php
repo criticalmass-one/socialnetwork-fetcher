@@ -9,11 +9,12 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
-use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Doctrine\Orm\Filter\BooleanFilter;
+use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
 use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use ApiPlatform\OpenApi\Model\Parameter;
-use App\State\ClientScopedItemProvider;
 use App\State\TimelineProvider;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
@@ -25,13 +26,12 @@ use Symfony\Component\Serializer\Attribute\Groups;
 #[ApiResource(
     operations: [
         new GetCollection(
-            provider: ClientScopedItemProvider::class,
-            description: 'Returns feed items for profiles linked to the authenticated client. Ordered by dateTime descending. Filter by profile using ?profile=<id>.',
+            description: 'Returns feed items for profiles linked to the authenticated client. Hidden and soft-deleted items are excluded by default; pass ?hidden=true or ?deleted=true to include them. Ordered by dateTime descending. See available filters below.',
         ),
         new GetCollection(
             uriTemplate: '/timeline',
             provider: TimelineProvider::class,
-            description: 'Chronological timeline of all feed items across the authenticated client\'s profiles. Defaults to the last 24 hours, max 100 items. Use query parameters to customize: ?limit=50&since=2025-01-01T00:00:00Z&until=2025-01-31T23:59:59Z&network=mastodon',
+            description: 'Chronological timeline of all feed items across the authenticated client\'s profiles. Defaults to the last 24 hours, max 100 items. Hidden and soft-deleted items are excluded. Use query parameters to customize: ?limit=50&since=2025-01-01T00:00:00Z&until=2025-01-31T23:59:59Z&network=mastodon',
             openapi: new OpenApiOperation(
                 summary: 'Get client timeline',
                 parameters: [
@@ -44,7 +44,6 @@ use Symfony\Component\Serializer\Attribute\Groups;
             paginationEnabled: false,
         ),
         new Get(
-            provider: ClientScopedItemProvider::class,
             description: 'Returns a single feed item by ID. Returns 404 if the item belongs to a profile not linked to the authenticated client.',
         ),
         new Post(
@@ -60,7 +59,15 @@ use Symfony\Component\Serializer\Attribute\Groups;
     order: ['dateTime' => 'DESC'],
     paginationItemsPerPage: 50,
 )]
-#[ApiFilter(SearchFilter::class, properties: ['profile' => 'exact'])]
+#[ApiFilter(SearchFilter::class, properties: [
+    'profile' => 'exact',
+    'profile.network' => 'exact',
+    'profile.network.identifier' => 'exact',
+    'text' => 'partial',
+    'title' => 'partial',
+])]
+#[ApiFilter(DateFilter::class, properties: ['dateTime', 'createdAt'])]
+#[ApiFilter(BooleanFilter::class, properties: ['hidden', 'deleted'])]
 #[ApiFilter(OrderFilter::class, properties: ['dateTime', 'createdAt'])]
 class Item
 {
