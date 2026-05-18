@@ -65,7 +65,23 @@ class Profile
 
     #[ORM\Column(type: 'string', length: 255)]
     #[Groups(['profile:read', 'profile:write', 'item:read'])]
-    #[ApiProperty(description: 'Network-specific identifier, typically a URL. Example: "https://mastodon.social/@username" for Mastodon or "username.bsky.social" for Bluesky.')]
+    #[ApiProperty(
+        description: <<<'DESC'
+        Network-specific identifier, typically a URL. The exact format depends on the
+        network this profile belongs to. Examples:
+
+        - **mastodon**: `https://mastodon.social/@username`
+        - **bluesky_profile**: `username.bsky.social`
+        - **instagram_profile**: `https://www.instagram.com/username/`
+        - **facebook_page**: `https://www.facebook.com/PageName`
+        - **thread**: `https://www.threads.net/@username`
+        - **homepage**: any `https://…` URL
+
+        Each network validates the format via a regex on `Network.profileUrlPattern`;
+        a mismatching URL is rejected at POST time.
+        DESC,
+        example: 'https://mastodon.social/@example',
+    )]
     private ?string $identifier = null;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
@@ -86,17 +102,17 @@ class Profile
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     #[Groups(['profile:read'])]
-    #[ApiProperty(description: 'Timestamp of the last successful feed fetch for this profile.', readable: true, writable: false)]
+    #[ApiProperty(description: 'Timestamp of the last successful feed fetch for this profile (ISO 8601). Useful to detect stale profiles or for sorting (`?order[lastFetchSuccessDateTime]=desc`).', readable: true, writable: false)]
     private ?\DateTimeImmutable $lastFetchSuccessDateTime = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     #[Groups(['profile:read'])]
-    #[ApiProperty(description: 'Timestamp of the last failed feed fetch attempt.', readable: true, writable: false)]
+    #[ApiProperty(description: 'Timestamp of the last failed feed fetch attempt. Paired with lastFetchFailureError to surface profiles that need attention.', readable: true, writable: false)]
     private ?\DateTimeImmutable $lastFetchFailureDateTime = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
     #[Groups(['profile:read'])]
-    #[ApiProperty(description: 'Error message from the last failed fetch attempt, if any.', readable: true, writable: false)]
+    #[ApiProperty(description: 'Free-text reason for the last failed fetch attempt. May contain HTTP status codes, network errors, or upstream API messages.', readable: true, writable: false)]
     private ?string $lastFetchFailureError = null;
 
     #[ORM\Column(type: 'boolean', options: ['default' => true])]

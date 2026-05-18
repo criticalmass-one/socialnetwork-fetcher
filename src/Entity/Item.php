@@ -101,7 +101,10 @@ class Item
 
     #[ORM\Column(type: 'text', nullable: true)]
     #[Groups(['item:read', 'item:write'])]
-    #[ApiProperty(description: 'Direct URL to the original post on the social network.')]
+    #[ApiProperty(
+        description: 'Direct URL to the original post on the social network. Used as `<link>` in the RSS feeds and is what a WordPress consumer would link to.',
+        example: 'https://mastodon.social/@example/110928301234567890',
+    )]
     private ?string $permalink = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
@@ -116,7 +119,10 @@ class Item
 
     #[ORM\Column(name: 'date_time', type: 'datetime_immutable', nullable: false)]
     #[Groups(['item:read', 'item:write'])]
-    #[ApiProperty(description: 'Publication date and time of the feed item on the social network.')]
+    #[ApiProperty(
+        description: 'Publication date and time of the post on the social network itself (ISO 8601 with timezone). Stable per post — does not change after import. Use this for ordering "what was published when". For incremental polling against a moving cursor, prefer createdAt because re-discovered old posts can land at any dateTime.',
+        example: '2026-05-18T08:30:00+00:00',
+    )]
     private ?\DateTimeImmutable $dateTime = null;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
@@ -131,7 +137,12 @@ class Item
 
     #[ORM\Column(name: 'created_at', type: 'datetime_immutable', nullable: false)]
     #[Groups(['item:read'])]
-    #[ApiProperty(description: 'Timestamp when this item was first imported into the system.', readable: true, writable: false)]
+    #[ApiProperty(
+        description: 'Timestamp when this item was first imported into the local DB (ISO 8601 with timezone). Monotonically increasing per insert, never modified. **This is the recommended cursor for incremental sync**: store the largest createdAt you have seen, then poll with `?createdAt[strictly_after]={cursor}&order[createdAt]=asc`.',
+        readable: true,
+        writable: false,
+        example: '2026-05-18T10:00:00+00:00',
+    )]
     private \DateTimeImmutable $createdAt;
 
     #[ORM\Column(type: 'text', nullable: true)]
