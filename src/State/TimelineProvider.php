@@ -2,18 +2,20 @@
 
 namespace App\State;
 
+use ApiPlatform\Doctrine\Orm\Paginator;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
 use App\Entity\Client;
 use App\Entity\Item;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
 use Symfony\Bundle\SecurityBundle\Security;
 
 /** @implements ProviderInterface<Item> */
 class TimelineProvider implements ProviderInterface
 {
-    private const DEFAULT_LIMIT = 100;
-    private const MAX_LIMIT = 500;
+    public const DEFAULT_ITEMS_PER_PAGE = 50;
+    public const MAX_ITEMS_PER_PAGE = 200;
     private const DEFAULT_HOURS = 24;
 
     public function __construct(
@@ -22,7 +24,7 @@ class TimelineProvider implements ProviderInterface
     ) {
     }
 
-    public function provide(Operation $operation, array $uriVariables = [], array $context = []): array
+    public function provide(Operation $operation, array $uriVariables = [], array $context = []): Paginator|array
     {
         $client = $this->security->getUser();
 
@@ -32,9 +34,12 @@ class TimelineProvider implements ProviderInterface
 
         $filters = $context['filters'] ?? [];
 
-        $limit = min(
-            max(1, (int) ($filters['limit'] ?? self::DEFAULT_LIMIT)),
-            self::MAX_LIMIT,
+        $page = max(1, (int) ($filters['page'] ?? 1));
+
+        $requestedPerPage = $filters['itemsPerPage'] ?? $filters['limit'] ?? self::DEFAULT_ITEMS_PER_PAGE;
+        $itemsPerPage = min(
+            max(1, (int) $requestedPerPage),
+            self::MAX_ITEMS_PER_PAGE,
         );
 
         $since = isset($filters['since'])
@@ -60,7 +65,8 @@ class TimelineProvider implements ProviderInterface
             ->setParameter('clientId', $client->getId())
             ->setParameter('since', $since)
             ->orderBy('i.dateTime', 'DESC')
-            ->setMaxResults($limit);
+            ->setFirstResult(($page - 1) * $itemsPerPage)
+            ->setMaxResults($itemsPerPage);
 
         if ($until !== null) {
             $qb->andWhere('i.dateTime <= :until')
@@ -73,6 +79,6 @@ class TimelineProvider implements ProviderInterface
                 ->setParameter('network', $network);
         }
 
-        return $qb->getQuery()->getResult();
+        return new Paginator(new DoctrinePaginator($qb->getQuery()));
     }
 }
