@@ -27,7 +27,8 @@ use Symfony\Component\Serializer\Attribute\Groups;
             description: 'Returns all profiles linked to the authenticated client. Soft-deleted profiles are excluded. See available filters below.',
         ),
         new Get(
-            description: 'Returns a single profile by ID. Returns 404 if the profile is not linked to the authenticated client.',
+            description: 'Returns a single profile by ID, including the additionalData payload (profile:detail group). Returns 404 if the profile is not linked to the authenticated client.',
+            normalizationContext: ['groups' => ['profile:read', 'profile:detail']],
         ),
         new Post(
             processor: ClientScopedProfileProcessor::class,
@@ -109,8 +110,8 @@ class Profile
     private bool $fetchSource = false;
 
     #[ORM\Column(type: 'text', nullable: true)]
-    #[Groups(['profile:read', 'profile:write'])]
-    #[ApiProperty(description: 'Arbitrary JSON data for network-specific configuration (e.g. RSS.app feed ID).')]
+    #[Groups(['profile:detail', 'profile:write'])]
+    #[ApiProperty(description: 'Arbitrary JSON data for network-specific configuration (e.g. RSS.app feed ID). Only included on the single-profile endpoint, not in collections.')]
     private ?string $additionalData = null;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]

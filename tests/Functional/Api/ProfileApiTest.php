@@ -199,6 +199,30 @@ class ProfileApiTest extends AbstractApiTestCase
         }
     }
 
+    public function testCollectionResponseExcludesAdditionalData(): void
+    {
+        $response = $this->requestAsClientA('GET', '/api/profiles');
+        $data = $response->toArray();
+        $members = $data['hydra:member'] ?? $data['member'] ?? [];
+
+        $this->assertNotEmpty($members);
+        foreach ($members as $profile) {
+            $this->assertArrayNotHasKey('additionalData', $profile);
+        }
+    }
+
+    public function testSingleProfileResponseIncludesAdditionalData(): void
+    {
+        $response = $this->requestAsClientA('GET', '/api/profiles');
+        $data = $response->toArray();
+        $members = $data['hydra:member'] ?? $data['member'] ?? [];
+        $profileId = $members[0]['id'];
+
+        $detail = $this->requestAsClientA('GET', '/api/profiles/' . $profileId)->toArray();
+
+        $this->assertArrayHasKey('additionalData', $detail);
+    }
+
     public function testFilterProfilesByNetworkIdentifier(): void
     {
         $response = $this->requestAsClientA('GET', '/api/profiles?network.identifier=bluesky_profile');

@@ -44,7 +44,8 @@ use Symfony\Component\Serializer\Attribute\Groups;
             paginationEnabled: false,
         ),
         new Get(
-            description: 'Returns a single feed item by ID. Returns 404 if the item belongs to a profile not linked to the authenticated client.',
+            description: 'Returns a single feed item by ID, including the heavy raw/rawSource/parsedSource payloads (item:detail group). Returns 404 if the item belongs to a profile not linked to the authenticated client.',
+            normalizationContext: ['groups' => ['item:read', 'item:detail']],
         ),
         new Post(
             description: 'Creates a new feed item.',
@@ -53,7 +54,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
             description: 'Updates an existing feed item.',
         ),
     ],
-    description: 'A feed item (post, tweet, etc.) fetched from a social network profile. Items are scoped to profiles linked to the authenticated API client.',
+    description: 'A feed item (post, tweet, etc.) fetched from a social network profile. Items are scoped to profiles linked to the authenticated API client. The collection responses use the slim item:read group (no raw payloads). The single-item GET adds item:detail which includes raw, rawSource and parsedSource.',
     normalizationContext: ['groups' => ['item:read']],
     denormalizationContext: ['groups' => ['item:write']],
     order: ['dateTime' => 'DESC'],
@@ -125,29 +126,44 @@ class Item
     private \DateTimeImmutable $createdAt;
 
     #[ORM\Column(type: 'text', nullable: true)]
-    #[Groups(['item:read', 'item:write'])]
-    #[ApiProperty(description: 'Raw JSON response from the social network API for this item.')]
+    #[Groups(['item:detail', 'item:write'])]
+    #[ApiProperty(description: 'Raw JSON response from the social network API for this item. Only included on the single-item endpoint, not in collections.')]
     private ?string $raw = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
-    #[Groups(['item:read', 'item:write'])]
-    #[ApiProperty(description: 'Raw HTML source of the original page, if fetchSource was enabled on the profile.')]
+    #[Groups(['item:detail', 'item:write'])]
+    #[ApiProperty(description: 'Raw HTML source of the original page, if fetchSource was enabled on the profile. Only included on the single-item endpoint.')]
     private ?string $rawSource = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
-    #[Groups(['item:read', 'item:write'])]
-    #[ApiProperty(description: 'Parsed/processed version of the source content.')]
+    #[Groups(['item:detail', 'item:write'])]
+    #[ApiProperty(description: 'Parsed/processed version of the source content. Only included on the single-item endpoint.')]
     private ?string $parsedSource = null;
 
     #[ORM\Column(type: 'json', nullable: true)]
     #[Groups(['item:read'])]
-    #[ApiProperty(description: 'Relative paths to downloaded photo files.', readable: true, writable: false)]
+    #[ApiProperty(description: 'Relative paths to downloaded photo files. Use photoUrls for absolute URLs.', readable: true, writable: false)]
     private ?array $photoPaths = null;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     #[Groups(['item:read'])]
-    #[ApiProperty(description: 'Relative path to the downloaded video file.', readable: true, writable: false)]
+    #[ApiProperty(description: 'Relative path to the downloaded video file. Use videoUrl for the absolute URL.', readable: true, writable: false)]
     private ?string $videoPath = null;
+
+    /**
+     * Populated at serialization time by ItemMediaUrlNormalizer based on photoPaths.
+     * @var list<string>
+     */
+    #[Groups(['item:read'])]
+    #[ApiProperty(description: 'Absolute URLs of downloaded photo files. Built from photoPaths against the current request host. Empty array when no photos have been downloaded.', readable: true, writable: false)]
+    public array $photoUrls = [];
+
+    /**
+     * Populated at serialization time by ItemMediaUrlNormalizer based on videoPath.
+     */
+    #[Groups(['item:read'])]
+    #[ApiProperty(description: 'Absolute URL of the downloaded video file. Built from videoPath against the current request host. Null when no video has been downloaded.', readable: true, writable: false)]
+    public ?string $videoUrl = null;
 
     #[ORM\Column(type: 'string', length: 20, nullable: true)]
     #[Groups(['item:read'])]
