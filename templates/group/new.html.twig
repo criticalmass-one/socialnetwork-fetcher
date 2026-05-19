@@ -9,7 +9,9 @@
         <div class="data-card-body">
             {{ form_start(form) }}
                 {{ form_row(form.name) }}
-                {{ form_row(form.client) }}
+                {% if form.client is defined %}
+                    {{ form_row(form.client) }}
+                {% endif %}
                 {{ form_row(form.description) }}
                 {{ form_row(form.color) }}
                 {{ form_row(form.profiles) }}

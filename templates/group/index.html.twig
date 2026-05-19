@@ -13,12 +13,14 @@
 {% block body %}
     <form method="get" class="mb-3 d-flex gap-2">
         <input type="text" name="search" value="{{ search }}" class="form-control" placeholder="Nach Name filtern…">
-        <select name="client" class="form-select" style="max-width: 250px;">
-            <option value="">— Alle Clients —</option>
-            {% for c in clients %}
-                <option value="{{ c.id }}"{% if selectedClient and c.id == selectedClient.id %} selected{% endif %}>{{ c.name }}</option>
-            {% endfor %}
-        </select>
+        {% if clientPickerEnabled %}
+            <select name="client" class="form-select" style="max-width: 250px;">
+                <option value="">— Alle Clients —</option>
+                {% for c in clients %}
+                    <option value="{{ c.id }}"{% if selectedClient and c.id == selectedClient.id %} selected{% endif %}>{{ c.name }}</option>
+                {% endfor %}
+            </select>
+        {% endif %}
         <button type="submit" class="btn btn-outline-secondary">Filtern</button>
     </form>
 

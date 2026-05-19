@@ -9,6 +9,10 @@ security:
         web_user_provider:
             id: App\Security\WebUserProvider
 
+        web_combined_provider:
+            chain:
+                providers: ['web_user_provider', 'client_token_provider']
+
     firewalls:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
@@ -23,13 +27,15 @@ security:
 
         main:
             pattern: ^/
-            provider: web_user_provider
+            provider: web_combined_provider
             lazy: true
             form_login:
                 login_path: app_login
                 check_path: app_login
                 default_target_path: app_dashboard
                 enable_csrf: true
+            custom_authenticators:
+                - App\Security\WebTokenAuthenticator
             logout:
                 path: app_logout
                 target: app_login
@@ -38,5 +44,7 @@ security:
         - { path: ^/api/doc, roles: PUBLIC_ACCESS }
         - { path: ^/api/docs, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: ROLE_API_CLIENT }
-        - { path: ^/login$, roles: PUBLIC_ACCESS }
+        - { path: ^/login, roles: PUBLIC_ACCESS }
+        # Group management is available to both admins and client-token users.
+        - { path: ^/groups, roles: [ROLE_ADMIN, ROLE_API_CLIENT] }
         - { path: ^/, roles: ROLE_ADMIN }

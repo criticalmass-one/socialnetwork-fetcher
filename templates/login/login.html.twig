@@ -7,37 +7,76 @@
 {% block body %}
 <div class="mt-5">
     <div class="data-card">
-            <div class="data-card-header">
-                <h4 class="mb-0"><i class="fas fa-sign-in-alt me-2"></i>Login</h4>
-            </div>
-            <div class="data-card-body">
-                {% if error %}
-                    <div class="alert alert-danger">
-                        {{ error.messageKey|trans(error.messageData, 'security') }}
-                    </div>
-                {% endif %}
+        <div class="data-card-header">
+            <h4 class="mb-0"><i class="fas fa-sign-in-alt me-2"></i>Login</h4>
+        </div>
+        <div class="data-card-body">
+            {% if error %}
+                <div class="alert alert-danger">
+                    {{ error.messageKey|trans(error.messageData, 'security') }}
+                </div>
+            {% endif %}
 
-                <form action="{{ path('app_login') }}" method="post">
-                    <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
-
-                    <div class="mb-3">
-                        <label for="username" class="form-label">Username</label>
-                        <input type="text" id="username" name="_username"
-                               class="form-control" value="{{ last_username }}"
-                               required autofocus>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" id="password" name="_password"
-                               class="form-control" required>
-                    </div>
-
-                    <button type="submit" class="btn-primary-custom w-100">
-                        <i class="fas fa-sign-in-alt me-1"></i>Sign in
+            <ul class="nav nav-tabs mb-3" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="tab-admin" data-bs-toggle="tab" data-bs-target="#pane-admin" type="button" role="tab">
+                        <i class="fas fa-user-shield me-1"></i>Admin
                     </button>
-                </form>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-client-token" data-bs-toggle="tab" data-bs-target="#pane-client-token" type="button" role="tab">
+                        <i class="fas fa-key me-1"></i>Client-Token
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="pane-admin" role="tabpanel">
+                    <p class="text-muted small">Login mit den Web-Admin-Zugangsdaten aus den Environment-Variablen.</p>
+                    <form action="{{ path('app_login') }}" method="post">
+                        <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" id="username" name="_username"
+                                   class="form-control" value="{{ last_username }}"
+                                   required autocomplete="username">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" id="password" name="_password"
+                                   class="form-control" required autocomplete="current-password">
+                        </div>
+
+                        <button type="submit" class="btn-primary-custom w-100">
+                            <i class="fas fa-sign-in-alt me-1"></i>Sign in
+                        </button>
+                    </form>
+                </div>
+
+                <div class="tab-pane fade" id="pane-client-token" role="tabpanel">
+                    <p class="text-muted small">
+                        Login mit einem API-Client-Token (64 Hex-Zeichen). Client-User können nach dem Login die eigenen Gruppen verwalten.
+                        Token erzeugst du mit <code>bin/console app:client:create &lt;name&gt;</code>.
+                    </p>
+                    <form action="/login/client-token" method="post">
+                        <div class="mb-3">
+                            <label for="client_token" class="form-label">Client-Token</label>
+                            <input type="text" id="client_token" name="client_token"
+                                   class="form-control font-monospace" required
+                                   minlength="64" maxlength="64"
+                                   pattern="[0-9a-fA-F]{64}"
+                                   placeholder="aaaaaaaaaaaaaaaa…">
+                        </div>
+
+                        <button type="submit" class="btn-primary-custom w-100">
+                            <i class="fas fa-key me-1"></i>Mit Token einloggen
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
+    </div>
 </div>
 {% endblock %}
