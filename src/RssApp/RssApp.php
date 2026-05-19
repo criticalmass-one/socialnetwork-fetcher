@@ -89,7 +89,41 @@ class RssApp implements RssAppInterface
             'json' => ['url' => $url],
         ]);
 
+        $statusCode = $response->getStatusCode();
+
+        if ($statusCode < 200 || $statusCode >= 300) {
+            // Pull the body without triggering toArray's auto-throw, so we can surface
+            // RSS.app's actual error message (e.g. "Unsupported source URL") instead of
+            // a generic "HTTP 400 returned" from Symfony's HttpClient.
+            $body = $response->getContent(throw: false);
+            throw new RssAppException(sprintf(
+                'RSS.app rejected URL "%s" with HTTP %d: %s',
+                $url,
+                $statusCode,
+                $this->extractMessage($body) ?: 'no body',
+            ));
+        }
+
         return $response->toArray();
+    }
+
+    private function extractMessage(string $body): ?string
+    {
+        if ($body === '') {
+            return null;
+        }
+
+        $decoded = json_decode($body, true);
+        if (is_array($decoded)) {
+            foreach (['message', 'error', 'detail', 'description'] as $key) {
+                if (isset($decoded[$key]) && is_string($decoded[$key])) {
+                    return $decoded[$key];
+                }
+            }
+        }
+
+        // Fall back to the raw body, trimmed to keep flash messages readable.
+        return mb_substr(trim($body), 0, 200);
     }
 
     public function deleteFeed(string $feedId): void
