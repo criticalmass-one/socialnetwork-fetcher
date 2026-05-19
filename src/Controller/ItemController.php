@@ -180,7 +180,10 @@ class ItemController extends AbstractController
                 'videoPath' => $item->getVideoPath(),
                 'mediaStatus' => $item->getMediaStatus(),
             ]);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            // Catch Throwable (not just Exception) so PHP Errors — e.g. missing
+            // classes / extensions — still return a JSON 500 instead of an HTML
+            // error page that the JS modal can't parse.
             return new JsonResponse([
                 'success' => false,
                 'error' => $e->getMessage(),

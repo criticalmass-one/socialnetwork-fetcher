@@ -239,4 +239,77 @@ class MediaDownloadServiceTest extends TestCase
 
         $this->assertSame('completed', $item->getMediaStatus());
     }
+
+    public function testInstagramPhotoPostRunsYtDlpPhotoExtractor(): void
+    {
+        $network = new Network();
+        $network->setIdentifier('instagram_photo');
+
+        $profile = new Profile();
+        $profile->setId(42);
+        $profile->setNetwork($network);
+        $profile->setIdentifier('test');
+
+        $item = new Item();
+        $ref = new \ReflectionProperty(Item::class, 'id');
+        $ref->setValue($item, 100);
+        $item->setProfile($profile);
+        $item->setPermalink('https://www.instagram.com/p/DYKYyTgjdNe');
+
+        $this->ytDlpPhotoDownloader->method('isAvailable')->willReturn(true);
+        $this->ytDlpPhotoDownloader->expects($this->once())
+            ->method('download')
+            ->with('https://www.instagram.com/p/DYKYyTgjdNe', 42, 100)
+            ->willReturn(['42/100/photo_1.jpg']);
+
+        $this->extractor->method('extractVideoUrl')->willReturn(null);
+
+        $this->service->downloadMedia($item);
+
+        $this->assertSame('completed', $item->getMediaStatus());
+        $this->assertSame(['42/100/photo_1.jpg'], $item->getPhotoPaths());
+    }
+
+    public function testPhotoSuccessWithVideoFailureIsCompletedWithWarning(): void
+    {
+        $item = $this->createItem();
+        $item->setPermalink('https://example.com/post/1');
+
+        $this->extractor->method('extractPhotoUrls')->willReturn(['https://example.com/photo.jpg']);
+        $this->extractor->method('extractVideoUrl')->willReturn('https://example.com/post/1');
+
+        $this->photoDownloader->method('download')->willReturn('42/100/photo_0.jpg');
+
+        $this->videoDownloader->method('isAvailable')->willReturn(true);
+        $this->videoDownloader->method('download')
+            ->willThrowException(new \RuntimeException('yt-dlp failed: There is no video in this post'));
+
+        $this->service->downloadMedia($item);
+
+        $this->assertSame('completed', $item->getMediaStatus(), 'photos succeeded so status should be completed');
+        $this->assertSame(['42/100/photo_0.jpg'], $item->getPhotoPaths());
+        $this->assertNotNull($item->getMediaError(), 'video failure preserved as warning');
+        $this->assertStringContainsString('Video:', $item->getMediaError());
+    }
+
+    public function testPhotoFailureWithVideoFailureIsFailed(): void
+    {
+        $item = $this->createItem();
+
+        $this->extractor->method('extractPhotoUrls')->willReturn(['https://example.com/photo.jpg']);
+        $this->extractor->method('extractVideoUrl')->willReturn('https://example.com/post/1');
+
+        $this->photoDownloader->method('download')
+            ->willThrowException(new \RuntimeException('photo broke'));
+
+        $this->videoDownloader->method('isAvailable')->willReturn(true);
+        $this->videoDownloader->method('download')
+            ->willThrowException(new \RuntimeException('video broke'));
+
+        $this->service->downloadMedia($item);
+
+        $this->assertSame('failed', $item->getMediaStatus());
+        $this->assertStringContainsString('Photo:', $item->getMediaError());
+        $this->assertStringContainsString('Video:', $item->getMediaError());
+    }
 }
