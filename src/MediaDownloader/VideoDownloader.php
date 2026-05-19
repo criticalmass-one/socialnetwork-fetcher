@@ -6,6 +6,8 @@ use Symfony\Component\Process\Process;
 
 class VideoDownloader
 {
+    private const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'mkv', 'm4v', 'avi'];
+
     public function __construct(
         private readonly string $mediaDirectory,
     ) {
@@ -36,17 +38,33 @@ class VideoDownloader
             throw new \RuntimeException(sprintf('yt-dlp failed: %s', $process->getErrorOutput() ?: $process->getOutput()));
         }
 
-        // Find the output file
-        $files = glob(sprintf('%s/video.*', $outputDir));
+        // Find the actual video file — yt-dlp also writes sidecars (.info.json,
+        // .description, .live_chat.json, .vtt, …) which would otherwise match.
+        $absolutePath = $this->findVideoFile($outputDir);
 
-        if (empty($files)) {
-            throw new \RuntimeException('yt-dlp produced no output file');
+        if ($absolutePath === null) {
+            throw new \RuntimeException('yt-dlp produced no video output file');
         }
 
-        // Return relative path
-        $absolutePath = $files[0];
-
         return ltrim(str_replace($this->mediaDirectory, '', $absolutePath), '/');
+    }
+
+    private function findVideoFile(string $outputDir): ?string
+    {
+        $found = glob(sprintf('%s/video.*', $outputDir)) ?: [];
+
+        foreach ($found as $path) {
+            $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+            if (!in_array($extension, self::VIDEO_EXTENSIONS, true)) {
+                continue;
+            }
+            if (!is_file($path) || filesize($path) === 0) {
+                continue;
+            }
+            return $path;
+        }
+
+        return null;
     }
 
     public function isAvailable(): bool
