@@ -160,11 +160,7 @@
                         </form>
                     {% else %}
                         <p class="text-muted small mb-0">
-                            {% if profile.clients|length == 0 %}
-                                Profil ist mit keinem Client verknüpft — keine Gruppen verfügbar.
-                            {% else %}
-                                Keine weiteren Gruppen verfügbar. Lege bei Bedarf eine neue Gruppe an: <a href="{{ path('app_group_new') }}">Neue Gruppe</a>.
-                            {% endif %}
+                            Keine weiteren Gruppen verfügbar. Lege bei Bedarf eine neue Gruppe an: <a href="{{ path('app_group_new') }}">Neue Gruppe</a>.
                         </p>
                     {% endif %}
                 </div>

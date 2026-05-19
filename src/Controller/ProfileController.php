@@ -168,17 +168,17 @@ class ProfileController extends AbstractController
             if ($group === null) {
                 continue;
             }
-            // Refuse cross-tenant: the group's client must be one of the
-            // profile's clients (and, for client-token users, the scope).
-            if (!$profile->getClients()->contains($group->getClient())) {
-                $this->addFlash('warning', sprintf(
-                    'Gruppe „%s" gehört nicht zu einem Client dieses Profils und wurde übersprungen.',
-                    $group->getName() ?? '?',
-                ));
-                continue;
-            }
-            if ($clientScope !== null && $group->getClient()?->getId() !== $clientScope->getId()) {
-                continue;
+            // For client-token users: refuse cross-tenant. Admin can add a
+            // profile to any group; tenancy is enforced at the read side
+            // (API client scope only sees groups it owns).
+            if ($clientScope !== null) {
+                if ($group->getClient()?->getId() !== $clientScope->getId()) {
+                    continue;
+                }
+                if (!$profile->getClients()->contains($clientScope)) {
+                    $this->addFlash('warning', 'Profil ist nicht mit deinem Client verknüpft.');
+                    continue;
+                }
             }
             $group->addProfile($profile);
             $added++;

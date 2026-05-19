@@ -42,26 +42,20 @@ class GroupRepository extends ServiceEntityRepository
     }
 
     /**
-     * Groups the profile is *not* in yet, restricted to clients the profile
-     * is linked to (so we never offer a foreign-tenant group as a target).
+     * Groups the profile is *not* in yet.
+     *
+     * - When $client is given (client-token user), restrict to groups owned
+     *   by that client *and* the profile must be linked to that client too.
+     * - When $client is null (admin), return *all* groups the profile is not
+     *   in, regardless of whether the profile is linked to the group's
+     *   client. Admins are tenant-wide and we don't want to hide groups
+     *   behind a profile↔client link that may not exist for imported data.
      *
      * @return list<Group>
      */
     public function findAvailableForProfile(\App\Entity\Profile $profile, ?Client $client = null): array
     {
-        $allowedClients = $client !== null
-            ? [$client]
-            : iterator_to_array($profile->getClients());
-
-        if ($allowedClients === []) {
-            return [];
-        }
-
-        $allowedClientIds = array_map(fn($c) => $c->getId(), $allowedClients);
-
         $qb = $this->createQueryBuilder('g')
-            ->andWhere('g.client IN (:clientIds)')
-            ->setParameter('clientIds', $allowedClientIds)
             ->andWhere('g.id NOT IN (
                 SELECT g2.id FROM App\Entity\Group g2
                 JOIN g2.profiles p2
@@ -69,6 +63,15 @@ class GroupRepository extends ServiceEntityRepository
             )')
             ->setParameter('profileId', $profile->getId())
             ->orderBy('g.name', 'ASC');
+
+        if ($client !== null) {
+            // Client-token user: only their own groups, and only if the
+            // profile is actually linked to them.
+            if (!$profile->getClients()->contains($client)) {
+                return [];
+            }
+            $qb->andWhere('g.client = :clientScope')->setParameter('clientScope', $client);
+        }
 
         return $qb->getQuery()->getResult();
     }
