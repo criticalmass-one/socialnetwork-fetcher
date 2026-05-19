@@ -2,6 +2,8 @@
 
 namespace App\Controller;
 
+use App\Entity\Client;
+use App\Entity\Group;
 use App\Entity\Profile;
 use App\Form\ProfileType;
 use App\FeedFetcher\FeedFetcher;
@@ -9,6 +11,7 @@ use App\FeedFetcher\FetchInfo;
 use App\FeedFetcher\FetchResult;
 use App\FeedItemPersister\FeedItemPersisterInterface;
 use App\Model\Profile as ModelProfile;
+use App\Repository\GroupRepository;
 use App\Repository\ItemRepository;
 use App\Repository\NetworkRepository;
 use App\Repository\ProfileRepository;
@@ -122,14 +125,108 @@ class ProfileController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_profile_show', requirements: ['id' => '\d+'])]
-    public function show(Profile $profile, ItemRepository $itemRepository): Response
+    public function show(Profile $profile, ItemRepository $itemRepository, GroupRepository $groupRepository): Response
     {
+        $clientScope = $this->clientScope();
+        $currentGroups = $groupRepository->findByProfile($profile, $clientScope);
+        $availableGroups = $groupRepository->findAvailableForProfile($profile, $clientScope);
+
         $itemCount = $itemRepository->count(['profile' => $profile]);
 
         return $this->render('profile/show.html.twig', [
             'profile' => $profile,
             'itemCount' => $itemCount,
+            'currentGroups' => $currentGroups,
+            'availableGroups' => $availableGroups,
         ]);
+    }
+
+    #[Route('/{id}/groups/add', name: 'app_profile_groups_add', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function addToGroups(
+        Request $request,
+        Profile $profile,
+        GroupRepository $groupRepository,
+        EntityManagerInterface $em,
+    ): Response {
+        if (!$this->isCsrfTokenValid('profile-groups-add-' . $profile->getId(), $request->request->getString('_token'))) {
+            return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
+        }
+
+        $groupIds = array_map('intval', (array) $request->request->all('groupIds'));
+        if ($groupIds === []) {
+            return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
+        }
+
+        $clientScope = $this->clientScope();
+        $added = 0;
+
+        foreach ($groupIds as $groupId) {
+            if ($groupId <= 0) {
+                continue;
+            }
+            $group = $groupRepository->find($groupId);
+            if ($group === null) {
+                continue;
+            }
+            // Refuse cross-tenant: the group's client must be one of the
+            // profile's clients (and, for client-token users, the scope).
+            if (!$profile->getClients()->contains($group->getClient())) {
+                $this->addFlash('warning', sprintf(
+                    'Gruppe „%s" gehört nicht zu einem Client dieses Profils und wurde übersprungen.',
+                    $group->getName() ?? '?',
+                ));
+                continue;
+            }
+            if ($clientScope !== null && $group->getClient()?->getId() !== $clientScope->getId()) {
+                continue;
+            }
+            $group->addProfile($profile);
+            $added++;
+        }
+
+        $em->flush();
+
+        if ($added > 0) {
+            $this->addFlash('success', sprintf('Profil wurde zu %d Gruppe%s hinzugefügt.', $added, $added === 1 ? '' : 'n'));
+        }
+
+        return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
+    }
+
+    #[Route('/{id}/groups/{groupId}/remove', name: 'app_profile_group_remove', requirements: ['id' => '\d+', 'groupId' => '\d+'], methods: ['POST'])]
+    public function removeFromGroup(
+        Request $request,
+        Profile $profile,
+        int $groupId,
+        GroupRepository $groupRepository,
+        EntityManagerInterface $em,
+    ): Response {
+        if (!$this->isCsrfTokenValid('profile-group-remove-' . $profile->getId() . '-' . $groupId, $request->request->getString('_token'))) {
+            return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
+        }
+
+        $group = $groupRepository->find($groupId);
+        if ($group === null) {
+            return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
+        }
+
+        $clientScope = $this->clientScope();
+        if ($clientScope !== null && $group->getClient()?->getId() !== $clientScope->getId()) {
+            return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
+        }
+
+        $group->removeProfile($profile);
+        $em->flush();
+
+        $this->addFlash('success', sprintf('Profil wurde aus Gruppe „%s" entfernt.', $group->getName() ?? '?'));
+
+        return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
+    }
+
+    private function clientScope(): ?Client
+    {
+        $user = $this->getUser();
+        return $user instanceof Client ? $user : null;
     }
 
     #[Route('/{id}/edit', name: 'app_profile_edit', requirements: ['id' => '\d+'])]
