@@ -7,6 +7,8 @@ use App\Entity\Profile;
 use App\Form\GroupType;
 use App\Repository\ClientRepository;
 use App\Repository\GroupRepository;
+use App\Repository\ItemRepository;
+use App\Repository\NetworkRepository;
 use App\Repository\ProfileRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -18,6 +20,7 @@ use Symfony\Component\Routing\Attribute\Route;
 class GroupController extends AbstractController
 {
     private const GROUPS_PER_PAGE = 50;
+    private const TIMELINE_ITEMS_PER_PAGE = 50;
 
     #[Route('', name: 'app_group_index', methods: ['GET'])]
     public function index(Request $request, GroupRepository $groupRepository, ClientRepository $clientRepository): Response
@@ -72,10 +75,40 @@ class GroupController extends AbstractController
     }
 
     #[Route('/{id}', name: 'app_group_show', requirements: ['id' => '\d+'], methods: ['GET'])]
-    public function show(Group $group): Response
-    {
+    public function show(
+        Group $group,
+        Request $request,
+        ItemRepository $itemRepository,
+        NetworkRepository $networkRepository,
+    ): Response {
+        $page = max(1, $request->query->getInt('page', 1));
+        $networkId = $request->query->getInt('network', 0) ?: null;
+
+        $itemCount = $itemRepository->countByGroup($group, $networkId);
+        $pages = max(1, (int) ceil($itemCount / self::TIMELINE_ITEMS_PER_PAGE));
+        $page = min($page, $pages);
+
+        $items = $itemRepository->findPaginatedByGroup($group, $page, self::TIMELINE_ITEMS_PER_PAGE, $networkId);
+
+        // Collect the distinct networks present in the group's live members, so
+        // the network filter offers only what's actually relevant.
+        $networks = [];
+        foreach ($group->getProfiles() as $profile) {
+            if ($profile->isDeleted() || $profile->getNetwork() === null) {
+                continue;
+            }
+            $networks[$profile->getNetwork()->getId()] = $profile->getNetwork();
+        }
+        ksort($networks);
+
         return $this->render('group/show.html.twig', [
             'group' => $group,
+            'items' => $items,
+            'itemCount' => $itemCount,
+            'page' => $page,
+            'pages' => $pages,
+            'networks' => array_values($networks),
+            'selectedNetworkId' => $networkId,
         ]);
     }
 

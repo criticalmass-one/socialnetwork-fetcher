@@ -25,6 +25,64 @@ class ItemRepository extends ServiceEntityRepository
     }
 
     /**
+     * Paginated items across all profiles in a group, excluding hidden /
+     * soft-deleted items and items belonging to soft-deleted profiles.
+     *
+     * @return list<Item>
+     */
+    public function findPaginatedByGroup(\App\Entity\Group $group, int $page, int $limit, ?int $networkId = null): array
+    {
+        $qb = $this->groupQueryBuilder($group)
+            ->orderBy('i.dateTime', 'DESC')
+            ->setFirstResult(($page - 1) * $limit)
+            ->setMaxResults($limit);
+
+        if ($networkId !== null) {
+            $qb->andWhere('n.id = :networkId')->setParameter('networkId', $networkId);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
+    public function countByGroup(\App\Entity\Group $group, ?int $networkId = null): int
+    {
+        $qb = $this->groupQueryBuilder($group)->select('COUNT(i.id)');
+
+        if ($networkId !== null) {
+            $qb->andWhere('n.id = :networkId')->setParameter('networkId', $networkId);
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
+    private function groupQueryBuilder(\App\Entity\Group $group): QueryBuilder
+    {
+        $profileIds = [];
+        foreach ($group->getProfiles() as $profile) {
+            if (!$profile->isDeleted()) {
+                $profileIds[] = $profile->getId();
+            }
+        }
+
+        $qb = $this->createQueryBuilder('i')
+            ->leftJoin('i.profile', 'p')
+            ->addSelect('p')
+            ->leftJoin('p.network', 'n')
+            ->addSelect('n')
+            ->andWhere('i.hidden = false')
+            ->andWhere('i.deleted = false');
+
+        if ($profileIds === []) {
+            // Group has no live members → no items. Force-empty result.
+            $qb->andWhere('1 = 0');
+        } else {
+            $qb->andWhere('p.id IN (:profileIds)')->setParameter('profileIds', $profileIds);
+        }
+
+        return $qb;
+    }
+
+    /**
      * @param list<int> $networkIds
      * @return list<Item>
      */
