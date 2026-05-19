@@ -169,15 +169,19 @@ class ProfileController extends AbstractController
     public function rssappRegister(Request $request, Profile $profile, RssAppInterface $rssApp, EntityManagerInterface $em): Response
     {
         if ($this->isCsrfTokenValid('rssapp-' . $profile->getId(), $request->request->getString('_token'))) {
-            $feedData = $rssApp->createFeed($profile->getIdentifier());
+            try {
+                $feedData = $rssApp->createFeed($profile->getIdentifier());
 
-            $additionalData = $profile->getAdditionalData() ?? [];
-            $additionalData['rss_feed_id'] = $feedData['id'];
-            $profile->setAdditionalData($additionalData);
+                $additionalData = $profile->getAdditionalData() ?? [];
+                $additionalData['rss_feed_id'] = $feedData['id'];
+                $profile->setAdditionalData($additionalData);
 
-            $em->flush();
+                $em->flush();
 
-            $this->addFlash('success', 'Feed wurde bei RSS.app registriert.');
+                $this->addFlash('success', 'Feed wurde bei RSS.app registriert.');
+            } catch (\Throwable $e) {
+                $this->addFlash('danger', sprintf('Registrierung bei RSS.app fehlgeschlagen: %s', $e->getMessage()));
+            }
         }
 
         return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
