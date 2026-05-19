@@ -6,6 +6,8 @@ use Symfony\Component\Process\Process;
 
 class YtDlpPhotoDownloader
 {
+    private const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'];
+
     public function __construct(
         private readonly string $mediaDirectory,
     ) {
@@ -41,7 +43,7 @@ class YtDlpPhotoDownloader
             throw new \RuntimeException(sprintf('yt-dlp photo extraction failed: %s', $process->getErrorOutput() ?: $process->getOutput()));
         }
 
-        $files = glob(sprintf('%s/photo_*.*', $outputDir));
+        $files = $this->collectImageFiles($outputDir);
 
         if (empty($files)) {
             return [];
@@ -56,6 +58,29 @@ class YtDlpPhotoDownloader
         }
 
         return $paths;
+    }
+
+    /** @return list<string> */
+    private function collectImageFiles(string $outputDir): array
+    {
+        // yt-dlp may write sidecar files (.info.json, .description, .live_chat.json, …).
+        // Only return real image files, and skip zero-byte writes that occasionally
+        // happen when a thumbnail extraction partially fails.
+        $found = glob(sprintf('%s/photo_*.*', $outputDir)) ?: [];
+
+        $images = [];
+        foreach ($found as $path) {
+            $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+            if (!in_array($extension, self::IMAGE_EXTENSIONS, true)) {
+                continue;
+            }
+            if (!is_file($path) || filesize($path) === 0) {
+                continue;
+            }
+            $images[] = $path;
+        }
+
+        return $images;
     }
 
     public function isAvailable(): bool
