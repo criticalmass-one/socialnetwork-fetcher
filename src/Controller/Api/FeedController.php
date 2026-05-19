@@ -3,8 +3,10 @@
 namespace App\Controller\Api;
 
 use App\Entity\Client;
+use App\Entity\Group;
 use App\Entity\Item;
 use App\Entity\Profile;
+use App\Repository\GroupRepository;
 use App\Repository\ProfileRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use OpenApi\Attributes as OA;
@@ -26,6 +28,7 @@ class FeedController
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly ProfileRepository $profileRepository,
+        private readonly GroupRepository $groupRepository,
         private readonly Security $security,
         private readonly UrlHelper $urlHelper,
     ) {
@@ -168,6 +171,100 @@ class FeedController
         return $this->buildRssResponse(
             title: $title,
             description: sprintf('Feed of items from %s on %s.', $profile->getDisplayName(), $networkName),
+            selfUrl: $this->urlHelper->getAbsoluteUrl($request->getRequestUri()),
+            items: $items,
+        );
+    }
+
+    #[Route('/api/feeds/groups/{id}.rss', name: 'app_api_feed_group', requirements: ['id' => '\d+'], methods: ['GET'])]
+    #[OA\Get(
+        summary: 'Per-group RSS feed.',
+        description: <<<'DESC'
+        RSS 2.0 feed for a single group: items across every (non-soft-deleted)
+        member profile, dateTime DESC. Returns 404 if the group is not owned by
+        the authenticated client. Hidden / soft-deleted items are excluded.
+
+        Item structure matches `/api/feeds/timeline.rss`. Each `<item>` carries
+        the originating profile's network as `<category>` and the profile's
+        display name as `<dc:creator>` so consumer-side templates can
+        differentiate items from different networks even though they all live
+        in the same feed.
+
+        Use this for embedding a topical bundle of accounts (e.g. "all the
+        Mastodon, Instagram, Bluesky and Twitter accounts on the topic of
+        climate") into a WordPress site as a single feed.
+        DESC,
+        tags: ['Feed', 'Group'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Group ID.', schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'limit', in: 'query', description: 'Maximum number of items in the feed (default 100, max 200).', schema: new OA\Schema(type: 'integer', default: 100, minimum: 1, maximum: 200)),
+            new OA\Parameter(name: 'network', in: 'query', description: 'Optional: filter to a single network identifier.', schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'RSS 2.0 XML feed.', content: new OA\MediaType(mediaType: 'application/rss+xml')),
+            new OA\Response(response: 401, description: 'Missing or invalid Bearer token.'),
+            new OA\Response(response: 404, description: 'Group not found or not owned by the authenticated client.'),
+        ],
+    )]
+    public function groupFeed(int $id, Request $request): Response
+    {
+        $client = $this->requireClient();
+
+        $group = $this->groupRepository->find($id);
+        if ($group === null || $group->getClient()?->getId() !== $client->getId()) {
+            throw new NotFoundHttpException('Group not found.');
+        }
+
+        $limit = min(
+            max(1, $request->query->getInt('limit', self::DEFAULT_LIMIT)),
+            self::MAX_LIMIT,
+        );
+
+        $profileIds = [];
+        foreach ($group->getProfiles() as $profile) {
+            if (!$profile->isDeleted() && $profile->getId() !== null) {
+                $profileIds[] = $profile->getId();
+            }
+        }
+
+        if ($profileIds === []) {
+            return $this->buildRssResponse(
+                title: sprintf('%s — Gruppe', $group->getName() ?? '?'),
+                description: 'Aggregated feed across the group\'s member profiles.',
+                selfUrl: $this->urlHelper->getAbsoluteUrl($request->getRequestUri()),
+                items: [],
+            );
+        }
+
+        $qb = $this->em->createQueryBuilder()
+            ->select('i')
+            ->from(Item::class, 'i')
+            ->innerJoin('i.profile', 'p')
+            ->where('p.id IN (:profileIds)')
+            ->andWhere('p.deleted = false')
+            ->andWhere('i.hidden = false')
+            ->andWhere('i.deleted = false')
+            ->setParameter('profileIds', $profileIds)
+            ->orderBy('i.dateTime', 'DESC')
+            ->setMaxResults($limit);
+
+        $network = $request->query->get('network');
+        if ($network !== null) {
+            $qb->innerJoin('p.network', 'n')
+                ->andWhere('n.identifier = :network')
+                ->setParameter('network', $network);
+        }
+
+        $items = $qb->getQuery()->getResult();
+
+        $title = sprintf('%s — Gruppe', $group->getName() ?? '?');
+        if ($network !== null) {
+            $title .= sprintf(' (%s)', $network);
+        }
+
+        return $this->buildRssResponse(
+            title: $title,
+            description: sprintf('Aggregated feed across the %d profiles in group "%s".', count($profileIds), $group->getName() ?? '?'),
             selfUrl: $this->urlHelper->getAbsoluteUrl($request->getRequestUri()),
             items: $items,
         );

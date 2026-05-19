@@ -15,6 +15,7 @@ use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use ApiPlatform\OpenApi\Model\Parameter;
+use App\State\GroupItemsProvider;
 use App\State\TimelineProvider;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
@@ -33,6 +34,26 @@ use Symfony\Component\Serializer\Attribute\Groups;
 
             See available filters below for full query options.
             TEXT,
+        ),
+        new GetCollection(
+            uriTemplate: '/groups/{groupId}/items',
+            uriVariables: ['groupId'],
+            provider: GroupItemsProvider::class,
+            description: 'Chronological items across every (non-soft-deleted) member profile of the group. Hidden / deleted items excluded, dateTime DESC, paginated 50 per page (max 200). Supports `?since=`, `?until=` and `?network=` (network identifier). 404 if the group does not belong to the authenticated client.',
+            openapi: new OpenApiOperation(
+                summary: 'Get all items for a group',
+                parameters: [
+                    new Parameter(name: 'groupId', in: 'path', required: true, schema: ['type' => 'integer']),
+                    new Parameter(name: 'page', in: 'query', description: 'Page number (default: 1).', schema: ['type' => 'integer', 'default' => 1, 'minimum' => 1]),
+                    new Parameter(name: 'itemsPerPage', in: 'query', description: 'Items per page (default: 50, max: 200).', schema: ['type' => 'integer', 'default' => 50, 'minimum' => 1, 'maximum' => 200]),
+                    new Parameter(name: 'since', in: 'query', description: 'Return items published after this timestamp (ISO 8601).', schema: ['type' => 'string', 'format' => 'date-time']),
+                    new Parameter(name: 'until', in: 'query', description: 'Return items published before this timestamp (ISO 8601).', schema: ['type' => 'string', 'format' => 'date-time']),
+                    new Parameter(name: 'network', in: 'query', description: 'Filter by network identifier (e.g. mastodon).', schema: ['type' => 'string']),
+                ],
+            ),
+            paginationEnabled: true,
+            paginationItemsPerPage: 50,
+            paginationMaximumItemsPerPage: 200,
         ),
         new GetCollection(
             uriTemplate: '/timeline',

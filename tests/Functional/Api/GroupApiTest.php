@@ -167,6 +167,64 @@ class GroupApiTest extends AbstractApiTestCase
         $this->assertResponseStatusCodeSame(404);
     }
 
+    public function testGroupItemsEndpoint(): void
+    {
+        $sharedIri = $this->ownedProfileIri('https://mastodon.social/@shared');
+        $groupId = $this->createGroup('Items Test', [$sharedIri]);
+
+        $response = $this->requestAsClientA('GET', '/api/groups/' . $groupId . '/items');
+        $this->assertResponseIsSuccessful();
+
+        $items = $this->extractMembers($response);
+        $this->assertNotEmpty($items, 'group items endpoint should return shared items');
+        foreach ($items as $item) {
+            $this->assertStringContainsString('Shared', $item['text']);
+        }
+    }
+
+    public function testGroupItemsEndpoint404ForForeignGroup(): void
+    {
+        $groupId = $this->createGroup('Foreign Items Test', [], 'B');
+
+        $this->requestAsClientA('GET', '/api/groups/' . $groupId . '/items');
+        $this->assertResponseStatusCodeSame(404);
+    }
+
+    public function testGroupItemsExcludesHiddenAndDeleted(): void
+    {
+        $sharedIri = $this->ownedProfileIri('https://mastodon.social/@shared');
+        $groupId = $this->createGroup('Hidden Test', [$sharedIri]);
+
+        $items = $this->extractMembers($this->requestAsClientA('GET', '/api/groups/' . $groupId . '/items'));
+        $texts = array_map(fn($i) => $i['text'], $items);
+
+        $this->assertNotContains('Shared hidden item', $texts);
+        $this->assertNotContains('Shared soft-deleted item', $texts);
+    }
+
+    public function testGroupRssFeed(): void
+    {
+        $sharedIri = $this->ownedProfileIri('https://mastodon.social/@shared');
+        $groupId = $this->createGroup('Rss Test', [$sharedIri]);
+
+        $response = $this->requestAsClientA('GET', '/api/feeds/groups/' . $groupId . '.rss', ['headers' => ['Accept' => '*/*']]);
+        $this->assertResponseIsSuccessful();
+        $this->assertStringContainsString('application/rss+xml', $response->getHeaders()['content-type'][0]);
+
+        $body = $response->getContent();
+        $this->assertStringStartsWith('<?xml', $body);
+        $this->assertStringContainsString('<rss ', $body);
+        $this->assertStringContainsString('Shared item 1', $body);
+    }
+
+    public function testGroupRssFeed404ForForeignGroup(): void
+    {
+        $groupId = $this->createGroup('Foreign Rss Test', [], 'B');
+
+        $this->requestAsClientA('GET', '/api/feeds/groups/' . $groupId . '.rss', ['headers' => ['Accept' => '*/*']]);
+        $this->assertResponseStatusCodeSame(404);
+    }
+
     private function extractMembers(\Symfony\Contracts\HttpClient\ResponseInterface $response): array
     {
         $data = $response->toArray();
