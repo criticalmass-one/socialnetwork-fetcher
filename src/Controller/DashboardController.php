@@ -32,13 +32,22 @@ class DashboardController extends AbstractController
         $networkStats = [];
         foreach ($networks as $network) {
             $profiles = $profileRepository->findBy(['network' => $network]);
-            if (count($profiles) === 0) {
-                continue;
+            $activeProfileCount = 0;
+            foreach ($profiles as $profile) {
+                if (!$profile->isDeleted()) {
+                    $activeProfileCount++;
+                }
             }
+
             $itemCount = 0;
             foreach ($profiles as $profile) {
                 $itemCount += $itemRepository->count(['profile' => $profile]);
             }
+
+            if ($activeProfileCount === 0 && $itemCount === 0) {
+                continue;
+            }
+
             $networkStats[] = [
                 'network' => $network,
                 'profileCount' => count($profiles),

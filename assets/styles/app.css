@@ -131,6 +131,60 @@ body {
     color: white;
 }
 
+.sidebar-nav .nav-group > details > summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    color: var(--sidebar-text);
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    list-style: none;
+    transition: all 0.15s;
+}
+
+.sidebar-nav .nav-group > details > summary::-webkit-details-marker {
+    display: none;
+}
+
+.sidebar-nav .nav-group > details > summary:hover {
+    background: var(--sidebar-hover);
+    color: var(--sidebar-text-active);
+}
+
+.sidebar-nav .nav-group > details > summary.active-group {
+    color: var(--sidebar-text-active);
+}
+
+.sidebar-nav .nav-group > details > summary .nav-icon {
+    width: 20px;
+    text-align: center;
+    font-size: 15px;
+}
+
+.sidebar-nav .nav-group .nav-chevron {
+    margin-left: auto;
+    font-size: 11px;
+    transition: transform 0.15s;
+}
+
+.sidebar-nav .nav-group > details[open] > summary .nav-chevron {
+    transform: rotate(90deg);
+}
+
+.sidebar-subnav {
+    list-style: none;
+    padding: 4px 0 4px 12px;
+    margin: 0;
+}
+
+.sidebar-subnav li a {
+    font-size: 13px;
+    padding: 8px 12px;
+}
+
 .sidebar-footer {
     margin-top: auto;
     padding: 16px;
@@ -387,6 +441,7 @@ body.login-page .main {
 
 .data-card-body {
     padding: 24px;
+    overflow-x: auto;
 }
 
 /* ===== Data Table ===== */

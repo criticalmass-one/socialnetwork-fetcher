@@ -9,11 +9,12 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
-use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Doctrine\Orm\Filter\BooleanFilter;
+use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
 use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use ApiPlatform\OpenApi\Model\Parameter;
-use App\State\ClientScopedItemProvider;
 use App\State\TimelineProvider;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
@@ -25,27 +26,35 @@ use Symfony\Component\Serializer\Attribute\Groups;
 #[ApiResource(
     operations: [
         new GetCollection(
-            provider: ClientScopedItemProvider::class,
-            description: 'Returns feed items for profiles linked to the authenticated client. Ordered by dateTime descending. Filter by profile using ?profile=<id>.',
+            description: <<<'TEXT'
+            Returns feed items for profiles linked to the authenticated client. Hidden and soft-deleted items are excluded by default; pass ?hidden=true or ?deleted=true to include them. Ordered by dateTime descending. Paginated 50 items per page.
+
+            **Incremental sync pattern**: store the latest `createdAt` you've seen, then on the next poll request `?createdAt[strictly_after]={lastCreatedAt}&order[createdAt]=asc`. `createdAt` is the import-into-DB timestamp; using it (instead of `dateTime`, which is the social-network publication time) guarantees stable ordering even when an old item is re-discovered.
+
+            See available filters below for full query options.
+            TEXT,
         ),
         new GetCollection(
             uriTemplate: '/timeline',
             provider: TimelineProvider::class,
-            description: 'Chronological timeline of all feed items across the authenticated client\'s profiles. Defaults to the last 24 hours, max 100 items. Use query parameters to customize: ?limit=50&since=2025-01-01T00:00:00Z&until=2025-01-31T23:59:59Z&network=mastodon',
+            description: 'Chronological timeline of all feed items across the authenticated client\'s profiles. Defaults to the last 24 hours, paginated 50 items per page (max 200). Hidden and soft-deleted items are excluded. For incremental sync against a WordPress site etc., prefer /api/items with ?createdAt[strictly_after]=… and ?order[createdAt]=asc.',
             openapi: new OpenApiOperation(
                 summary: 'Get client timeline',
                 parameters: [
-                    new Parameter(name: 'limit', in: 'query', description: 'Maximum number of items to return (default: 100, max: 500).', schema: ['type' => 'integer', 'default' => 100, 'minimum' => 1, 'maximum' => 500]),
+                    new Parameter(name: 'page', in: 'query', description: 'Page number (default: 1).', schema: ['type' => 'integer', 'default' => 1, 'minimum' => 1]),
+                    new Parameter(name: 'itemsPerPage', in: 'query', description: 'Items per page (default: 50, max: 200). The legacy ?limit= parameter is accepted as a synonym for backwards compatibility.', schema: ['type' => 'integer', 'default' => 50, 'minimum' => 1, 'maximum' => 200]),
                     new Parameter(name: 'since', in: 'query', description: 'Return items published after this timestamp (default: 24 hours ago). ISO 8601 format.', schema: ['type' => 'string', 'format' => 'date-time']),
                     new Parameter(name: 'until', in: 'query', description: 'Return items published before this timestamp. ISO 8601 format.', schema: ['type' => 'string', 'format' => 'date-time']),
                     new Parameter(name: 'network', in: 'query', description: 'Filter by network identifier (e.g. "mastodon", "bluesky", "instagram_profile").', schema: ['type' => 'string']),
                 ],
             ),
-            paginationEnabled: false,
+            paginationEnabled: true,
+            paginationItemsPerPage: 50,
+            paginationMaximumItemsPerPage: 200,
         ),
         new Get(
-            provider: ClientScopedItemProvider::class,
-            description: 'Returns a single feed item by ID. Returns 404 if the item belongs to a profile not linked to the authenticated client.',
+            description: 'Returns a single feed item by ID, including the heavy raw/rawSource/parsedSource payloads (item:detail group). Returns 404 if the item belongs to a profile not linked to the authenticated client.',
+            normalizationContext: ['groups' => ['item:read', 'item:detail']],
         ),
         new Post(
             description: 'Creates a new feed item.',
@@ -54,13 +63,21 @@ use Symfony\Component\Serializer\Attribute\Groups;
             description: 'Updates an existing feed item.',
         ),
     ],
-    description: 'A feed item (post, tweet, etc.) fetched from a social network profile. Items are scoped to profiles linked to the authenticated API client.',
+    description: 'A feed item (post, tweet, etc.) fetched from a social network profile. Items are scoped to profiles linked to the authenticated API client. The collection responses use the slim item:read group (no raw payloads). The single-item GET adds item:detail which includes raw, rawSource and parsedSource.',
     normalizationContext: ['groups' => ['item:read']],
     denormalizationContext: ['groups' => ['item:write']],
     order: ['dateTime' => 'DESC'],
     paginationItemsPerPage: 50,
 )]
-#[ApiFilter(SearchFilter::class, properties: ['profile' => 'exact'])]
+#[ApiFilter(SearchFilter::class, properties: [
+    'profile' => 'exact',
+    'profile.network' => 'exact',
+    'profile.network.identifier' => 'exact',
+    'text' => 'partial',
+    'title' => 'partial',
+])]
+#[ApiFilter(DateFilter::class, properties: ['dateTime', 'createdAt'])]
+#[ApiFilter(BooleanFilter::class, properties: ['hidden', 'deleted'])]
 #[ApiFilter(OrderFilter::class, properties: ['dateTime', 'createdAt'])]
 class Item
 {
@@ -84,7 +101,10 @@ class Item
 
     #[ORM\Column(type: 'text', nullable: true)]
     #[Groups(['item:read', 'item:write'])]
-    #[ApiProperty(description: 'Direct URL to the original post on the social network.')]
+    #[ApiProperty(
+        description: 'Direct URL to the original post on the social network. Used as `<link>` in the RSS feeds and is what a WordPress consumer would link to.',
+        example: 'https://mastodon.social/@example/110928301234567890',
+    )]
     private ?string $permalink = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
@@ -99,7 +119,10 @@ class Item
 
     #[ORM\Column(name: 'date_time', type: 'datetime_immutable', nullable: false)]
     #[Groups(['item:read', 'item:write'])]
-    #[ApiProperty(description: 'Publication date and time of the feed item on the social network.')]
+    #[ApiProperty(
+        description: 'Publication date and time of the post on the social network itself (ISO 8601 with timezone). Stable per post — does not change after import. Use this for ordering "what was published when". For incremental polling against a moving cursor, prefer createdAt because re-discovered old posts can land at any dateTime.',
+        example: '2026-05-18T08:30:00+00:00',
+    )]
     private ?\DateTimeImmutable $dateTime = null;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
@@ -114,33 +137,53 @@ class Item
 
     #[ORM\Column(name: 'created_at', type: 'datetime_immutable', nullable: false)]
     #[Groups(['item:read'])]
-    #[ApiProperty(description: 'Timestamp when this item was first imported into the system.', readable: true, writable: false)]
+    #[ApiProperty(
+        description: 'Timestamp when this item was first imported into the local DB (ISO 8601 with timezone). Monotonically increasing per insert, never modified. **This is the recommended cursor for incremental sync**: store the largest createdAt you have seen, then poll with `?createdAt[strictly_after]={cursor}&order[createdAt]=asc`.',
+        readable: true,
+        writable: false,
+        example: '2026-05-18T10:00:00+00:00',
+    )]
     private \DateTimeImmutable $createdAt;
 
     #[ORM\Column(type: 'text', nullable: true)]
-    #[Groups(['item:read', 'item:write'])]
-    #[ApiProperty(description: 'Raw JSON response from the social network API for this item.')]
+    #[Groups(['item:detail', 'item:write'])]
+    #[ApiProperty(description: 'Raw JSON response from the social network API for this item. Only included on the single-item endpoint, not in collections.')]
     private ?string $raw = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
-    #[Groups(['item:read', 'item:write'])]
-    #[ApiProperty(description: 'Raw HTML source of the original page, if fetchSource was enabled on the profile.')]
+    #[Groups(['item:detail', 'item:write'])]
+    #[ApiProperty(description: 'Raw HTML source of the original page, if fetchSource was enabled on the profile. Only included on the single-item endpoint.')]
     private ?string $rawSource = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
-    #[Groups(['item:read', 'item:write'])]
-    #[ApiProperty(description: 'Parsed/processed version of the source content.')]
+    #[Groups(['item:detail', 'item:write'])]
+    #[ApiProperty(description: 'Parsed/processed version of the source content. Only included on the single-item endpoint.')]
     private ?string $parsedSource = null;
 
     #[ORM\Column(type: 'json', nullable: true)]
     #[Groups(['item:read'])]
-    #[ApiProperty(description: 'Relative paths to downloaded photo files.', readable: true, writable: false)]
+    #[ApiProperty(description: 'Relative paths to downloaded photo files. Use photoUrls for absolute URLs.', readable: true, writable: false)]
     private ?array $photoPaths = null;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
     #[Groups(['item:read'])]
-    #[ApiProperty(description: 'Relative path to the downloaded video file.', readable: true, writable: false)]
+    #[ApiProperty(description: 'Relative path to the downloaded video file. Use videoUrl for the absolute URL.', readable: true, writable: false)]
     private ?string $videoPath = null;
+
+    /**
+     * Populated at serialization time by ItemMediaUrlNormalizer based on photoPaths.
+     * @var list<string>
+     */
+    #[Groups(['item:read'])]
+    #[ApiProperty(description: 'Absolute URLs of downloaded photo files. Built from photoPaths against the current request host. Empty array when no photos have been downloaded.', readable: true, writable: false)]
+    public array $photoUrls = [];
+
+    /**
+     * Populated at serialization time by ItemMediaUrlNormalizer based on videoPath.
+     */
+    #[Groups(['item:read'])]
+    #[ApiProperty(description: 'Absolute URL of the downloaded video file. Built from videoPath against the current request host. Null when no video has been downloaded.', readable: true, writable: false)]
+    public ?string $videoUrl = null;
 
     #[ORM\Column(type: 'string', length: 20, nullable: true)]
     #[Groups(['item:read'])]

@@ -1,33 +1,85 @@
 api_platform:
     title: Social Network Fetcher API
     description: |
-        REST API for managing social network profiles and their feed items.
+        REST API for managing social-network profiles and their feed items.
+        Speaks JSON-LD (Hydra), plain JSON, and RSS 2.0 under `/api/feeds/…`.
 
         ## Authentication
 
-        All endpoints under `/api/` (except `/api/docs`) require a Bearer token.
-        Tokens are issued per client via the CLI command `app:client:create <name>`.
+        Every request under `/api/` (except `/api/doc`, `/api/docs`) requires a Bearer token issued via:
 
-        Include the token in the `Authorization` header:
+        ```
+        bin/console app:client:create <name>
+        ```
 
-            Authorization: Bearer <token>
+        Include the token in every request:
 
-        Requests without a valid token receive a `401 Unauthorized` response.
+        ```
+        Authorization: Bearer <your-token>
+        ```
+
+        Missing, invalid or disabled-client tokens → **401**.
 
         ## Multi-Tenancy
 
-        Each API client sees only its own profiles and their items.
-        Profiles can be shared between clients — a profile is only soft-deleted
-        when the last client removes it.
+        Each client sees only its own profiles and items. Profiles may be shared between clients.
+        A profile is only soft-deleted when the last client removes it.
+        Profiles and items are never physically deleted — historical data is preserved.
 
-        ## Profile Lifecycle
+        ## Response visibility defaults
 
-        - **POST /api/profiles** — Creates a new profile or links an existing one to the authenticated client.
-          If a profile with the same network + identifier already exists, it is linked (idempotent).
-          If the existing profile was soft-deleted, it is reactivated.
-        - **DELETE /api/profiles/{id}** — Unlinks the profile from the client.
-          If no other client references it, the profile is soft-deleted and its RSS.app feed is removed.
-        - Profiles and items are never physically deleted — historical data is preserved.
+        - `/api/items` and `/api/timeline` exclude `hidden=true` and `deleted=true` items by
+          default. Override with `?hidden=true` / `?deleted=true`.
+        - `/api/profiles` excludes soft-deleted profiles always.
+
+        ## Slim vs. detail responses
+
+        Collections return the slim `item:read` / `profile:read` group. The heavy fields
+        — `raw`, `rawSource`, `parsedSource` (Item) and `additionalData` (Profile) — are
+        in the detail group and only land on the single-resource GET endpoint.
+
+        ## Media URLs
+
+        Items expose both relative paths (`photoPaths`, `videoPath`) and absolute URLs
+        (`photoUrls`, `videoUrl`) built from the current request host. Use the absolute
+        ones for embedding.
+
+        ## Filtering & sorting
+
+        See the per-operation parameter list. Items support filters on `profile`,
+        `profile.network`, `profile.network.identifier`, `text` (partial), `title`
+        (partial), `hidden`, `deleted`, date ranges on `dateTime` and `createdAt`,
+        and ordering by `dateTime` / `createdAt`. Profiles support filters on
+        `network`, `network.identifier`, `identifier` (partial), `title` (partial),
+        `autoFetch`, plus ordering by `identifier`, `title`, `createdAt`,
+        `lastFetchSuccessDateTime`.
+
+        ## Incremental sync (recommended for WordPress polling)
+
+        For periodic polling, prefer `createdAt` over `dateTime`:
+
+        ```
+        GET /api/items?createdAt[strictly_after]=2026-05-18T10:00:00Z&order[createdAt]=asc&itemsPerPage=200
+        ```
+
+        Store the largest `createdAt` you've seen and use it as the cursor next time.
+
+        ## RSS feeds
+
+        - `GET /api/feeds/timeline.rss` — aggregated feed across all linked profiles
+        - `GET /api/feeds/profiles/{id}.rss` — per-profile feed
+
+        Both honor the same Bearer-token auth. WordPress feed plugins typically support
+        custom request headers — set `Authorization: Bearer <token>` and you're done.
+
+        ## Error responses (RFC 7807)
+
+        | Status | Meaning |
+        |--------|---------|
+        | 400 | Invalid request body / parameters |
+        | 401 | Missing or invalid Bearer token |
+        | 404 | Resource not found or not linked to your client |
+        | 422 | Validation error on POST/PUT |
 
     version: 1.0.0
     defaults:

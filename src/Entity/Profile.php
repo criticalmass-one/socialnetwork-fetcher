@@ -10,9 +10,9 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
+use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use App\State\ClientScopedProfileProcessor;
-use App\State\ClientScopedProfileProvider;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -24,12 +24,11 @@ use Symfony\Component\Serializer\Attribute\Groups;
 #[ApiResource(
     operations: [
         new GetCollection(
-            provider: ClientScopedProfileProvider::class,
-            description: 'Returns all profiles linked to the authenticated client. Soft-deleted profiles are excluded.',
+            description: 'Returns all profiles linked to the authenticated client. Soft-deleted profiles are excluded. See available filters below.',
         ),
         new Get(
-            provider: ClientScopedProfileProvider::class,
-            description: 'Returns a single profile by ID. Returns 404 if the profile is not linked to the authenticated client.',
+            description: 'Returns a single profile by ID, including the additionalData payload (profile:detail group). Returns 404 if the profile is not linked to the authenticated client.',
+            normalizationContext: ['groups' => ['profile:read', 'profile:detail']],
         ),
         new Post(
             processor: ClientScopedProfileProcessor::class,
@@ -46,8 +45,16 @@ use Symfony\Component\Serializer\Attribute\Groups;
     description: 'A social network profile (e.g. a Mastodon account, Instagram page). Profiles are scoped to the authenticated API client.',
     normalizationContext: ['groups' => ['profile:read']],
     denormalizationContext: ['groups' => ['profile:write']],
+    order: ['identifier' => 'ASC'],
 )]
-#[ApiFilter(SearchFilter::class, properties: ['network' => 'exact'])]
+#[ApiFilter(SearchFilter::class, properties: [
+    'network' => 'exact',
+    'network.identifier' => 'exact',
+    'identifier' => 'partial',
+    'title' => 'partial',
+    'autoFetch' => 'exact',
+])]
+#[ApiFilter(OrderFilter::class, properties: ['identifier', 'title', 'createdAt', 'lastFetchSuccessDateTime'])]
 class Profile
 {
     #[ORM\Id]
@@ -58,7 +65,23 @@ class Profile
 
     #[ORM\Column(type: 'string', length: 255)]
     #[Groups(['profile:read', 'profile:write', 'item:read'])]
-    #[ApiProperty(description: 'Network-specific identifier, typically a URL. Example: "https://mastodon.social/@username" for Mastodon or "username.bsky.social" for Bluesky.')]
+    #[ApiProperty(
+        description: <<<'DESC'
+        Network-specific identifier, typically a URL. The exact format depends on the
+        network this profile belongs to. Examples:
+
+        - **mastodon**: `https://mastodon.social/@username`
+        - **bluesky_profile**: `username.bsky.social`
+        - **instagram_profile**: `https://www.instagram.com/username/`
+        - **facebook_page**: `https://www.facebook.com/PageName`
+        - **thread**: `https://www.threads.net/@username`
+        - **homepage**: any `https://…` URL
+
+        Each network validates the format via a regex on `Network.profileUrlPattern`;
+        a mismatching URL is rejected at POST time.
+        DESC,
+        example: 'https://mastodon.social/@example',
+    )]
     private ?string $identifier = null;
 
     #[ORM\Column(type: 'string', length: 255, nullable: true)]
@@ -79,17 +102,17 @@ class Profile
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     #[Groups(['profile:read'])]
-    #[ApiProperty(description: 'Timestamp of the last successful feed fetch for this profile.', readable: true, writable: false)]
+    #[ApiProperty(description: 'Timestamp of the last successful feed fetch for this profile (ISO 8601). Useful to detect stale profiles or for sorting (`?order[lastFetchSuccessDateTime]=desc`).', readable: true, writable: false)]
     private ?\DateTimeImmutable $lastFetchSuccessDateTime = null;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     #[Groups(['profile:read'])]
-    #[ApiProperty(description: 'Timestamp of the last failed feed fetch attempt.', readable: true, writable: false)]
+    #[ApiProperty(description: 'Timestamp of the last failed feed fetch attempt. Paired with lastFetchFailureError to surface profiles that need attention.', readable: true, writable: false)]
     private ?\DateTimeImmutable $lastFetchFailureDateTime = null;
 
     #[ORM\Column(type: 'text', nullable: true)]
     #[Groups(['profile:read'])]
-    #[ApiProperty(description: 'Error message from the last failed fetch attempt, if any.', readable: true, writable: false)]
+    #[ApiProperty(description: 'Free-text reason for the last failed fetch attempt. May contain HTTP status codes, network errors, or upstream API messages.', readable: true, writable: false)]
     private ?string $lastFetchFailureError = null;
 
     #[ORM\Column(type: 'boolean', options: ['default' => true])]
@@ -103,8 +126,8 @@ class Profile
     private bool $fetchSource = false;
 
     #[ORM\Column(type: 'text', nullable: true)]
-    #[Groups(['profile:read', 'profile:write'])]
-    #[ApiProperty(description: 'Arbitrary JSON data for network-specific configuration (e.g. RSS.app feed ID).')]
+    #[Groups(['profile:detail', 'profile:write'])]
+    #[ApiProperty(description: 'Arbitrary JSON data for network-specific configuration (e.g. RSS.app feed ID). Only included on the single-profile endpoint, not in collections.')]
     private ?string $additionalData = null;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]

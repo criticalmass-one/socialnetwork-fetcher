@@ -4,61 +4,229 @@ nelmio_api_doc:
             title: Social Network Fetcher API
             version: 1.0.0
             description: |
-                REST API for managing social network profiles and their feed items.
+                REST API for managing social-network profiles and their feed items.
+                The API speaks **JSON-LD (Hydra)** for programmatic clients, plain
+                **JSON**, and **RSS 2.0** under `/api/feeds/…` for feed-aggregator
+                tooling (WordPress, RSS readers, IFTTT, Zapier, static-site generators).
+
+                ## Quick start
+
+                ```bash
+                # 1. Create a client and grab the token
+                bin/console app:client:create my-wordpress
+
+                # 2. Probe a public endpoint to confirm auth works
+                curl -H 'Authorization: Bearer <token>' https://your-host/api/networks
+
+                # 3. List your profiles
+                curl -H 'Authorization: Bearer <token>' https://your-host/api/profiles
+
+                # 4. Pull latest items
+                curl -H 'Authorization: Bearer <token>' \
+                  'https://your-host/api/items?itemsPerPage=20'
+                ```
 
                 ## Authentication
 
-                All endpoints under `/api/` (except documentation) require a Bearer token.
-                Tokens are issued per client via the CLI command:
+                Every request under `/api/` (except `/api/doc` and `/api/docs`) requires a
+                Bearer token. Tokens are 64-char hex strings issued per *client* via:
 
-                    bin/console app:client:create <name>
+                ```
+                bin/console app:client:create <name>
+                ```
 
                 Include the token in every request:
 
-                    Authorization: Bearer <your-token>
+                ```
+                Authorization: Bearer <your-token>
+                ```
 
-                Requests without a valid token receive a **401 Unauthorized** response.
-                Disabled clients also receive **401**, even with a correct token.
+                - Missing or malformed token → **401 Unauthorized**
+                - Token for a disabled client → **401 Unauthorized** as well
+                - Token for a deleted client → **401**
+
+                List, regenerate, enable / disable tokens via the matching `app:client:*` CLI commands.
 
                 ## Multi-Tenancy
 
-                Each API client sees **only its own profiles** and their items.
+                Each client sees **only its own profiles** and the items belonging to them.
 
-                - Profiles can be shared between clients — the same profile may appear in multiple client scopes.
-                - A profile is only soft-deleted when the **last** client removes it.
-                - Items belong to profiles and inherit the client scope transitively.
+                - Profiles may be shared between clients (same profile in multiple client scopes).
+                - A profile is only **soft-deleted** when the **last** client removes it.
+                - Items inherit the client scope transitively via their profile.
+                - Profiles and items are **never physically deleted** — historical data is preserved.
 
-                ## Profile Lifecycle
+                ## Response visibility defaults
 
-                | Action | Behavior |
-                |--------|----------|
-                | **POST /api/profiles** | Creates a new profile **or** links an existing one to the authenticated client (idempotent). Reactivates soft-deleted profiles. |
-                | **DELETE /api/profiles/{id}** | Unlinks the profile from the client. If no other client references it, the profile is soft-deleted and its RSS.app feed is removed. |
-                | **PUT /api/profiles/{id}** | Updates profile properties (identifier, network, flags). |
+                - `/api/items` and `/api/timeline` exclude **hidden** items (`hidden=true`) and
+                  **soft-deleted** items (`deleted=true`) by default. Pass `?hidden=true` or
+                  `?deleted=true` to include them.
+                - `/api/profiles` excludes soft-deleted profiles always (they can be reactivated
+                  by POSTing the same network + identifier).
 
-                Profiles and items are **never physically deleted** — historical data is preserved.
+                ## Slim vs. detail responses
 
-                ## Filtering & Sorting
+                Collection responses use the slim **`item:read`** / **`profile:read`** group.
+                The heavy payloads — `raw`, `rawSource`, `parsedSource` on Item and
+                `additionalData` on Profile — are tagged with the detail group and only
+                appear on the **single-resource** endpoint (`GET /api/items/{id}`,
+                `GET /api/profiles/{id}`). This keeps `/api/items?itemsPerPage=50` responses
+                well under 1 MB even when items carry full HTML or social-network JSON dumps.
 
-                - **Profiles**: Filter by network: `?network=<id>`
-                - **Items**: Filter by profile: `?profile=<id>`, order by `dateTime` or `createdAt`
-                - **Pagination**: Items are paginated (50 per page by default)
+                ## Media URLs
 
-                ## Response Formats
+                Item responses carry both relative and absolute media URLs:
 
-                The API supports the following response formats via the `Accept` header:
+                - `photoPaths`: array of strings, e.g. `["42/100/photo_0.jpg"]`
+                - `photoUrls`: array of absolute URLs built from the current request host,
+                  e.g. `["https://your-host/media/42/100/photo_0.jpg"]`
+                - `videoPath` / `videoUrl`: equivalent for the (optional) video
 
-                - `application/json` — plain JSON
-                - `application/ld+json` — JSON-LD (Hydra)
+                Use `photoUrls` / `videoUrl` directly for embedding into WordPress posts.
 
-                ## Error Responses
+                ## Filtering
+
+                ### Items
+
+                | Filter | Type | Example |
+                |---|---|---|
+                | `profile` | exact | `?profile=/api/profiles/42` |
+                | `profile.network` | exact | `?profile.network=/api/networks/3` |
+                | `profile.network.identifier` | exact | `?profile.network.identifier=mastodon` |
+                | `text` | partial | `?text=demo` |
+                | `title` | partial | `?title=announcement` |
+                | `hidden` | boolean | `?hidden=true` |
+                | `deleted` | boolean | `?deleted=true` |
+                | `dateTime` | date range | `?dateTime[after]=2026-05-01T00:00:00Z` |
+                | `dateTime` | date range | `?dateTime[before]=2026-05-31T23:59:59Z` |
+                | `createdAt` | date range | `?createdAt[strictly_after]=2026-05-18T10:00:00Z` |
+                | `order[dateTime]` | sort | `?order[dateTime]=desc` |
+                | `order[createdAt]` | sort | `?order[createdAt]=asc` |
+
+                ### Profiles
+
+                | Filter | Type | Example |
+                |---|---|---|
+                | `network` | exact | `?network=/api/networks/3` |
+                | `network.identifier` | exact | `?network.identifier=instagram_profile` |
+                | `identifier` | partial | `?identifier=mastodon.social` |
+                | `title` | partial | `?title=anna` |
+                | `autoFetch` | boolean | `?autoFetch=true` |
+                | `order[identifier]` | sort | `?order[identifier]=asc` |
+                | `order[title]` | sort | `?order[title]=asc` |
+                | `order[createdAt]` | sort | `?order[createdAt]=desc` |
+                | `order[lastFetchSuccessDateTime]` | sort | `?order[lastFetchSuccessDateTime]=desc` |
+
+                ## Pagination
+
+                Hydra-style pagination on collection endpoints. The response includes:
+
+                ```json
+                {
+                  "hydra:totalItems": 1234,
+                  "hydra:view": {
+                    "@id": "/api/items?page=1",
+                    "hydra:first": "/api/items?page=1",
+                    "hydra:last": "/api/items?page=25",
+                    "hydra:next": "/api/items?page=2"
+                  },
+                  "hydra:member": [ ... ]
+                }
+                ```
+
+                Query params:
+
+                - `page` — page number (default `1`)
+                - `itemsPerPage` — items per page (`/api/items`: default 50; `/api/timeline`:
+                  default 50, max 200)
+
+                ## Incremental sync (recommended for WordPress polling)
+
+                For periodic polling, **always use `createdAt`** rather than `dateTime`:
+
+                - `dateTime` = publication time at the social network (immutable but may
+                  appear in the past if an old post is re-discovered)
+                - `createdAt` = import timestamp in this DB (monotonically increasing,
+                  perfect for "give me everything new")
+
+                ```
+                # First call (initial backfill):
+                GET /api/items?itemsPerPage=200&order[createdAt]=asc
+
+                # Store the largest createdAt you received, e.g. 2026-05-18T10:00:00+00:00
+
+                # Subsequent calls:
+                GET /api/items?createdAt[strictly_after]=2026-05-18T10:00:00%2B00:00&order[createdAt]=asc&itemsPerPage=200
+
+                # Update the cursor and repeat.
+                ```
+
+                ## RSS feeds
+
+                For WordPress plugins like **Feedzy**, **WP RSS Aggregator**, generic RSS
+                readers, IFTTT, Zapier and similar feed-consumer tooling, two RSS 2.0
+                endpoints are available **under the same Bearer-auth firewall** as the JSON API:
+
+                | Endpoint | Use case |
+                |---|---|
+                | `GET /api/feeds/timeline.rss` | Aggregated feed across all linked profiles |
+                | `GET /api/feeds/profiles/{id}.rss` | Single-profile feed |
+
+                Both feeds:
+
+                - exclude soft-deleted profiles, hidden items, soft-deleted items
+                - carry `<title>`, `<link>`, `<description>` (with inline `<img>` tags for any
+                  downloaded photos via absolute URLs), `<pubDate>` (RFC 2822), `<guid>`,
+                  `<category>` (network name), `<dc:creator>` (profile display name) and an
+                  `<enclosure>` for the first photo
+
+                Query params:
+
+                - `since` (ISO 8601, default -7 days for timeline)
+                - `until` (ISO 8601, optional)
+                - `limit` (default 100, max 200)
+                - `network` (timeline only — filter to one network identifier)
+
+                Most WordPress feed plugins support a custom `Authorization` header — set it
+                to `Bearer <your-token>` and you're done. Refresh intervals are typically
+                configured in the plugin itself (5 min, 1 h, etc.).
+
+                ## Error responses
 
                 | Status | Meaning |
-                |--------|---------|
-                | 400 | Invalid request body or parameters |
-                | 401 | Missing or invalid Bearer token |
-                | 404 | Resource not found or not linked to the authenticated client |
-                | 422 | Validation error |
+                |---|---|
+                | **400** Bad Request | Invalid request body, parameters, or filter syntax |
+                | **401** Unauthorized | Missing, invalid, or disabled-client Bearer token |
+                | **404** Not Found | Resource doesn't exist **or** isn't linked to your client |
+                | **422** Unprocessable Entity | Validation error on POST/PUT body |
+                | **500** Internal Server Error | Server-side bug — please report |
+
+                Error bodies follow RFC 7807 (`application/problem+json`):
+
+                ```json
+                {
+                  "type": "https://tools.ietf.org/html/rfc2616#section-10",
+                  "title": "An error occurred",
+                  "detail": "Profile not found.",
+                  "status": 404
+                }
+                ```
+
+                ## Response formats
+
+                Negotiate via the `Accept` header:
+
+                - `application/ld+json` — JSON-LD with Hydra pagination metadata (recommended)
+                - `application/json` — plain JSON
+                - `application/rss+xml` — only on `/api/feeds/…`
+
+                ## Conventions
+
+                - All timestamps are **ISO 8601** with timezone (e.g. `2026-05-18T10:00:00+00:00`).
+                - IRIs (e.g. `/api/profiles/42`) are accepted on POST/PUT wherever a relationship is expected.
+                - Network identifiers (machine-readable strings) are stable: `mastodon`,
+                  `bluesky_profile`, `instagram_profile`, `facebook_profile`, `facebook_page`,
+                  `thread`, `homepage`, … List all via `GET /api/networks`.
 
             contact:
                 name: criticalmass.in
@@ -71,6 +239,17 @@ nelmio_api_doc:
                     description: "API token issued via `bin/console app:client:create <name>`"
         security:
             - Bearer: []
+        tags:
+            - name: Profile
+              description: Social-network profiles. Scoped to the authenticated client.
+            - name: Item
+              description: Feed items (posts, tweets, photos) fetched from profiles.
+            - name: Timeline
+              description: Chronological feed across all linked profiles.
+            - name: Feed
+              description: RSS 2.0 feeds for WordPress / RSS-reader / feed-aggregator consumption.
+            - name: Network
+              description: Catalogue of supported social networks.
 
     areas:
         path_patterns:

@@ -23,14 +23,26 @@
             <span class="nav-icon"><i class="fas fa-users"></i></span>
             Profiles
         </a></li>
-        <li><a href="{{ path('app_rssapp_profile_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_rssapp_profile' %}active{% endif %}">
-            <span class="nav-icon"><i class="fas fa-rss-square"></i></span>
-            RSS.app
-        </a></li>
-        <li><a href="{{ path('app_rssapp_orphan_feed_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_rssapp_orphan_feed' %}active{% endif %}">
-            <span class="nav-icon"><i class="fas fa-unlink"></i></span>
-            RSS.app Verwaiste Feeds
-        </a></li>
+        {% set rssappRoute = app.request.attributes.get('_route') starts with 'app_rssapp_' %}
+        <li class="nav-group">
+            <details{% if rssappRoute %} open{% endif %}>
+                <summary class="{% if rssappRoute %}active-group{% endif %}">
+                    <span class="nav-icon"><i class="fas fa-rss-square"></i></span>
+                    RSS.app
+                    <span class="nav-chevron"><i class="fas fa-chevron-right"></i></span>
+                </summary>
+                <ul class="sidebar-subnav">
+                    <li><a href="{{ path('app_rssapp_profile_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_rssapp_profile' %}active{% endif %}">
+                        <span class="nav-icon"><i class="fas fa-list"></i></span>
+                        Übersicht
+                    </a></li>
+                    <li><a href="{{ path('app_rssapp_orphan_feed_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_rssapp_orphan_feed' %}active{% endif %}">
+                        <span class="nav-icon"><i class="fas fa-unlink"></i></span>
+                        Verwaiste Feeds
+                    </a></li>
+                </ul>
+            </details>
+        </li>
         <li><a href="{{ path('app_item_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_item' %}active{% endif %}">
             <span class="nav-icon"><i class="fas fa-stream"></i></span>
             Items

@@ -172,6 +172,8 @@ class Network
             return false;
         }
 
-        return preg_match($this->profileUrlPattern, $url) === 1;
+        // Suppress warnings from malformed patterns (e.g. unescaped delimiters)
+        // so a single broken network row doesn't crash the lookup for every URL.
+        return @preg_match($this->profileUrlPattern, $url) === 1;
     }
 }

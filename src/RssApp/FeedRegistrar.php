@@ -70,6 +70,15 @@ class FeedRegistrar
         }
     }
 
+    public function linkExistingFeedAndImport(Profile $profile, string $feedId): int
+    {
+        $additionalData = $profile->getAdditionalData() ?? [];
+        $additionalData['rss_feed_id'] = $feedId;
+        $profile->setAdditionalData($additionalData);
+
+        return $this->importInitialItems($profile);
+    }
+
     private function importInitialItems(Profile $profile): int
     {
         if ($profile->getId() === null) {
