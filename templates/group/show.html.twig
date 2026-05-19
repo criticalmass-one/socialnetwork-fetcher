@@ -1,0 +1,98 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gruppe „{{ group.name }}" - Social Network Fetcher{% endblock %}
+
+{% block page_title %}
+    {% if group.color %}
+        <span class="net-badge me-2" style="background-color: {{ group.color }}; color: #fff;">{{ group.name }}</span>
+    {% else %}
+        {{ group.name }}
+    {% endif %}
+{% endblock %}
+
+{% block topbar_actions %}
+    <a href="{{ path('app_group_edit', {id: group.id}) }}" class="btn btn-outline-secondary">
+        <i class="fas fa-edit me-1"></i>Bearbeiten
+    </a>
+{% endblock %}
+
+{% block body %}
+    <div class="row g-3">
+        <div class="col-md-4">
+            <div class="data-card mb-3">
+                <div class="data-card-header">Meta</div>
+                <div class="data-card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-5">ID</dt><dd class="col-sm-7">{{ group.id }}</dd>
+                        <dt class="col-sm-5">Client</dt><dd class="col-sm-7">{{ group.client ? group.client.name : '–' }}</dd>
+                        <dt class="col-sm-5">Profile</dt><dd class="col-sm-7">{{ group.profileCount }}</dd>
+                        <dt class="col-sm-5">Erstellt</dt><dd class="col-sm-7">{{ group.createdAt|date('d.m.Y H:i') }}</dd>
+                    </dl>
+                    {% if group.description %}
+                        <hr>
+                        <p class="mb-0 text-muted">{{ group.description|nl2br }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <form method="post" action="{{ path('app_group_delete', {id: group.id}) }}"
+                  data-controller="confirm"
+                  data-confirm-message-value="Gruppe &quot;{{ group.name }}&quot; wirklich löschen? Profile bleiben erhalten.">
+                <input type="hidden" name="_token" value="{{ csrf_token('delete-group-' ~ group.id) }}">
+                <button type="submit" class="btn btn-outline-danger w-100">
+                    <i class="fas fa-trash me-1"></i>Gruppe löschen
+                </button>
+            </form>
+        </div>
+
+        <div class="col-md-8">
+            <div class="data-card">
+                <div class="data-card-header">
+                    Mitglieder
+                </div>
+                <div class="data-card-body">
+                    {% if group.profiles is empty %}
+                        <p class="text-muted mb-0">Diese Gruppe enthält noch keine Profile. Über „Bearbeiten" lassen sich welche hinzufügen.</p>
+                    {% else %}
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Netzwerk</th>
+                                    <th>Profil</th>
+                                    <th>Identifier</th>
+                                    <th>Aktion</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for profile in group.profiles %}
+                                    {% if not profile.deleted %}
+                                        <tr>
+                                            <td>
+                                                {% if profile.network %}
+                                                    <span class="net-badge" style="background-color: {{ profile.network.backgroundColor }}; color: {{ profile.network.textColor }};">
+                                                        <i class="{{ profile.network.icon }} me-1"></i>{{ profile.network.name }}
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            <td><a href="{{ path('app_profile_show', {id: profile.id}) }}">{{ profile.displayName }}</a></td>
+                                            <td class="text-muted">{{ profile.identifier }}</td>
+                                            <td>
+                                                <form method="post" action="{{ path('app_group_profile_remove', {id: group.id, profileId: profile.id}) }}"
+                                                      class="d-inline"
+                                                      data-controller="confirm"
+                                                      data-confirm-message-value="Profil &quot;{{ profile.displayName }}&quot; aus der Gruppe entfernen?">
+                                                    <input type="hidden" name="_token" value="{{ csrf_token('group-remove-profile-' ~ group.id ~ '-' ~ profile.id) }}">
+                                                    <button type="submit" class="action-btn" title="Aus Gruppe entfernen"><i class="fas fa-times"></i></button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    {% endif %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

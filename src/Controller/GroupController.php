@@ -1,0 +1,179 @@
+<?php declare(strict_types=1);
+
+namespace App\Controller;
+
+use App\Entity\Group;
+use App\Entity\Profile;
+use App\Form\GroupType;
+use App\Repository\ClientRepository;
+use App\Repository\GroupRepository;
+use App\Repository\ProfileRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+
+#[Route('/groups')]
+class GroupController extends AbstractController
+{
+    private const GROUPS_PER_PAGE = 50;
+
+    #[Route('', name: 'app_group_index', methods: ['GET'])]
+    public function index(Request $request, GroupRepository $groupRepository, ClientRepository $clientRepository): Response
+    {
+        $page = max(1, $request->query->getInt('page', 1));
+        $search = trim($request->query->getString('search', ''));
+        $clientId = $request->query->getInt('client', 0) ?: null;
+
+        $client = $clientId ? $clientRepository->find($clientId) : null;
+
+        $total = $groupRepository->countFiltered($client, $search);
+        $pages = max(1, (int) ceil($total / self::GROUPS_PER_PAGE));
+        $page = min($page, $pages);
+
+        $groups = $groupRepository->findPaginated($page, self::GROUPS_PER_PAGE, $client, $search);
+
+        return $this->render('group/index.html.twig', [
+            'groups' => $groups,
+            'clients' => $clientRepository->findBy([], ['name' => 'ASC']),
+            'page' => $page,
+            'pages' => $pages,
+            'total' => $total,
+            'search' => $search,
+            'selectedClient' => $client,
+        ]);
+    }
+
+    #[Route('/new', name: 'app_group_new', methods: ['GET', 'POST'])]
+    public function new(Request $request, EntityManagerInterface $em): Response
+    {
+        $group = new Group();
+
+        $form = $this->createForm(GroupType::class, $group);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            if ($error = $this->ensureProfilesBelongToClient($group)) {
+                $form->addError(new \Symfony\Component\Form\FormError($error));
+            } else {
+                $em->persist($group);
+                $em->flush();
+
+                $this->addFlash('success', sprintf('Gruppe "%s" wurde angelegt.', $group->getName()));
+
+                return $this->redirectToRoute('app_group_show', ['id' => $group->getId()]);
+            }
+        }
+
+        return $this->render('group/new.html.twig', [
+            'form' => $form,
+        ]);
+    }
+
+    #[Route('/{id}', name: 'app_group_show', requirements: ['id' => '\d+'], methods: ['GET'])]
+    public function show(Group $group): Response
+    {
+        return $this->render('group/show.html.twig', [
+            'group' => $group,
+        ]);
+    }
+
+    #[Route('/{id}/edit', name: 'app_group_edit', requirements: ['id' => '\d+'], methods: ['GET', 'POST'])]
+    public function edit(Request $request, Group $group, EntityManagerInterface $em): Response
+    {
+        $form = $this->createForm(GroupType::class, $group);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            if ($error = $this->ensureProfilesBelongToClient($group)) {
+                $form->addError(new \Symfony\Component\Form\FormError($error));
+            } else {
+                $em->flush();
+
+                $this->addFlash('success', 'Gruppe wurde aktualisiert.');
+
+                return $this->redirectToRoute('app_group_show', ['id' => $group->getId()]);
+            }
+        }
+
+        return $this->render('group/edit.html.twig', [
+            'group' => $group,
+            'form' => $form,
+        ]);
+    }
+
+    #[Route('/{id}/delete', name: 'app_group_delete', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function delete(Request $request, Group $group, EntityManagerInterface $em): Response
+    {
+        if ($this->isCsrfTokenValid('delete-group-' . $group->getId(), $request->request->getString('_token'))) {
+            $em->remove($group);
+            $em->flush();
+            $this->addFlash('success', 'Gruppe wurde gelöscht.');
+        }
+
+        return $this->redirectToRoute('app_group_index');
+    }
+
+    #[Route('/{id}/profiles/add', name: 'app_group_profile_add', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function addProfile(Request $request, Group $group, ProfileRepository $profileRepository, EntityManagerInterface $em): Response
+    {
+        if ($this->isCsrfTokenValid('group-add-profile-' . $group->getId(), $request->request->getString('_token'))) {
+            $profileIds = array_map('intval', (array) $request->request->all('profileIds'));
+
+            foreach ($profileIds as $profileId) {
+                if ($profileId <= 0) {
+                    continue;
+                }
+                $profile = $profileRepository->find($profileId);
+                if ($profile === null) {
+                    continue;
+                }
+                if (!$profile->getClients()->contains($group->getClient())) {
+                    $this->addFlash('warning', sprintf('Profil "%s" ist nicht mit dem Client der Gruppe verknüpft und wurde übersprungen.', $profile->getDisplayName()));
+                    continue;
+                }
+                $group->addProfile($profile);
+            }
+
+            $em->flush();
+            $this->addFlash('success', 'Profile wurden zur Gruppe hinzugefügt.');
+        }
+
+        return $this->redirectToRoute('app_group_show', ['id' => $group->getId()]);
+    }
+
+    #[Route('/{id}/profiles/{profileId}/remove', name: 'app_group_profile_remove', requirements: ['id' => '\d+', 'profileId' => '\d+'], methods: ['POST'])]
+    public function removeProfile(Request $request, Group $group, int $profileId, ProfileRepository $profileRepository, EntityManagerInterface $em): Response
+    {
+        if ($this->isCsrfTokenValid('group-remove-profile-' . $group->getId() . '-' . $profileId, $request->request->getString('_token'))) {
+            $profile = $profileRepository->find($profileId);
+            if ($profile !== null) {
+                $group->removeProfile($profile);
+                $em->flush();
+                $this->addFlash('success', sprintf('Profil "%s" wurde aus der Gruppe entfernt.', $profile->getDisplayName()));
+            }
+        }
+
+        return $this->redirectToRoute('app_group_show', ['id' => $group->getId()]);
+    }
+
+    /** @return string|null  Error message if invalid, null if OK */
+    private function ensureProfilesBelongToClient(Group $group): ?string
+    {
+        $client = $group->getClient();
+        if ($client === null) {
+            return null;
+        }
+        foreach ($group->getProfiles() as $profile) {
+            if (!$profile->getClients()->contains($client)) {
+                return sprintf(
+                    'Profil "%s" ist nicht mit dem Client "%s" verknüpft. Verknüpfe es zuerst auf der Profil-Detailseite oder über die API.',
+                    $profile->getDisplayName(),
+                    $client->getName(),
+                );
+            }
+        }
+        return null;
+    }
+}
