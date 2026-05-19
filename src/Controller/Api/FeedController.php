@@ -7,6 +7,7 @@ use App\Entity\Item;
 use App\Entity\Profile;
 use App\Repository\ProfileRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use OpenApi\Attributes as OA;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -31,6 +32,36 @@ class FeedController
     }
 
     #[Route('/api/feeds/timeline.rss', name: 'app_api_feed_timeline', methods: ['GET'])]
+    #[OA\Get(
+        summary: 'Client-scoped chronological RSS feed across all linked profiles.',
+        description: <<<'DESC'
+        RSS 2.0 feed aggregating recent items across every profile linked to the
+        authenticated client. Excludes soft-deleted profiles, hidden items and
+        soft-deleted items.
+
+        Each `<item>` carries title, link (permalink), description (item text
+        with inline `<img>` tags for downloaded photos using absolute URLs),
+        pubDate (RFC 2822), guid (item id, isPermaLink="false"), category
+        (network name), dc:creator (profile display name), and an `<enclosure>`
+        for the first photo with a guessed image MIME type.
+
+        Typical WordPress use: point Feedzy / WP RSS Aggregator at this URL
+        with a custom `Authorization: Bearer <token>` header. Configure the
+        plugin's refresh interval (5 min, 1 h, …) and the aggregator pulls
+        new items automatically.
+        DESC,
+        tags: ['Feed'],
+        parameters: [
+            new OA\Parameter(name: 'since', in: 'query', description: 'Only return items published after this timestamp. ISO 8601. Default: 7 days ago.', schema: new OA\Schema(type: 'string', format: 'date-time'), example: '2026-05-11T00:00:00Z'),
+            new OA\Parameter(name: 'until', in: 'query', description: 'Only return items published before this timestamp. ISO 8601.', schema: new OA\Schema(type: 'string', format: 'date-time')),
+            new OA\Parameter(name: 'limit', in: 'query', description: 'Maximum number of items in the feed (default 100, max 200).', schema: new OA\Schema(type: 'integer', default: 100, minimum: 1, maximum: 200)),
+            new OA\Parameter(name: 'network', in: 'query', description: 'Filter to a single network by identifier (e.g. mastodon, instagram_profile).', schema: new OA\Schema(type: 'string'), example: 'mastodon'),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'RSS 2.0 XML feed.', content: new OA\MediaType(mediaType: 'application/rss+xml')),
+            new OA\Response(response: 401, description: 'Missing or invalid Bearer token.'),
+        ],
+    )]
     public function timeline(Request $request): Response
     {
         $client = $this->requireClient();
@@ -83,6 +114,29 @@ class FeedController
     }
 
     #[Route('/api/feeds/profiles/{id}.rss', name: 'app_api_feed_profile', requirements: ['id' => '\d+'], methods: ['GET'])]
+    #[OA\Get(
+        summary: 'Per-profile RSS feed.',
+        description: <<<'DESC'
+        RSS 2.0 feed for a single profile linked to the authenticated client.
+        Returns 404 if the profile is not linked to the client (or is
+        soft-deleted). Hidden / soft-deleted items are excluded.
+
+        Item structure matches `/api/feeds/timeline.rss`.
+
+        Use this for embedding a single Mastodon / Instagram / Bluesky
+        account into a WordPress sidebar widget via a feed plugin.
+        DESC,
+        tags: ['Feed'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Profile ID.', schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'limit', in: 'query', description: 'Maximum number of items in the feed (default 100, max 200).', schema: new OA\Schema(type: 'integer', default: 100, minimum: 1, maximum: 200)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'RSS 2.0 XML feed.', content: new OA\MediaType(mediaType: 'application/rss+xml')),
+            new OA\Response(response: 401, description: 'Missing or invalid Bearer token.'),
+            new OA\Response(response: 404, description: 'Profile not found or not linked to the authenticated client.'),
+        ],
+    )]
     public function profileFeed(int $id, Request $request): Response
     {
         $client = $this->requireClient();
