@@ -12,7 +12,7 @@
         {% endblock %}
     </head>
     <body class="{% block body_class %}{% endblock %}">
-        {% if is_granted('ROLE_ADMIN') %}
+        {% if app.user %}
             {% include '_partials/_sidebar.html.twig' %}
             <div class="main">
                 <div class="topbar">

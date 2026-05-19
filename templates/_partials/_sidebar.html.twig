@@ -11,50 +11,54 @@
 
     <div class="sidebar-section">Navigation</div>
     <ul class="sidebar-nav">
-        <li><a href="{{ path('app_dashboard') }}" class="{% if app.request.attributes.get('_route') == 'app_dashboard' %}active{% endif %}">
-            <span class="nav-icon"><i class="fas fa-th-large"></i></span>
-            Dashboard
-        </a></li>
-        <li><a href="{{ path('app_network_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_network' %}active{% endif %}">
-            <span class="nav-icon"><i class="fas fa-network-wired"></i></span>
-            Networks
-        </a></li>
-        <li><a href="{{ path('app_profile_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_profile' %}active{% endif %}">
-            <span class="nav-icon"><i class="fas fa-users"></i></span>
-            Profiles
-        </a></li>
+        {% if is_granted('ROLE_ADMIN') %}
+            <li><a href="{{ path('app_dashboard') }}" class="{% if app.request.attributes.get('_route') == 'app_dashboard' %}active{% endif %}">
+                <span class="nav-icon"><i class="fas fa-th-large"></i></span>
+                Dashboard
+            </a></li>
+            <li><a href="{{ path('app_network_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_network' %}active{% endif %}">
+                <span class="nav-icon"><i class="fas fa-network-wired"></i></span>
+                Networks
+            </a></li>
+            <li><a href="{{ path('app_profile_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_profile' %}active{% endif %}">
+                <span class="nav-icon"><i class="fas fa-users"></i></span>
+                Profiles
+            </a></li>
+        {% endif %}
         <li><a href="{{ path('app_group_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_group' %}active{% endif %}">
             <span class="nav-icon"><i class="fas fa-layer-group"></i></span>
             Gruppen
         </a></li>
-        {% set rssappRoute = app.request.attributes.get('_route') starts with 'app_rssapp_' %}
-        <li class="nav-group">
-            <details{% if rssappRoute %} open{% endif %}>
-                <summary class="{% if rssappRoute %}active-group{% endif %}">
-                    <span class="nav-icon"><i class="fas fa-rss-square"></i></span>
-                    RSS.app
-                    <span class="nav-chevron"><i class="fas fa-chevron-right"></i></span>
-                </summary>
-                <ul class="sidebar-subnav">
-                    <li><a href="{{ path('app_rssapp_profile_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_rssapp_profile' %}active{% endif %}">
-                        <span class="nav-icon"><i class="fas fa-list"></i></span>
-                        Übersicht
-                    </a></li>
-                    <li><a href="{{ path('app_rssapp_orphan_feed_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_rssapp_orphan_feed' %}active{% endif %}">
-                        <span class="nav-icon"><i class="fas fa-unlink"></i></span>
-                        Verwaiste Feeds
-                    </a></li>
-                </ul>
-            </details>
-        </li>
-        <li><a href="{{ path('app_item_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_item' %}active{% endif %}">
-            <span class="nav-icon"><i class="fas fa-stream"></i></span>
-            Items
-        </a></li>
-        <li><a href="{{ path('app_client_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_client' %}active{% endif %}">
-            <span class="nav-icon"><i class="fas fa-id-badge"></i></span>
-            Clients
-        </a></li>
+        {% if is_granted('ROLE_ADMIN') %}
+            {% set rssappRoute = app.request.attributes.get('_route') starts with 'app_rssapp_' %}
+            <li class="nav-group">
+                <details{% if rssappRoute %} open{% endif %}>
+                    <summary class="{% if rssappRoute %}active-group{% endif %}">
+                        <span class="nav-icon"><i class="fas fa-rss-square"></i></span>
+                        RSS.app
+                        <span class="nav-chevron"><i class="fas fa-chevron-right"></i></span>
+                    </summary>
+                    <ul class="sidebar-subnav">
+                        <li><a href="{{ path('app_rssapp_profile_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_rssapp_profile' %}active{% endif %}">
+                            <span class="nav-icon"><i class="fas fa-list"></i></span>
+                            Übersicht
+                        </a></li>
+                        <li><a href="{{ path('app_rssapp_orphan_feed_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_rssapp_orphan_feed' %}active{% endif %}">
+                            <span class="nav-icon"><i class="fas fa-unlink"></i></span>
+                            Verwaiste Feeds
+                        </a></li>
+                    </ul>
+                </details>
+            </li>
+            <li><a href="{{ path('app_item_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_item' %}active{% endif %}">
+                <span class="nav-icon"><i class="fas fa-stream"></i></span>
+                Items
+            </a></li>
+            <li><a href="{{ path('app_client_index') }}" class="{% if app.request.attributes.get('_route') starts with 'app_client' %}active{% endif %}">
+                <span class="nav-icon"><i class="fas fa-id-badge"></i></span>
+                Clients
+            </a></li>
+        {% endif %}
     </ul>
 
     <div class="sidebar-footer">
@@ -63,7 +67,13 @@
                 <i class="fas fa-user"></i>
             </div>
             <div>
-                <div style="color: white; font-weight: 500;">{{ app.user.userIdentifier }}</div>
+                <div style="color: white; font-weight: 500;">
+                    {% if is_granted('ROLE_API_CLIENT') %}
+                        <i class="fas fa-key me-1" title="Client-Token"></i>{{ app.user.name }}
+                    {% else %}
+                        <i class="fas fa-user-shield me-1" title="Admin"></i>{{ app.user.userIdentifier }}
+                    {% endif %}
+                </div>
                 <a href="{{ path('app_logout') }}">Abmelden</a>
             </div>
         </div>
