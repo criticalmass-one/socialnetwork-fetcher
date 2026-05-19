@@ -48,7 +48,7 @@ Key environment variables:
 |---|---|---|
 | `DATABASE_URL` | PostgreSQL connection string | see `compose.yaml` |
 | `CRITICALMASS_HOSTNAME` | criticalmass.in API hostname | `criticalmass.in` |
-| `RSS_APP_API_KEY` | RSS.app API key (for Instagram, Facebook, Threads) | — |
+| `RSS_APP_API_KEY` | RSS.app API key (for Instagram, Facebook, Threads, Twitter) | — |
 | `RSS_APP_API_SECRET` | RSS.app API secret | — |
 | `WEB_ADMIN_USERNAME` | Web UI admin username | `admin` |
 | `WEB_ADMIN_PASSWORD_HASH` | Bcrypt hash for web login | `$2y$13$changeme` |
@@ -79,6 +79,7 @@ The application is accessible at `https://127.0.0.1:8000`.
 | Instagram | `instagram_profile` | via RSS.app | Yes (RSS.app) |
 | Facebook | `facebook_page` | via RSS.app | Yes (RSS.app) |
 | Threads | `threads_profile` | via RSS.app | Yes (RSS.app) |
+| Twitter / X | `twitter` | via RSS.app | Yes (RSS.app) |
 
 ## Console Commands
 
@@ -245,7 +246,7 @@ Network fetchers are auto-discovered: any class implementing `NetworkFeedFetcher
 ### Network fetcher types
 
 - **Direct API fetchers**: `MastodonFeedFetcher`, `BlueskyFeedFetcher`, `HomepageFeedFetcher` — call the network's API directly
-- **RSS.app-based fetchers**: `FacebookFeedFetcher`, `InstagramFeedFetcher`, `ThreadFeedFetcher` — proxy through RSS.app's API
+- **RSS.app-based fetchers**: `FacebookFeedFetcher`, `InstagramFeedFetcher`, `ThreadFeedFetcher`, `TwitterFeedFetcher` — proxy through RSS.app's API
 
 ### Each network fetcher directory contains
 
