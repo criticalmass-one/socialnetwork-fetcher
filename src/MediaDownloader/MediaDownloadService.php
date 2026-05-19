@@ -56,7 +56,7 @@ class MediaDownloadService
                     $item->setPhotoPaths($paths);
                     $photoCount = count($paths);
                 }
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 $this->logger->error('Photo download failed for item {itemId}: {message}', [
                     'itemId' => $item->getId(),
                     'message' => $e->getMessage(),
@@ -75,7 +75,7 @@ class MediaDownloadService
                     $item->setVideoPath($path);
                     $videoDownloaded = true;
                 }
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 $this->logger->error('Video download failed for item {itemId}: {message}', [
                     'itemId' => $item->getId(),
                     'message' => $e->getMessage(),
