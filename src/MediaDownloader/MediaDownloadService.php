@@ -6,10 +6,20 @@ use App\Entity\Item;
 use App\Entity\Profile;
 use App\Repository\ItemRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 class MediaDownloadService
 {
-    private const YTDLP_PHOTO_NETWORKS = ['instagram_profile', 'threads_profile', 'facebook_page'];
+    private const YTDLP_PHOTO_NETWORKS = [
+        'instagram_profile',
+        'instagram_photo',
+        'threads_profile',
+        'threads_post',
+        'facebook_page',
+    ];
+
+    private readonly LoggerInterface $logger;
 
     public function __construct(
         private readonly MediaUrlExtractor $mediaUrlExtractor,
@@ -18,7 +28,9 @@ class MediaDownloadService
         private readonly YtDlpPhotoDownloader $ytDlpPhotoDownloader,
         private readonly EntityManagerInterface $entityManager,
         private readonly ItemRepository $itemRepository,
+        ?LoggerInterface $logger = null,
     ) {
+        $this->logger = $logger ?? new NullLogger();
     }
 
     public function downloadMedia(Item $item, bool $photo = true, bool $video = true): void
@@ -34,14 +46,22 @@ class MediaDownloadService
         $this->entityManager->flush();
 
         $errors = [];
+        $photoCount = 0;
+        $videoDownloaded = false;
 
         if ($photo) {
             try {
                 $paths = $this->downloadPhotos($item, $profile);
                 if (!empty($paths)) {
                     $item->setPhotoPaths($paths);
+                    $photoCount = count($paths);
                 }
             } catch (\Exception $e) {
+                $this->logger->error('Photo download failed for item {itemId}: {message}', [
+                    'itemId' => $item->getId(),
+                    'message' => $e->getMessage(),
+                    'exception' => $e,
+                ]);
                 $errors[] = 'Photo: ' . $e->getMessage();
             }
         }
@@ -53,20 +73,44 @@ class MediaDownloadService
                 if ($videoUrl && $this->videoDownloader->isAvailable()) {
                     $path = $this->videoDownloader->download($videoUrl, $profile->getId(), $item->getId());
                     $item->setVideoPath($path);
+                    $videoDownloaded = true;
                 }
             } catch (\Exception $e) {
+                $this->logger->error('Video download failed for item {itemId}: {message}', [
+                    'itemId' => $item->getId(),
+                    'message' => $e->getMessage(),
+                    'exception' => $e,
+                ]);
                 $errors[] = 'Video: ' . $e->getMessage();
             }
         }
 
-        if (!empty($errors)) {
+        // Photo-only posts (e.g. Instagram /p/…) typically fail the video step. If
+        // we successfully grabbed at least one photo, treat the run as completed
+        // and keep the video failure only as a soft warning in mediaError.
+        $videoOnlyFailure = $photoCount > 0 && !$videoDownloaded && $this->isVideoOnlyFailure($errors);
+
+        if (!empty($errors) && !$videoOnlyFailure) {
             $item->setMediaStatus('failed');
             $item->setMediaError(implode("\n", $errors));
         } else {
             $item->setMediaStatus('completed');
+            $item->setMediaError($videoOnlyFailure ? implode("\n", $errors) : null);
         }
 
         $this->entityManager->flush();
+    }
+
+    /** @param list<string> $errors */
+    private function isVideoOnlyFailure(array $errors): bool
+    {
+        foreach ($errors as $error) {
+            if (!str_starts_with($error, 'Video:')) {
+                return false;
+            }
+        }
+
+        return $errors !== [];
     }
 
     /**
