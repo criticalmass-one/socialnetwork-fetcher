@@ -46,7 +46,7 @@
         </div>
 
         <div class="col-md-8">
-            <div class="data-card">
+            <div class="data-card mb-3">
                 <div class="data-card-header">
                     Mitglieder
                 </div>
@@ -90,6 +90,70 @@
                                 {% endfor %}
                             </tbody>
                         </table>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="data-card">
+                <div class="data-card-header d-flex align-items-center justify-content-between">
+                    <span>Timeline <span class="text-muted small">({{ itemCount }} {{ itemCount == 1 ? 'Item' : 'Items' }})</span></span>
+                    {% if networks|length > 1 %}
+                        <form method="get" class="d-flex gap-2 m-0" action="{{ path('app_group_show', {id: group.id}) }}">
+                            <select name="network" class="form-select form-select-sm" onchange="this.form.submit()">
+                                <option value="">Alle Netzwerke</option>
+                                {% for n in networks %}
+                                    <option value="{{ n.id }}"{% if selectedNetworkId == n.id %} selected{% endif %}>{{ n.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                    {% endif %}
+                </div>
+                <div class="data-card-body">
+                    {% if items is empty %}
+                        <p class="text-muted mb-0">Noch keine Items in dieser Gruppe{% if selectedNetworkId %} für das gewählte Netzwerk{% endif %}.</p>
+                    {% else %}
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Netzwerk</th>
+                                    <th>Profil</th>
+                                    <th>Text</th>
+                                    <th>Datum</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in items %}
+                                    <tr>
+                                        <td>
+                                            {% if item.profile and item.profile.network %}
+                                                <span class="net-badge" style="background-color: {{ item.profile.network.backgroundColor }}; color: {{ item.profile.network.textColor }};">
+                                                    <i class="{{ item.profile.network.icon }} me-1"></i>{{ item.profile.network.name }}
+                                                </span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if item.profile %}
+                                                <a href="{{ path('app_profile_show', {id: item.profile.id}) }}" class="link-subtle">
+                                                    {{ item.profile.displayName|length > 30 ? item.profile.displayName[:30] ~ '…' : item.profile.displayName }}
+                                                </a>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{{ path('app_item_show', {id: item.id}) }}" class="link-subtle">
+                                                {{ item.text|length > 80 ? item.text[:80] ~ '…' : item.text }}
+                                            </a>
+                                        </td>
+                                        <td><span class="time-ago" title="{{ item.dateTime|date('d.m.Y H:i:s') }}">{{ item.dateTime|date('d.m.Y H:i') }}</span></td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+
+                        {% if pages > 1 %}
+                            <div class="mt-3">
+                                {% include '_partials/_pagination.html.twig' with {page: page, pages: pages} %}
+                            </div>
+                        {% endif %}
                     {% endif %}
                 </div>
             </div>
