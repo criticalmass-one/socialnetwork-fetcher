@@ -1,0 +1,82 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Gruppen - Social Network Fetcher{% endblock %}
+
+{% block page_title %}Gruppen{% endblock %}
+
+{% block topbar_actions %}
+    <a href="{{ path('app_group_new') }}" class="btn-primary-custom">
+        <i class="fas fa-plus me-1"></i>Neue Gruppe
+    </a>
+{% endblock %}
+
+{% block body %}
+    <form method="get" class="mb-3 d-flex gap-2">
+        <input type="text" name="search" value="{{ search }}" class="form-control" placeholder="Nach Name filtern…">
+        <select name="client" class="form-select" style="max-width: 250px;">
+            <option value="">— Alle Clients —</option>
+            {% for c in clients %}
+                <option value="{{ c.id }}"{% if selectedClient and c.id == selectedClient.id %} selected{% endif %}>{{ c.name }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-outline-secondary">Filtern</button>
+    </form>
+
+    {% if groups is empty %}
+        <div class="alert alert-info">
+            Keine Gruppen gefunden.
+            <a href="{{ path('app_group_new') }}">Erste Gruppe anlegen?</a>
+        </div>
+    {% else %}
+        <div class="data-card">
+            <div class="data-card-body">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Client</th>
+                            <th>Profile</th>
+                            <th>Erstellt</th>
+                            <th>Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for group in groups %}
+                            <tr>
+                                <td>{{ group.id }}</td>
+                                <td>
+                                    <a href="{{ path('app_group_show', {id: group.id}) }}">
+                                        {% if group.color %}
+                                            <span class="net-badge" style="background-color: {{ group.color }}; color: #fff;">{{ group.name }}</span>
+                                        {% else %}
+                                            {{ group.name }}
+                                        {% endif %}
+                                    </a>
+                                </td>
+                                <td>{{ group.client ? group.client.name : '–' }}</td>
+                                <td>{{ group.profileCount }}</td>
+                                <td>{{ group.createdAt|date('d.m.Y H:i') }}</td>
+                                <td>
+                                    <a href="{{ path('app_group_show', {id: group.id}) }}" class="action-btn" title="Anzeigen"><i class="fas fa-eye"></i></a>
+                                    <a href="{{ path('app_group_edit', {id: group.id}) }}" class="action-btn" title="Bearbeiten"><i class="fas fa-edit"></i></a>
+                                    <form method="post" action="{{ path('app_group_delete', {id: group.id}) }}"
+                                          class="d-inline"
+                                          data-controller="confirm"
+                                          data-confirm-message-value="Gruppe &quot;{{ group.name }}&quot; wirklich löschen? Profile bleiben erhalten.">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('delete-group-' ~ group.id) }}">
+                                        <button type="submit" class="action-btn" title="Löschen"><i class="fas fa-trash"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if pages > 1 %}
+            {% include '_partials/_pagination.html.twig' with {page: page, pages: pages} %}
+        {% endif %}
+    {% endif %}
+{% endblock %}
