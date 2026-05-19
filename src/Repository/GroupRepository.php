@@ -21,6 +21,59 @@ class GroupRepository extends ServiceEntityRepository
     }
 
     /**
+     * Groups that already contain $profile. Optionally restricted to a single
+     * client (used to hide foreign-client groups from a client-token user).
+     *
+     * @return list<Group>
+     */
+    public function findByProfile(\App\Entity\Profile $profile, ?Client $client = null): array
+    {
+        $qb = $this->createQueryBuilder('g')
+            ->innerJoin('g.profiles', 'p')
+            ->andWhere('p.id = :profileId')
+            ->setParameter('profileId', $profile->getId())
+            ->orderBy('g.name', 'ASC');
+
+        if ($client !== null) {
+            $qb->andWhere('g.client = :clientScope')->setParameter('clientScope', $client);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
+     * Groups the profile is *not* in yet, restricted to clients the profile
+     * is linked to (so we never offer a foreign-tenant group as a target).
+     *
+     * @return list<Group>
+     */
+    public function findAvailableForProfile(\App\Entity\Profile $profile, ?Client $client = null): array
+    {
+        $allowedClients = $client !== null
+            ? [$client]
+            : iterator_to_array($profile->getClients());
+
+        if ($allowedClients === []) {
+            return [];
+        }
+
+        $allowedClientIds = array_map(fn($c) => $c->getId(), $allowedClients);
+
+        $qb = $this->createQueryBuilder('g')
+            ->andWhere('g.client IN (:clientIds)')
+            ->setParameter('clientIds', $allowedClientIds)
+            ->andWhere('g.id NOT IN (
+                SELECT g2.id FROM App\Entity\Group g2
+                JOIN g2.profiles p2
+                WHERE p2.id = :profileId
+            )')
+            ->setParameter('profileId', $profile->getId())
+            ->orderBy('g.name', 'ASC');
+
+        return $qb->getQuery()->getResult();
+    }
+
+    /**
      * @return list<Group>
      */
     public function findPaginated(int $page, int $limit, ?Client $client = null, string $search = ''): array

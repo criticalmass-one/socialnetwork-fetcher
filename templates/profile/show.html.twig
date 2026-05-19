@@ -116,6 +116,60 @@
                 </div>
             </div>
 
+            <div class="data-card mb-4">
+                <div class="data-card-header">Gruppen ({{ currentGroups|length }})</div>
+                <div class="data-card-body">
+                    {% if currentGroups is empty %}
+                        <p class="text-muted mb-2">Profil ist in keiner Gruppe.</p>
+                    {% else %}
+                        <ul class="list-unstyled mb-3">
+                            {% for group in currentGroups %}
+                                <li class="d-flex align-items-center justify-content-between mb-1">
+                                    <a href="{{ path('app_group_show', {id: group.id}) }}">
+                                        {% if group.color %}
+                                            <span class="net-badge me-1" style="background-color: {{ group.color }}; color: #fff;">{{ group.name }}</span>
+                                        {% else %}
+                                            <i class="fas fa-layer-group me-1"></i>{{ group.name }}
+                                        {% endif %}
+                                        <span class="text-muted small">({{ group.client.name }})</span>
+                                    </a>
+                                    <form method="post" action="{{ path('app_profile_group_remove', {id: profile.id, groupId: group.id}) }}"
+                                          class="d-inline"
+                                          data-controller="confirm"
+                                          data-confirm-message-value="Profil aus Gruppe &quot;{{ group.name }}&quot; entfernen?">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('profile-group-remove-' ~ profile.id ~ '-' ~ group.id) }}">
+                                        <button type="submit" class="action-btn" title="Aus Gruppe entfernen"><i class="fas fa-times"></i></button>
+                                    </form>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+
+                    {% if availableGroups is not empty %}
+                        <form method="post" action="{{ path('app_profile_groups_add', {id: profile.id}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('profile-groups-add-' ~ profile.id) }}">
+                            <label for="profile-group-add" class="form-label small">Zu Gruppen hinzufügen</label>
+                            <select id="profile-group-add" name="groupIds[]" class="form-select form-select-sm mb-2" multiple size="{{ min(6, availableGroups|length + 1) }}">
+                                {% for group in availableGroups %}
+                                    <option value="{{ group.id }}">{{ group.name }} ({{ group.client.name }})</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-outline-primary btn-sm w-100">
+                                <i class="fas fa-plus me-1"></i>Hinzufügen
+                            </button>
+                        </form>
+                    {% else %}
+                        <p class="text-muted small mb-0">
+                            {% if profile.clients|length == 0 %}
+                                Profil ist mit keinem Client verknüpft — keine Gruppen verfügbar.
+                            {% else %}
+                                Keine weiteren Gruppen verfügbar. Lege bei Bedarf eine neue Gruppe an: <a href="{{ path('app_group_new') }}">Neue Gruppe</a>.
+                            {% endif %}
+                        </p>
+                    {% endif %}
+                </div>
+            </div>
+
             <div class="data-card mb-4"
                  data-controller="item-list"
                  data-item-list-url-value="{{ path('app_item_index') }}"
