@@ -52,7 +52,7 @@ class FeedRegistrarTest extends TestCase
     public function testNotApplicableWhenFeedIdAlreadySet(): void
     {
         $profile = $this->makeProfile('instagram_profile', 'https://instagram.com/foo');
-        $profile->setAdditionalData(['rss_feed_id' => 'preset-id']);
+        $profile->setRssAppFeedId('preset-id');
 
         $this->rssApp->expects($this->never())->method('findRssAppFeedIdBySourceUrl');
         $this->rssApp->expects($this->never())->method('createFeed');
@@ -60,7 +60,7 @@ class FeedRegistrarTest extends TestCase
         $result = $this->registrar->registerIfNeeded($profile);
 
         $this->assertFalse($result->registered);
-        $this->assertSame('preset-id', $profile->getAdditionalData()['rss_feed_id']);
+        $this->assertSame('preset-id', $profile->getRssAppFeedId());
     }
 
     public function testCreatesNewFeedWhenNoneFoundAtRssApp(): void
@@ -84,7 +84,7 @@ class FeedRegistrarTest extends TestCase
         $this->assertTrue($result->registered);
         $this->assertFalse($result->linkedToExistingFeed);
         $this->assertSame(0, $result->importedItems);
-        $this->assertSame('new-feed-123', $profile->getAdditionalData()['rss_feed_id']);
+        $this->assertSame('new-feed-123', $profile->getRssAppFeedId());
     }
 
     public function testLinksToExistingFeedAndImportsInitialItems(): void
@@ -124,7 +124,7 @@ class FeedRegistrarTest extends TestCase
         $this->assertTrue($result->registered);
         $this->assertTrue($result->linkedToExistingFeed);
         $this->assertSame(3, $result->importedItems);
-        $this->assertSame('existing-feed-99', $profile->getAdditionalData()['rss_feed_id']);
+        $this->assertSame('existing-feed-99', $profile->getRssAppFeedId());
     }
 
     public function testReturnsNotApplicableWhenRssAppLookupThrows(): void
@@ -137,7 +137,7 @@ class FeedRegistrarTest extends TestCase
         $result = $this->registrar->registerIfNeeded($profile);
 
         $this->assertFalse($result->registered);
-        $this->assertArrayNotHasKey('rss_feed_id', $profile->getAdditionalData() ?? []);
+        $this->assertNull($profile->getRssAppFeedId());
     }
 
     public function testNotApplicableWhenIdentifierIsNull(): void
@@ -185,7 +185,7 @@ class FeedRegistrarTest extends TestCase
         $imported = $this->registrar->linkExistingFeedAndImport($profile, 'adopted-feed-42');
 
         $this->assertSame(2, $imported);
-        $this->assertSame('adopted-feed-42', $profile->getAdditionalData()['rss_feed_id']);
+        $this->assertSame('adopted-feed-42', $profile->getRssAppFeedId());
     }
 
     private function makeProfile(string $networkIdentifier, string $url, ?int $id = null): Profile

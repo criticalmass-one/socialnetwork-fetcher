@@ -50,6 +50,7 @@ class TestFixtures extends Fixture implements DependentFixtureInterface
         $profileShared->setNetwork($networkMastodon);
         $profileShared->setCreatedAt(new \DateTimeImmutable());
         $profileShared->setRssAppFeedId('fixture-feed-shared');
+        $profileShared->setAdditionalData(['fixture_note' => 'shared']);
         $manager->persist($profileShared);
         $clientA->addProfile($profileShared);
         $clientB->addProfile($profileShared);

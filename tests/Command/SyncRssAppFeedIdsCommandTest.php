@@ -30,7 +30,7 @@ class SyncRssAppFeedIdsCommandTest extends TestCase
         $profile->setNetwork($network);
 
         if ($feedId !== null) {
-            $profile->setAdditionalData(['rss_feed_id' => $feedId]);
+            $profile->setRssAppFeedId($feedId);
         }
 
         return $profile;
@@ -58,7 +58,7 @@ class SyncRssAppFeedIdsCommandTest extends TestCase
 
         $this->assertSame(0, $tester->getStatusCode());
         $this->assertStringContainsString('1 aktualisiert', $tester->getDisplay());
-        $this->assertSame('feed-abc', $profile->getAdditionalData()['rss_feed_id']);
+        $this->assertSame('feed-abc', $profile->getRssAppFeedId());
     }
 
     public function testSkipsProfileWithExistingFeedId(): void
@@ -107,7 +107,7 @@ class SyncRssAppFeedIdsCommandTest extends TestCase
         $tester->execute(['--force' => true]);
 
         $this->assertSame(0, $tester->getStatusCode());
-        $this->assertSame('new-feed', $profile->getAdditionalData()['rss_feed_id']);
+        $this->assertSame('new-feed', $profile->getRssAppFeedId());
     }
 
     public function testDryRunDoesNotPersist(): void
@@ -194,7 +194,7 @@ class SyncRssAppFeedIdsCommandTest extends TestCase
         $tester->execute(['--network' => 'instagram_profile']);
 
         $this->assertSame(0, $tester->getStatusCode());
-        $this->assertSame('ig-feed', $instagram->getAdditionalData()['rss_feed_id']);
+        $this->assertSame('ig-feed', $instagram->getRssAppFeedId());
         $this->assertNull($facebook->getAdditionalData());
     }
 
