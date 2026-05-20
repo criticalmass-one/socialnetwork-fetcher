@@ -38,9 +38,8 @@ class ProfileRepository extends ServiceEntityRepository
         return $this->createQueryBuilder('p')
             ->leftJoin('p.network', 'n')
             ->addSelect('n')
-            ->where('p.additionalData LIKE :key')
+            ->where('p.rssAppFeedId IS NOT NULL')
             ->andWhere('p.deleted = false')
-            ->setParameter('key', '%"rss_feed_id"%')
             ->orderBy('p.identifier', 'ASC')
             ->getQuery()
             ->getResult();

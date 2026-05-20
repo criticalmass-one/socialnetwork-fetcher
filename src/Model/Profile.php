@@ -16,6 +16,7 @@ class Profile
     protected bool $savePhotos = false;
     protected bool $saveVideos = false;
     protected ?string $additionalData = null;
+    protected ?string $rssAppFeedId = null;
 
     public function getId(): ?int
     {
@@ -172,4 +173,15 @@ class Profile
         return $this;
     }
 
+    public function getRssAppFeedId(): ?string
+    {
+        return $this->rssAppFeedId;
+    }
+
+    public function setRssAppFeedId(?string $rssAppFeedId): self
+    {
+        $this->rssAppFeedId = $rssAppFeedId;
+
+        return $this;
+    }
 }

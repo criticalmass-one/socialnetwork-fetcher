@@ -74,17 +74,14 @@ class ImportRssAppProfilesCommand extends Command
 
             if (isset($profileMap[$normalized])) {
                 $profile = $profileMap[$normalized];
-                $additionalData = $profile->getAdditionalData() ?? [];
 
-                if (($additionalData['rss_feed_id'] ?? null) === $feedId) {
+                if ($profile->getRssAppFeedId() === $feedId) {
                     $alreadyLinked++;
                     continue;
                 }
 
-                $additionalData['rss_feed_id'] = $feedId;
-
                 if (!$dryRun) {
-                    $profile->setAdditionalData($additionalData);
+                    $profile->setRssAppFeedId($feedId);
                 }
 
                 $linked++;
@@ -107,7 +104,7 @@ class ImportRssAppProfilesCommand extends Command
             $profile->setIdentifier($sourceUrl);
             $profile->setNetwork($network);
             $profile->setCreatedAt(new \DateTimeImmutable());
-            $profile->setAdditionalData(['rss_feed_id' => $feedId]);
+            $profile->setRssAppFeedId($feedId);
 
             if (!$dryRun) {
                 $this->entityManager->persist($profile);
