@@ -62,7 +62,7 @@ class HomepageFeedFetcher extends AbstractNetworkFeedFetcher
     protected function markAsFailed(Profile $profile, string $errorMessage): Profile
     {
         $profile
-            ->setLastFetchFailureDateTime(new \DateTime())
+            ->setLastFetchFailureDateTime(new \DateTimeImmutable())
             ->setLastFetchFailureError($errorMessage);
 
         $this
