@@ -36,7 +36,7 @@ abstract class AbstractNetworkFeedFetcher implements NetworkFeedFetcherInterface
     protected function markAsFailed(Profile $profile, string $errorMessage): Profile
     {
         $profile
-            ->setLastFetchFailureDateTime(new \DateTime())
+            ->setLastFetchFailureDateTime(new \DateTimeImmutable())
             ->setLastFetchFailureError($errorMessage);
 
         $this

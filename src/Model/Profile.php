@@ -7,9 +7,9 @@ class Profile
     protected int $id;
     protected ?string $identifier = null;
     protected string $network;
-    private ?\DateTime $createdAt = null;
-    protected ?\DateTime $lastFetchSuccessDateTime = null;
-    protected ?\DateTime $lastFetchFailureDateTime = null;
+    private ?\DateTimeImmutable $createdAt = null;
+    protected ?\DateTimeImmutable $lastFetchSuccessDateTime = null;
+    protected ?\DateTimeImmutable $lastFetchFailureDateTime = null;
     protected ?string $lastFetchFailureError = null;
     protected bool $autoFetch = true;
     protected bool $fetchSource = false;
@@ -60,36 +60,36 @@ class Profile
         return $this;
     }
 
-    public function getCreatedAt(): ?\DateTimeInterface
+    public function getCreatedAt(): ?\DateTimeImmutable
     {
         return $this->createdAt;
     }
 
-    public function setCreatedAt(?\DateTimeInterface $createdAt): self
+    public function setCreatedAt(?\DateTimeImmutable $createdAt): self
     {
         $this->createdAt = $createdAt;
 
         return $this;
     }
 
-    public function getLastFetchSuccessDateTime(): ?\DateTimeInterface
+    public function getLastFetchSuccessDateTime(): ?\DateTimeImmutable
     {
         return $this->lastFetchSuccessDateTime;
     }
 
-    public function setLastFetchSuccessDateTime(?\DateTimeInterface $lastFetchSuccessDateTime): self
+    public function setLastFetchSuccessDateTime(?\DateTimeImmutable $lastFetchSuccessDateTime): self
     {
         $this->lastFetchSuccessDateTime = $lastFetchSuccessDateTime;
 
         return $this;
     }
 
-    public function getLastFetchFailureDateTime(): ?\DateTimeInterface
+    public function getLastFetchFailureDateTime(): ?\DateTimeImmutable
     {
         return $this->lastFetchFailureDateTime;
     }
 
-    public function setLastFetchFailureDateTime(?\DateTimeInterface $lastFetchFailureDateTime): self
+    public function setLastFetchFailureDateTime(?\DateTimeImmutable $lastFetchFailureDateTime): self
     {
         $this->lastFetchFailureDateTime = $lastFetchFailureDateTime;
 

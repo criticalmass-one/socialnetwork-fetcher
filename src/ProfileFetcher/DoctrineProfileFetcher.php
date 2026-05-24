@@ -59,13 +59,8 @@ class DoctrineProfileFetcher implements ProfileFetcherInterface
         $model->setNetwork($entity->getNetwork()->getIdentifier());
         $model->setAutoFetch($entity->isAutoFetch());
 
-        if ($entity->getLastFetchSuccessDateTime()) {
-            $model->setLastFetchSuccessDateTime(\DateTime::createFromInterface($entity->getLastFetchSuccessDateTime()));
-        }
-
-        if ($entity->getLastFetchFailureDateTime()) {
-            $model->setLastFetchFailureDateTime(\DateTime::createFromInterface($entity->getLastFetchFailureDateTime()));
-        }
+        $model->setLastFetchSuccessDateTime($entity->getLastFetchSuccessDateTime());
+        $model->setLastFetchFailureDateTime($entity->getLastFetchFailureDateTime());
 
         $model->setLastFetchFailureError($entity->getLastFetchFailureError());
         $model->setFetchSource($entity->isFetchSource());
