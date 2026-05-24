@@ -43,7 +43,14 @@
                         </tr>
                         <tr>
                             <th>Identifier</th>
-                            <td>{{ profile.identifier }}</td>
+                            <td>
+                                {{ profile.identifier }}
+                                {% if profile.identifier starts with 'http://' or profile.identifier starts with 'https://' %}
+                                    <a href="{{ profile.identifier }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary ms-2">
+                                        <i class="fas fa-external-link-alt me-1"></i>Im Netzwerk öffnen
+                                    </a>
+                                {% endif %}
+                            </td>
                         </tr>
                         <tr>
                             <th>Titel</th>
