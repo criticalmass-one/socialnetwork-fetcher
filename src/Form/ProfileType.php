@@ -31,6 +31,7 @@ class ProfileType extends AbstractType
                 'choice_label' => 'name',
                 'placeholder' => 'Netzwerk wählen...',
                 'label' => 'Netzwerk',
+                'query_builder' => fn (\Doctrine\ORM\EntityRepository $er) => $er->createQueryBuilder('n')->orderBy('n.name', 'ASC'),
             ])
             ->add('identifier', TextType::class, [
                 'label' => 'Identifier',

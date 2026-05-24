@@ -122,7 +122,7 @@ class GroupController extends AbstractController
             }
             $networks[$profile->getNetwork()->getId()] = $profile->getNetwork();
         }
-        ksort($networks);
+        usort($networks, static fn ($a, $b): int => strcasecmp($a->getName() ?? '', $b->getName() ?? ''));
 
         return $this->render('group/show.html.twig', [
             'group' => $group,
