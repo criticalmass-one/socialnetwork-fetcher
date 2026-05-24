@@ -312,7 +312,13 @@ class ProfileController extends AbstractController
             return;
         }
 
-        $rssApp->deleteFeed($additionalData['rss_feed_id']);
+        try {
+            $rssApp->deleteFeed($additionalData['rss_feed_id']);
+        } catch (\Throwable $e) {
+            $this->addFlash('danger', sprintf('Löschen bei RSS.app fehlgeschlagen: %s', $e->getMessage()));
+
+            return;
+        }
 
         unset($additionalData['rss_feed_id']);
         $profile->setAdditionalData($additionalData);
