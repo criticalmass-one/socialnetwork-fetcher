@@ -18,7 +18,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 )]
 class SyncRssAppFeedIdsCommand extends Command
 {
-    private const RSS_APP_NETWORKS = ['instagram_profile', 'facebook_profile', 'thread', 'twitter'];
+    private const RSS_APP_NETWORKS = ['instagram_profile', 'facebook_profile', 'facebook_page', 'threads_profile', 'thread', 'twitter'];
 
     public function __construct(
         private readonly RssAppInterface $rssApp,
