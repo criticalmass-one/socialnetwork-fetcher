@@ -86,7 +86,7 @@ class FeedFetcher extends AbstractFeedFetcher
                     }
 
                     $callback($fetchResult);
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     $profile->setLastFetchFailureDateTime(new \DateTimeImmutable());
                     $profile->setLastFetchFailureError($e->getMessage());
                     $this->profilePersister->persistProfile($profile);
