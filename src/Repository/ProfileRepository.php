@@ -82,6 +82,36 @@ class ProfileRepository extends ServiceEntityRepository
     /**
      * @param list<int> $networkIds
      */
+    /**
+     * Search non-deleted profiles for the group member picker, excluding
+     * profiles that are already members.
+     *
+     * @param list<int> $excludeIds
+     * @return list<Profile>
+     */
+    public function searchForPicker(string $term, array $excludeIds = [], int $limit = 20): array
+    {
+        $qb = $this->createQueryBuilder('p')
+            ->leftJoin('p.network', 'n')
+            ->addSelect('n')
+            ->andWhere('p.deleted = false')
+            ->orderBy('n.name', 'ASC')
+            ->addOrderBy('p.identifier', 'ASC')
+            ->setMaxResults($limit);
+
+        if ($term !== '') {
+            $qb->andWhere('LOWER(p.identifier) LIKE :term OR LOWER(p.title) LIKE :term')
+                ->setParameter('term', '%' . mb_strtolower($term) . '%');
+        }
+
+        if ($excludeIds !== []) {
+            $qb->andWhere('p.id NOT IN (:excludeIds)')
+                ->setParameter('excludeIds', $excludeIds);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
     private function applyFilters(\Doctrine\ORM\QueryBuilder $qb, array $networkIds, string $search, string $status): void
     {
         if ($networkIds !== []) {

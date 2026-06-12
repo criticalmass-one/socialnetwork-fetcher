@@ -52,7 +52,7 @@
                 </div>
                 <div class="data-card-body">
                     {% if group.profiles is empty %}
-                        <p class="text-muted mb-0">Diese Gruppe enthält noch keine Profile. Über „Bearbeiten" lassen sich welche hinzufügen.</p>
+                        <p class="text-muted mb-3">Diese Gruppe enthält noch keine Profile — unten welche suchen und hinzufügen.</p>
                     {% else %}
                         <table class="data-table">
                             <thead>
@@ -91,6 +91,27 @@
                             </tbody>
                         </table>
                     {% endif %}
+                </div>
+            </div>
+
+            <div class="data-card mb-3">
+                <div class="data-card-header">Profile hinzufügen</div>
+                <div class="data-card-body">
+                    <form method="post" action="{{ path('app_group_profile_add', {id: group.id}) }}"
+                          data-controller="group-profile-picker"
+                          data-group-profile-picker-search-url-value="{{ path('app_group_profile_search', {id: group.id}) }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('group-add-profile-' ~ group.id) }}">
+                        <input type="search" class="form-control form-control-sm mb-2"
+                               placeholder="Profil suchen (Identifier oder Titel)…"
+                               data-group-profile-picker-target="input"
+                               data-action="input->group-profile-picker#onInput">
+                        <div class="mb-2" style="max-height: 280px; overflow-y: auto;"
+                             data-group-profile-picker-target="results"></div>
+                        <button type="submit" class="btn btn-primary btn-sm" disabled
+                                data-group-profile-picker-target="submit">
+                            Profile hinzufügen
+                        </button>
+                    </form>
                 </div>
             </div>
 
