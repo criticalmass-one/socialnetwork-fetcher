@@ -66,8 +66,8 @@ Network fetchers are auto-discovered: any class implementing `NetworkFeedFetcher
 
 ### Network Fetcher Types
 
-- **Direct API fetchers**: `MastodonFeedFetcher`, `BlueskyFeedFetcher`, `HomepageFeedFetcher` — each extends `AbstractNetworkFeedFetcher` and calls the network's API directly
-- **RSS.app-based fetchers**: `FacebookFeedFetcher`, `InstagramFeedFetcher`, `ThreadFeedFetcher` — extend `RssApp\Fetcher` (abstract), which proxies through RSS.app's API
+- **Direct API fetchers**: `MastodonFeedFetcher`, `BlueskyFeedFetcher`, `HomepageFeedFetcher` — each extends `AbstractNetworkFeedFetcher` and calls the network's API directly. The Mastodon fetcher stores the original API entry JSON as the item's `raw` (like Bluesky does).
+- **RSS.app-based fetchers**: `FacebookFeedFetcher`, `InstagramFeedFetcher`, `ThreadFeedFetcher`, `TikTokFeedFetcher`, `TwitterFeedFetcher` — extend `RssApp\Fetcher` (abstract), which proxies through RSS.app's API
 
 ### Each Network Fetcher Directory Contains
 
@@ -79,8 +79,11 @@ Network fetchers are auto-discovered: any class implementing `NetworkFeedFetcher
 
 - **Profile** — Social network profile: `id`, `identifier` (URL), `title` (optional display name), `network` (FK), `autoFetch`, `fetchSource`, `savePhotos`, `saveVideos`, `additionalData` (JSON), `deleted`/`deletedAt` (soft delete). `getDisplayName()` returns `title` if set, otherwise `identifier`.
 - **Item** — Feed item: `id`, `profile` (FK), `uniqueIdentifier`, `text`, `title`, `dateTime`, `permalink`, `raw`, `hidden`, `deleted`, `photoPaths` (JSON array), `videoPath`, `mediaStatus`, `mediaError`. Supports soft-delete, hide toggles, and media downloads.
-- **Network** — Social network definition: `id`, `identifier`, `name`, `icon`, `backgroundColor`, `textColor`, `cronExpression`.
+- **Network** — Social network definition: `id`, `identifier`, `name`, `icon`, `backgroundColor`, `textColor`, `profileUrlPattern`, `cronExpression`.
 - **Client** — API client: `id`, `name`, `token`, `enabled`, `profiles` (ManyToMany via `client_profile` join table), `createdAt`.
+- **Group** — Client-scoped bundle of profiles (`profile_group` table): `id`, `name` (unique per client, validated via `UniqueEntity` + `NotBlank`), `client` (FK, required), `description`, `color`, `profiles` (ManyToMany via `profile_group_profile`). Deleting a group never touches profiles.
+
+**Gotcha:** The `profile` table has **no ID sequence** (IDs historically come from the criticalmass.in import). New profiles need an explicit ID — the API POST handler uses `ProfileRepository::findNextFreeId()` (MAX+1, race-prone workaround; proper identity column tracked in issue #86).
 
 ### Media Download System
 
@@ -111,22 +114,38 @@ Custom `App\Serializer\Serializer` (not Symfony's framework serializer). Uses `N
 - CLI commands and feed fetching run system-wide, no client context
 - Security: `ApiTokenAuthenticator` + `ClientTokenUserProvider`, stateless firewall for `/api/*`
 
+### Groups
+
+- A `Group` belongs to exactly one client; profiles can be members of any number of groups
+- **Membership rule (keep consistent everywhere):** admins may add *any* profile to *any* group; client-token users only profiles linked to their client. Enforced identically in `ProfileController::addToGroups()` and `GroupController::addProfile()`.
+- Members are managed via the searchable picker on the group show page (`app_group_profile_add` + JSON search endpoint `app_group_profile_search`, max 20 results, members and deleted profiles excluded) and via the profile show page. The `GroupType` form deliberately has **no** profiles field — editing a group never touches its member collection.
+- API: `/api/groups` CRUD is client-scoped via `ClientScopedGroupProcessor`, which assigns the client *after* validation — that's why the client requirement lives as a form constraint in `GroupType`, not as an entity-level `Assert\NotNull`. Group timeline at `/api/groups/{id}/items`, RSS feed at `/api/feeds/groups/{id}.rss`.
+
 ### Web UI
 
-- **Authentication**: Form login at `/login`, in-memory admin user via `WEB_ADMIN_USERNAME`/`WEB_ADMIN_PASSWORD_HASH` env vars, implemented in `WebUserProvider`
-- **Controllers**: `DashboardController`, `NetworkController`, `ProfileController`, `ItemController`, `ClientController`, `LoginController`
+- **Authentication**: Form login at `/login`, in-memory admin user via `WEB_ADMIN_USERNAME`/`WEB_ADMIN_PASSWORD_HASH` env vars, implemented in `WebUserProvider`. Client-token users can log in via `/login/client-token` (`WebTokenAuthenticator`) and see only the group pages.
+- **Controllers**: `DashboardController`, `NetworkController`, `ProfileController`, `ItemController`, `ClientController`, `GroupController`, `LoginController`
 - **Frontend stack**: Bootstrap 5.3, Stimulus controllers, Handlebars templates, Symfony Asset Mapper (no build step)
-- **Stimulus controllers** (`assets/controllers/`): `profile_list_controller`, `item_list_controller`, `profile_fetch_controller`, `profile_toggle_controller`, `toggle_controller`, `confirm_controller`, `flash_controller`, `media_download_controller`
+- **Stimulus controllers** (`assets/controllers/`): `profile_list_controller`, `item_list_controller`, `profile_fetch_controller`, `profile_toggle_controller`, `toggle_controller`, `confirm_controller`, `flash_controller`, `media_download_controller`, `group_profile_picker_controller`, `rssapp_table_controller`, `csrf_protection_controller`
 - **CSS**: Custom design system in `assets/styles/app.css` (dark sidebar, stat cards, network cards, data tables)
 - **AJAX patterns**: Profile and item lists use Stimulus + Handlebars for client-side rendering with AJAX pagination, search, and filtering. Controllers return JSON when `X-Requested-With: XMLHttpRequest` header is present.
+- **CSRF (two mechanisms!):** Symfony forms (login, GroupType, …) use *stateless* CSRF — `csrf_protection_controller.js` generates a random token on submit and double-submits it as field value + `csrf-token_<token>` cookie. **This controller is load-bearing; without JS every form submit fails.** Plain action forms (`csrf_token('…')` in Twig: toggles, delete, group add/remove) use classic session-based tokens. When driving the UI via HTTP (curl), generate a fresh double-submit pair per form POST (the cookie is consumed on validation) and parse session tokens from the rendered HTML.
 
 ### REST API (API Platform)
 
 - All endpoints under `/api/` require Bearer token (except `/api/docs`)
-- Profiles, items: client-scoped via custom State Providers/Processors
+- Profiles, items, groups: client-scoped via custom State Providers/Processors
 - Timeline endpoint: `GET /api/timeline` (chronological feed, filters: limit, since, until, network)
+- Group timeline: `GET /api/groups/{id}/items`; RSS feeds at `/api/feeds/groups/{id}.rss`
 - Networks: public read access
 - OpenAPI docs at `/api/docs`
+
+## Testing
+
+- Functional tests run against **SQLite** (`var/data_test.db`, see `.env.test`); production uses PostgreSQL. The schema is **not** rebuilt automatically — after entity/migration changes run `php bin/console doctrine:schema:drop --env=test --force && php bin/console doctrine:schema:create --env=test`, otherwise functional tests fail with `InvalidFieldNameException`.
+- Functional tests purge + load fixtures themselves (`NetworkFixtures`, `TestFixtures`) per test, see `tests/Functional/AbstractApiTestCase.php`.
+- **Web tests:** log in with `$client->loginUser(static::getContainer()->get(WebUserProvider::class)->loadUserByIdentifier('admin'), 'main')` — a hand-built `InMemoryUser` with a different password hash gets silently deauthenticated by the user-changed check on the next request (redirects to /login). Example: `tests/Functional/Web/GroupManagementTest.php`.
+- The ~90 risky-test warnings ("did not remove its own exception handlers") are a known pre-existing issue (#81); do **not** add `restore_exception_handler()` in `tearDown()` — PHPUnit 13 then complains about removed handlers instead.
 
 ## Adding a New Network Fetcher
 
@@ -172,3 +191,5 @@ docker compose up -d                                 # start PostgreSQL
 symfony serve -d                                     # start web server
 php bin/console doctrine:migrations:migrate          # run migrations
 ```
+
+**Port drift gotcha:** `compose.override.yaml` maps PostgreSQL port `"5432"` without a fixed host port — Docker assigns a random one whenever the container is recreated, silently invalidating `DATABASE_URL` in `.env.local` (symptom: "Connection refused" on a stale port). Check with `docker compose ps` and update `.env.local`, or use `symfony console` instead of `php bin/console` (the Symfony CLI injects the current Docker port automatically).

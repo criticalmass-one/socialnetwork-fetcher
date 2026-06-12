@@ -4,8 +4,6 @@ namespace App\Form;
 
 use App\Entity\Client;
 use App\Entity\Group;
-use App\Entity\Profile;
-use Doctrine\ORM\EntityRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ColorType;
@@ -13,6 +11,7 @@ use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
+use Symfony\Component\Validator\Constraints\NotNull;
 
 class GroupType extends AbstractType
 {
@@ -31,6 +30,7 @@ class GroupType extends AbstractType
                 'label' => 'Client',
                 'placeholder' => 'Client wählen...',
                 'help' => 'Eigentümer-Client der Gruppe. Bestimmt, wer sie über die API sieht.',
+                'constraints' => [new NotNull(message: 'Bitte einen Client wählen.')],
             ]);
         }
 
@@ -44,23 +44,12 @@ class GroupType extends AbstractType
                 'label' => 'Farbe',
                 'required' => false,
                 'help' => 'Optional, für die Badge-Darstellung im UI.',
-            ])
-            ->add('profiles', EntityType::class, [
-                'class' => Profile::class,
-                'multiple' => true,
-                'expanded' => false,
-                'label' => 'Profile',
-                'required' => false,
-                'attr' => ['size' => 15],
-                'choice_label' => fn(Profile $p) => sprintf('%s — %s', $p->getNetwork()?->getName() ?? '?', $p->getDisplayName()),
-                'query_builder' => fn(EntityRepository $repository) => $repository->createQueryBuilder('p')
-                    ->leftJoin('p.network', 'n')
-                    ->addSelect('n')
-                    ->andWhere('p.deleted = false')
-                    ->orderBy('n.name', 'ASC')
-                    ->addOrderBy('p.identifier', 'ASC'),
-                'help' => 'Profile, die zur Gruppe gehören. Profile, die nicht zum gewählten Client verknüpft sind, werden beim Speichern abgewiesen.',
             ]);
+        // Mitglieder werden nicht mehr über dieses Formular gepflegt, sondern
+        // über den durchsuchbaren Picker auf der Gruppen-Detailseite (und die
+        // Profil-Detailseite). Das frühere Multi-Select über alle Profile war
+        // bei ~2000 Einträgen unbenutzbar und hat beim Bearbeiten die
+        // Mitgliederliste ersetzt.
     }
 
     public function configureOptions(OptionsResolver $resolver): void

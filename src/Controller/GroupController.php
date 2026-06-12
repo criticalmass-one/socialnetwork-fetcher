@@ -23,6 +23,7 @@ class GroupController extends AbstractController
 {
     private const GROUPS_PER_PAGE = 50;
     private const TIMELINE_ITEMS_PER_PAGE = 50;
+    private const PICKER_RESULTS = 20;
 
     #[Route('', name: 'app_group_index', methods: ['GET'])]
     public function index(Request $request, GroupRepository $groupRepository, ClientRepository $clientRepository): Response
@@ -79,16 +80,12 @@ class GroupController extends AbstractController
                 // Force-set again in case form data was tampered with.
                 $group->setClient($clientUser);
             }
-            if ($error = $this->ensureProfilesBelongToClient($group)) {
-                $form->addError(new \Symfony\Component\Form\FormError($error));
-            } else {
-                $em->persist($group);
-                $em->flush();
+            $em->persist($group);
+            $em->flush();
 
-                $this->addFlash('success', sprintf('Gruppe "%s" wurde angelegt.', $group->getName()));
+            $this->addFlash('success', sprintf('Gruppe "%s" wurde angelegt. Füge jetzt Profile hinzu.', $group->getName()));
 
-                return $this->redirectToRoute('app_group_show', ['id' => $group->getId()]);
-            }
+            return $this->redirectToRoute('app_group_show', ['id' => $group->getId()]);
         }
 
         return $this->render('group/new.html.twig', [
@@ -146,15 +143,11 @@ class GroupController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            if ($error = $this->ensureProfilesBelongToClient($group)) {
-                $form->addError(new \Symfony\Component\Form\FormError($error));
-            } else {
-                $em->flush();
+            $em->flush();
 
-                $this->addFlash('success', 'Gruppe wurde aktualisiert.');
+            $this->addFlash('success', 'Gruppe wurde aktualisiert.');
 
-                return $this->redirectToRoute('app_group_show', ['id' => $group->getId()]);
-            }
+            return $this->redirectToRoute('app_group_show', ['id' => $group->getId()]);
         }
 
         return $this->render('group/edit.html.twig', [
@@ -168,11 +161,15 @@ class GroupController extends AbstractController
     {
         $this->denyForeignClient($group);
 
-        if ($this->isCsrfTokenValid('delete-group-' . $group->getId(), $request->request->getString('_token'))) {
-            $em->remove($group);
-            $em->flush();
-            $this->addFlash('success', 'Gruppe wurde gelöscht.');
+        if (!$this->isCsrfTokenValid('delete-group-' . $group->getId(), $request->request->getString('_token'))) {
+            $this->addFlash('danger', 'Die Aktion konnte nicht ausgeführt werden (ungültiges Sicherheitstoken). Bitte erneut versuchen.');
+
+            return $this->redirectToRoute('app_group_show', ['id' => $group->getId()]);
         }
+
+        $em->remove($group);
+        $em->flush();
+        $this->addFlash('success', 'Gruppe wurde gelöscht.');
 
         return $this->redirectToRoute('app_group_index');
     }
@@ -182,26 +179,40 @@ class GroupController extends AbstractController
     {
         $this->denyForeignClient($group);
 
-        if ($this->isCsrfTokenValid('group-add-profile-' . $group->getId(), $request->request->getString('_token'))) {
-            $profileIds = array_map('intval', (array) $request->request->all('profileIds'));
+        if (!$this->isCsrfTokenValid('group-add-profile-' . $group->getId(), $request->request->getString('_token'))) {
+            $this->addFlash('danger', 'Die Aktion konnte nicht ausgeführt werden (ungültiges Sicherheitstoken). Bitte erneut versuchen.');
 
-            foreach ($profileIds as $profileId) {
-                if ($profileId <= 0) {
-                    continue;
-                }
-                $profile = $profileRepository->find($profileId);
-                if ($profile === null) {
-                    continue;
-                }
-                if (!$profile->getClients()->contains($group->getClient())) {
-                    $this->addFlash('warning', sprintf('Profil "%s" ist nicht mit dem Client der Gruppe verknüpft und wurde übersprungen.', $profile->getDisplayName()));
-                    continue;
-                }
-                $group->addProfile($profile);
+            return $this->redirectToRoute('app_group_show', ['id' => $group->getId()]);
+        }
+
+        $profileIds = array_map('intval', (array) $request->request->all('profileIds'));
+        $clientUser = $this->loggedInClient();
+        $added = 0;
+
+        foreach ($profileIds as $profileId) {
+            if ($profileId <= 0) {
+                continue;
             }
+            $profile = $profileRepository->find($profileId);
+            if ($profile === null || $profile->isDeleted()) {
+                continue;
+            }
+            // Same rule as on the profile show page: admins may group any
+            // profile; client-token users only profiles linked to them.
+            if ($clientUser !== null && !$profile->getClients()->contains($clientUser)) {
+                $this->addFlash('warning', sprintf('Profil "%s" ist nicht mit deinem Client verknüpft und wurde übersprungen.', $profile->getDisplayName()));
+                continue;
+            }
+            $group->addProfile($profile);
+            $added++;
+        }
 
-            $em->flush();
-            $this->addFlash('success', 'Profile wurden zur Gruppe hinzugefügt.');
+        $em->flush();
+
+        if ($added > 0) {
+            $this->addFlash('success', sprintf('%d Profil%s zur Gruppe hinzugefügt.', $added, $added === 1 ? '' : 'e'));
+        } else {
+            $this->addFlash('info', 'Keine Profile ausgewählt.');
         }
 
         return $this->redirectToRoute('app_group_show', ['id' => $group->getId()]);
@@ -212,13 +223,17 @@ class GroupController extends AbstractController
     {
         $this->denyForeignClient($group);
 
-        if ($this->isCsrfTokenValid('group-remove-profile-' . $group->getId() . '-' . $profileId, $request->request->getString('_token'))) {
-            $profile = $profileRepository->find($profileId);
-            if ($profile !== null) {
-                $group->removeProfile($profile);
-                $em->flush();
-                $this->addFlash('success', sprintf('Profil "%s" wurde aus der Gruppe entfernt.', $profile->getDisplayName()));
-            }
+        if (!$this->isCsrfTokenValid('group-remove-profile-' . $group->getId() . '-' . $profileId, $request->request->getString('_token'))) {
+            $this->addFlash('danger', 'Die Aktion konnte nicht ausgeführt werden (ungültiges Sicherheitstoken). Bitte erneut versuchen.');
+
+            return $this->redirectToRoute('app_group_show', ['id' => $group->getId()]);
+        }
+
+        $profile = $profileRepository->find($profileId);
+        if ($profile !== null) {
+            $group->removeProfile($profile);
+            $em->flush();
+            $this->addFlash('success', sprintf('Profil "%s" wurde aus der Gruppe entfernt.', $profile->getDisplayName()));
         }
 
         return $this->redirectToRoute('app_group_show', ['id' => $group->getId()]);
@@ -230,30 +245,35 @@ class GroupController extends AbstractController
         return $user instanceof Client ? $user : null;
     }
 
+    #[Route('/{id}/profiles/search', name: 'app_group_profile_search', requirements: ['id' => '\d+'], methods: ['GET'])]
+    public function searchProfiles(Request $request, Group $group, ProfileRepository $profileRepository): Response
+    {
+        $this->denyForeignClient($group);
+
+        $term = trim($request->query->getString('q', ''));
+        $memberIds = array_map(static fn (Profile $p) => $p->getId(), $group->getProfiles()->toArray());
+
+        $profiles = $profileRepository->searchForPicker($term, $memberIds, self::PICKER_RESULTS);
+
+        return $this->json([
+            'results' => array_map(static fn (Profile $p) => [
+                'id' => $p->getId(),
+                'label' => $p->getDisplayName(),
+                'identifier' => $p->getIdentifier(),
+                'network' => $p->getNetwork()?->getName(),
+                'networkIcon' => $p->getNetwork()?->getIcon(),
+                'networkBackgroundColor' => $p->getNetwork()?->getBackgroundColor(),
+                'networkTextColor' => $p->getNetwork()?->getTextColor(),
+            ], $profiles),
+            'limit' => self::PICKER_RESULTS,
+        ]);
+    }
+
     private function denyForeignClient(Group $group): void
     {
         $client = $this->loggedInClient();
         if ($client !== null && $group->getClient()?->getId() !== $client->getId()) {
             throw new NotFoundHttpException('Group not found.');
         }
-    }
-
-    /** @return string|null  Error message if invalid, null if OK */
-    private function ensureProfilesBelongToClient(Group $group): ?string
-    {
-        $client = $group->getClient();
-        if ($client === null) {
-            return null;
-        }
-        foreach ($group->getProfiles() as $profile) {
-            if (!$profile->getClients()->contains($client)) {
-                return sprintf(
-                    'Profil "%s" ist nicht mit dem Client "%s" verknüpft. Verknüpfe es zuerst auf der Profil-Detailseite oder über die API.',
-                    $profile->getDisplayName(),
-                    $client->getName(),
-                );
-            }
-        }
-        return null;
     }
 }
