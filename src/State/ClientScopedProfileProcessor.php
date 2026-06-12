@@ -79,6 +79,7 @@ class ClientScopedProfileProcessor implements ProcessorInterface
             return $existingProfile;
         }
 
+        $data->setId($this->profileRepository->findNextFreeId());
         $data->setCreatedAt(new \DateTimeImmutable());
         $this->em->persist($data);
         $client->addProfile($data);

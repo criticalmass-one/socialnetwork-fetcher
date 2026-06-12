@@ -12,7 +12,7 @@ use Psr\Log\LoggerInterface;
 
 class FeedRegistrar
 {
-    public const RSS_APP_NETWORKS = ['instagram_profile', 'facebook_profile', 'thread', 'twitter'];
+    public const RSS_APP_NETWORKS = ['instagram_profile', 'facebook_profile', 'facebook_page', 'threads_profile', 'thread', 'twitter'];
     public const INITIAL_IMPORT_COUNT = 100;
 
     public function __construct(
