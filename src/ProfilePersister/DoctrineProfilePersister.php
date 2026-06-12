@@ -58,7 +58,8 @@ class DoctrineProfilePersister implements ProfilePersisterInterface
             ->setLastFetchSuccessDateTime($profile->getLastFetchSuccessDateTime() ? \DateTimeImmutable::createFromInterface($profile->getLastFetchSuccessDateTime()) : null)
             ->setLastFetchFailureDateTime($profile->getLastFetchFailureDateTime() ? \DateTimeImmutable::createFromInterface($profile->getLastFetchFailureDateTime()) : null)
             ->setLastFetchFailureError($profile->getLastFetchFailureError())
-            ->setAdditionalData($additionalData ? (array) json_decode($additionalData, true) : null);
+            ->setAdditionalData($additionalData ? (array) json_decode($additionalData, true) : null)
+            ->setRssAppFeedId($profile->getRssAppFeedId());
 
         $this->entityManager->persist($entity);
         $this->entityManager->flush();

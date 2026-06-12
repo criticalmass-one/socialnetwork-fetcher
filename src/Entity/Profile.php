@@ -20,6 +20,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Table(name: 'profile')]
 #[ORM\UniqueConstraint(name: 'uniq_profile_network_identifier', columns: ['network_id', 'identifier'])]
+#[ORM\Index(name: 'IDX_PROFILE_RSS_APP_FEED_ID', columns: ['rss_app_feed_id'])]
 #[ORM\Entity(repositoryClass: \App\Repository\ProfileRepository::class)]
 #[ApiResource(
     operations: [
@@ -127,8 +128,13 @@ class Profile
 
     #[ORM\Column(type: 'text', nullable: true)]
     #[Groups(['profile:detail', 'profile:write'])]
-    #[ApiProperty(description: 'Arbitrary JSON data for network-specific configuration (e.g. RSS.app feed ID). Only included on the single-profile endpoint, not in collections.')]
+    #[ApiProperty(description: 'Arbitrary JSON data for network-specific configuration. Only included on the single-profile endpoint, not in collections.')]
     private ?string $additionalData = null;
+
+    #[ORM\Column(type: 'string', length: 64, nullable: true)]
+    #[Groups(['profile:detail', 'profile:write'])]
+    #[ApiProperty(description: 'RSS.app feed ID linked to this profile (only set for RSS.app-based networks). Only included on the single-profile endpoint, not in collections.')]
+    private ?string $rssAppFeedId = null;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     #[Groups(['profile:read', 'profile:write'])]
@@ -292,6 +298,18 @@ class Profile
     public function setAdditionalData(?array $additionalData): self
     {
         $this->additionalData = $additionalData !== null ? json_encode($additionalData) : null;
+
+        return $this;
+    }
+
+    public function getRssAppFeedId(): ?string
+    {
+        return $this->rssAppFeedId;
+    }
+
+    public function setRssAppFeedId(?string $rssAppFeedId): self
+    {
+        $this->rssAppFeedId = $rssAppFeedId;
 
         return $this;
     }

@@ -72,6 +72,8 @@ class DoctrineProfileFetcher implements ProfileFetcherInterface
             $model->setAdditionalData(json_encode($additionalData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
         }
 
+        $model->setRssAppFeedId($entity->getRssAppFeedId());
+
         return $model;
     }
 }

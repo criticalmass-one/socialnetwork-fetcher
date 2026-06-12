@@ -349,7 +349,7 @@
                             data-action="profile-fetch#fetch">
                         <i class="fas fa-download me-1"></i>Items importieren
                     </button>
-                    {% set rssAppFeedId = profile.additionalData.rss_feed_id|default(null) %}
+                    {% set rssAppFeedId = profile.rssAppFeedId %}
                     {% if rssAppFeedId %}
                         <form method="post" action="{{ path('app_profile_rssapp_delete', {id: profile.id}) }}"
                               data-controller="confirm"

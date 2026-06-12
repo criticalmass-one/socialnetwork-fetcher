@@ -20,7 +20,7 @@
                 </thead>
                 <tbody>
                     {% for profile in profiles %}
-                        {% set feedId = profile.additionalData.rss_feed_id|default('') %}
+                        {% set feedId = profile.rssAppFeedId|default('') %}
                         {% set lastDate = lastItemDates[profile.id]|default(null) %}
                         <tr>
                             <td>

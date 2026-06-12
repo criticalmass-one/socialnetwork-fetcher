@@ -269,9 +269,7 @@ class ProfileController extends AbstractController
             try {
                 $feedData = $rssApp->createFeed($profile->getIdentifier());
 
-                $additionalData = $profile->getAdditionalData() ?? [];
-                $additionalData['rss_feed_id'] = $feedData['id'];
-                $profile->setAdditionalData($additionalData);
+                $profile->setRssAppFeedId($feedData['id']);
 
                 $em->flush();
 
@@ -306,22 +304,21 @@ class ProfileController extends AbstractController
             return;
         }
 
-        $additionalData = $profile->getAdditionalData() ?? [];
+        $feedId = $profile->getRssAppFeedId();
 
-        if (!isset($additionalData['rss_feed_id'])) {
+        if ($feedId === null) {
             return;
         }
 
         try {
-            $rssApp->deleteFeed($additionalData['rss_feed_id']);
+            $rssApp->deleteFeed($feedId);
         } catch (\Throwable $e) {
             $this->addFlash('danger', sprintf('Löschen bei RSS.app fehlgeschlagen: %s', $e->getMessage()));
 
             return;
         }
 
-        unset($additionalData['rss_feed_id']);
-        $profile->setAdditionalData($additionalData);
+        $profile->setRssAppFeedId(null);
 
         $em->flush();
 

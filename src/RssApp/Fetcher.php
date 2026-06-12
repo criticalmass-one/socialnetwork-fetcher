@@ -24,21 +24,18 @@ abstract class Fetcher extends AbstractNetworkFeedFetcher
             return [];
         }
 
-        $additionalData = json_decode($profile->getAdditionalData() ?? '{}', true);
-
-        $feedId = $additionalData['rss_feed_id'] ?? null;
+        $feedId = $profile->getRssAppFeedId();
 
         if ($feedId && !$this->rssApp->feedExists($feedId)) {
             $this->logger->notice(sprintf('RSS.app Feed %s existiert nicht mehr für %s, suche neu.', $feedId, $sourceUrl));
             $feedId = null;
-            unset($additionalData['rss_feed_id']);
+            $profile->setRssAppFeedId(null);
         }
 
         if (!$feedId) {
             $feedId = $this->rssApp->findRssAppFeedIdBySourceUrl($sourceUrl);
             if ($feedId) {
-                $additionalData['rss_feed_id'] = $feedId;
-                $profile->setAdditionalData(json_encode($additionalData, JSON_UNESCAPED_SLASHES));
+                $profile->setRssAppFeedId($feedId);
             } else {
                 $this->markAsFailed($profile, 'Kein Feed bei RSS.app gefunden für ' . $sourceUrl);
                 return [];

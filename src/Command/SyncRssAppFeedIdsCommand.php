@@ -82,8 +82,7 @@ class SyncRssAppFeedIdsCommand extends Command
                 continue;
             }
 
-            $additionalData = $profile->getAdditionalData() ?? [];
-            $existingFeedId = $additionalData['rss_feed_id'] ?? null;
+            $existingFeedId = $profile->getRssAppFeedId();
 
             if ($existingFeedId !== null && !$force) {
                 $alreadyLinked++;
@@ -115,10 +114,8 @@ class SyncRssAppFeedIdsCommand extends Command
                 continue;
             }
 
-            $additionalData['rss_feed_id'] = $feedId;
-
             if (!$dryRun) {
-                $profile->setAdditionalData($additionalData);
+                $profile->setRssAppFeedId($feedId);
             }
 
             $updated++;
