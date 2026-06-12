@@ -18,7 +18,9 @@ use App\State\ClientScopedGroupProcessor;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Table(name: 'profile_group')]
 #[ORM\UniqueConstraint(name: 'uniq_group_client_name', columns: ['client_id', 'name'])]
@@ -61,6 +63,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
     'profiles' => 'exact',
 ])]
 #[ApiFilter(OrderFilter::class, properties: ['name', 'createdAt'])]
+#[UniqueEntity(fields: ['client', 'name'], message: 'Eine Gruppe mit diesem Namen existiert für diesen Client bereits.')]
 class Group
 {
     #[ORM\Id]
@@ -72,9 +75,14 @@ class Group
 
     #[ORM\Column(type: 'string', length: 64)]
     #[Groups(['group:read', 'group:write'])]
+    #[Assert\NotBlank(message: 'Bitte einen Namen für die Gruppe angeben.')]
+    #[Assert\Length(max: 64)]
     #[ApiProperty(description: 'Human-readable name of the group. Must be unique within the client.', example: 'Klima')]
     private ?string $name = null;
 
+    // Kein Assert\NotNull hier: Beim API-POST setzt der ClientScopedGroupProcessor
+    // den Client erst nach der Validierung. Das Web-Formular erzwingt die
+    // Auswahl über einen Feld-Constraint im GroupType.
     #[ORM\ManyToOne(targetEntity: Client::class)]
     #[ORM\JoinColumn(name: 'client_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
     #[ApiProperty(description: 'The owning client. Set automatically from the Bearer token; not writable via the API.', readable: false, writable: false)]
