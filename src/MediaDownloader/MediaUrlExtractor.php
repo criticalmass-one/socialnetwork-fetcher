@@ -7,6 +7,14 @@ use App\Entity\Item;
 class MediaUrlExtractor
 {
     /**
+     * Networks whose raw payload reliably reveals whether a post contains a
+     * video. For these we only hand the permalink to yt-dlp when the raw data
+     * actually shows a video attachment — for all other networks (RSS.app,
+     * homepage, …) the permalink is probed blindly as before.
+     */
+    private const VIDEO_DETECTABLE_NETWORKS = ['mastodon', 'bluesky_profile'];
+
+    /**
      * @return list<string>
      */
     public function extractPhotoUrls(Item $item): array
@@ -35,11 +43,15 @@ class MediaUrlExtractor
             return [$data['thumbnail']];
         }
 
-        // Bluesky format: embed.images array
-        if (isset($data['embed']['images']) && is_array($data['embed']['images'])) {
+        // Bluesky format: embed view images (nested under post.embed in fresh
+        // raw payloads, top-level embed kept for older payloads)
+        $embed = $this->resolveBlueskyEmbed($data);
+        $images = $embed['images'] ?? $embed['media']['images'] ?? null;
+
+        if (is_array($images)) {
             $urls = [];
 
-            foreach ($data['embed']['images'] as $image) {
+            foreach ($images as $image) {
                 if (isset($image['fullsize'])) {
                     $urls[] = $image['fullsize'];
                 } elseif (isset($image['thumb'])) {
@@ -72,7 +84,70 @@ class MediaUrlExtractor
 
     public function extractVideoUrl(Item $item): ?string
     {
-        return $item->getPermalink();
+        $permalink = $item->getPermalink();
+
+        if (!$permalink) {
+            return null;
+        }
+
+        $networkIdentifier = $item->getProfile()?->getNetwork()?->getIdentifier();
+
+        if (in_array($networkIdentifier, self::VIDEO_DETECTABLE_NETWORKS, true) && !$this->rawContainsVideo($item)) {
+            return null;
+        }
+
+        return $permalink;
+    }
+
+    private function rawContainsVideo(Item $item): bool
+    {
+        $raw = $item->getRaw();
+
+        if ($raw === null) {
+            return false;
+        }
+
+        $data = json_decode($raw, true);
+
+        if (!is_array($data)) {
+            return false;
+        }
+
+        // Mastodon format: media_attachments with type video/gifv
+        $attachments = $data['media_attachments'] ?? null;
+
+        if (is_array($attachments)) {
+            foreach ($attachments as $attachment) {
+                if (in_array($attachment['type'] ?? null, ['video', 'gifv'], true)) {
+                    return true;
+                }
+            }
+        }
+
+        // Bluesky format: embed view of type app.bsky.embed.video (playlist
+        // holds the HLS URL), also when wrapped in recordWithMedia
+        $embed = $this->resolveBlueskyEmbed($data);
+
+        if ($embed !== null) {
+            foreach ([$embed['$type'] ?? null, $embed['media']['$type'] ?? null] as $type) {
+                if (is_string($type) && str_contains($type, 'embed.video')) {
+                    return true;
+                }
+            }
+
+            if (isset($embed['playlist']) || isset($embed['media']['playlist'])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function resolveBlueskyEmbed(array $data): ?array
+    {
+        $embed = $data['post']['embed'] ?? $data['embed'] ?? null;
+
+        return is_array($embed) ? $embed : null;
     }
 
     /**
