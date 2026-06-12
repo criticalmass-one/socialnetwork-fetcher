@@ -86,7 +86,7 @@ Network fetchers are auto-discovered: any class implementing `NetworkFeedFetcher
 
 Profiles can opt into automatic photo/video downloads via `savePhotos` and `saveVideos` flags. Media is stored via Flysystem (local adapter at `public/media/`).
 
-- **`MediaUrlExtractor`** — extracts photo URLs from `raw` JSON (RSS.app `description_html` img tags, RSS.app `thumbnail` fallback, Bluesky `embed.images[]`, Mastodon `media_attachments[]`). Supports multiple photos per item. Video URL is the item's `permalink`.
+- **`MediaUrlExtractor`** — extracts photo URLs from `raw` JSON (RSS.app `description_html` img tags, RSS.app `thumbnail` fallback, Bluesky `post.embed` images, Mastodon `media_attachments[]`). Supports multiple photos per item. Video URL is the item's `permalink` — for Mastodon/Bluesky only when the raw payload actually contains a video attachment/embed (posts without video are skipped instead of failing in yt-dlp); all other networks are probed blindly.
 - **`PhotoDownloader`** — downloads images via HttpClient, stores as `{profileId}/{itemId}/photo_{index}.{ext}` in Flysystem
 - **`YtDlpPhotoDownloader`** — extracts photos (including carousel/album images) via `yt-dlp` in original quality. Used for Instagram, Threads, and Facebook where RSS.app only provides a single thumbnail. Falls back to `PhotoDownloader` if `yt-dlp` is unavailable or returns no results.
 - **`VideoDownloader`** — downloads videos via `yt-dlp` process, stores as `{profileId}/{itemId}/video.{ext}` on disk. Requires `yt-dlp` to be installed; gracefully skips if unavailable.

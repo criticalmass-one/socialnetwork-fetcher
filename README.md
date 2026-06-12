@@ -150,7 +150,7 @@ php bin/console app:rssapp:sync-feed-ids --force      # re-check existing feed I
 
 ### Media download
 
-Download photos and videos for feed items. For Instagram, Threads, and Facebook, photos (including carousel/album images) are extracted in original quality via `yt-dlp`, with a fallback to the RSS.app thumbnail. Bluesky and Mastodon photos are downloaded directly from their API response (supports multiple photos per post natively). Videos are downloaded via `yt-dlp` from the item's permalink URL.
+Download photos and videos for feed items. For Instagram, Threads, and Facebook, photos (including carousel/album images) are extracted in original quality via `yt-dlp`, with a fallback to the RSS.app thumbnail. Bluesky and Mastodon photos are downloaded directly from their API response (supports multiple photos per post natively). Videos are downloaded via `yt-dlp` from the item's permalink URL. For Mastodon and Bluesky, yt-dlp is only invoked when the post's raw data actually contains a video — posts without a video are skipped instead of being recorded as failed downloads.
 
 ```bash
 php bin/console app:download-media                    # all profiles with savePhotos/saveVideos enabled
