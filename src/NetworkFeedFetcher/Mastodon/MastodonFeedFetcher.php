@@ -28,9 +28,12 @@ class MastodonFeedFetcher extends AbstractNetworkFeedFetcher
             $account = IdentifierParser::parse($profile);
 
             $accountInfo = $this->getAccountInfo($account);
-            $timeline = $this->fetchTimeline($account, $accountInfo, $fetchInfo->getCount());
+            $response = $this->fetchTimeline($account, $accountInfo, $fetchInfo->getCount());
 
-            return $this->convertTimeline($profile, $timeline);
+            $timeline = $this->serializer->deserialize($response, sprintf('%s[]', Status::class), 'json');
+            $rawEntries = json_decode($response, true) ?: [];
+
+            return $this->convertTimeline($profile, $timeline, $rawEntries);
         } catch (\Exception $exception) {
             $this->markAsFailed($profile, sprintf('Failed to fetch social network profile %d: %s', $profile->getId(), $exception->getMessage()));
 
@@ -47,21 +50,20 @@ class MastodonFeedFetcher extends AbstractNetworkFeedFetcher
         return $this->serializer->deserialize($response, AccountInfo::class, 'json');
     }
 
-    private function fetchTimeline(Account $account, AccountInfo $accountInfo, int $count): array
+    private function fetchTimeline(Account $account, AccountInfo $accountInfo, int $count): string
     {
         $url = sprintf('https://%s/api/v1/accounts/%s/statuses?limit=%d', $account->getHostname(), $accountInfo->getId(), $count);
 
-        $response = $this->httpClient->request('GET', $url)->getContent();
-
-        return $this->serializer->deserialize($response, sprintf('%s[]', Status::class), 'json');
+        return $this->httpClient->request('GET', $url)->getContent();
     }
 
-    private function convertTimeline(Profile $profile, array $timeline): array
+    private function convertTimeline(Profile $profile, array $timeline, array $rawEntries): array
     {
         $feedItemList = [];
 
-        foreach ($timeline as $status) {
-            $feedItem = EntryConverter::convert($profile, $status);
+        foreach ($timeline as $index => $status) {
+            $rawEntry = $rawEntries[$index] ?? null;
+            $feedItem = EntryConverter::convert($profile, $status, is_array($rawEntry) ? $rawEntry : null);
 
             if ($feedItem) {
                 $feedItemList[] = $feedItem;
