@@ -33,8 +33,7 @@ class RssAppOrphanFeedController extends AbstractController
         $knownSourceUrls = [];
 
         foreach ($profiles as $profile) {
-            $additionalData = $profile->getAdditionalData() ?? [];
-            $feedId = $additionalData['rss_feed_id'] ?? null;
+            $feedId = $profile->getRssAppFeedId();
             if ($feedId !== null) {
                 $knownFeedIds[$feedId] = true;
             }

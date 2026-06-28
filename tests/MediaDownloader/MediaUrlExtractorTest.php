@@ -3,6 +3,8 @@
 namespace App\Tests\MediaDownloader;
 
 use App\Entity\Item;
+use App\Entity\Network;
+use App\Entity\Profile;
 use App\MediaDownloader\MediaUrlExtractor;
 use PHPUnit\Framework\TestCase;
 
@@ -181,5 +183,163 @@ class MediaUrlExtractorTest extends TestCase
         $item = new Item();
 
         $this->assertNull($this->extractor->extractVideoUrl($item));
+    }
+
+    private function createItemForNetwork(string $networkIdentifier): Item
+    {
+        $network = new Network();
+        $network->setIdentifier($networkIdentifier);
+
+        $profile = new Profile();
+        $profile->setNetwork($network);
+
+        $item = new Item();
+        $item->setProfile($profile);
+        $item->setPermalink('https://example.com/post/1');
+
+        return $item;
+    }
+
+    public function testExtractVideoUrlReturnsPermalinkForMastodonVideoPost(): void
+    {
+        $item = $this->createItemForNetwork('mastodon');
+        $item->setRaw(json_encode([
+            'media_attachments' => [
+                ['type' => 'image', 'url' => 'https://mastodon.example.com/media/photo.png'],
+                ['type' => 'video', 'url' => 'https://mastodon.example.com/media/video.mp4'],
+            ],
+        ]));
+
+        $this->assertSame('https://example.com/post/1', $this->extractor->extractVideoUrl($item));
+    }
+
+    public function testExtractVideoUrlReturnsPermalinkForMastodonGifv(): void
+    {
+        $item = $this->createItemForNetwork('mastodon');
+        $item->setRaw(json_encode([
+            'media_attachments' => [
+                ['type' => 'gifv', 'url' => 'https://mastodon.example.com/media/animation.mp4'],
+            ],
+        ]));
+
+        $this->assertSame('https://example.com/post/1', $this->extractor->extractVideoUrl($item));
+    }
+
+    public function testExtractVideoUrlReturnsNullForMastodonPhotoOnlyPost(): void
+    {
+        $item = $this->createItemForNetwork('mastodon');
+        $item->setRaw(json_encode([
+            'media_attachments' => [
+                ['type' => 'image', 'url' => 'https://mastodon.example.com/media/photo.png'],
+            ],
+        ]));
+
+        $this->assertNull($this->extractor->extractVideoUrl($item));
+    }
+
+    public function testExtractVideoUrlReturnsNullForMastodonTextPost(): void
+    {
+        $item = $this->createItemForNetwork('mastodon');
+        $item->setRaw(json_encode([
+            'media_attachments' => [],
+        ]));
+
+        $this->assertNull($this->extractor->extractVideoUrl($item));
+    }
+
+    public function testExtractVideoUrlReturnsNullForMastodonPostWithoutRaw(): void
+    {
+        $item = $this->createItemForNetwork('mastodon');
+
+        $this->assertNull($this->extractor->extractVideoUrl($item));
+    }
+
+    public function testExtractVideoUrlReturnsPermalinkForBlueskyVideoEmbed(): void
+    {
+        $item = $this->createItemForNetwork('bluesky_profile');
+        $item->setRaw(json_encode([
+            'post' => [
+                'embed' => [
+                    '$type' => 'app.bsky.embed.video#view',
+                    'playlist' => 'https://video.bsky.app/watch/abc/playlist.m3u8',
+                ],
+            ],
+        ]));
+
+        $this->assertSame('https://example.com/post/1', $this->extractor->extractVideoUrl($item));
+    }
+
+    public function testExtractVideoUrlReturnsPermalinkForBlueskyRecordWithMediaVideo(): void
+    {
+        $item = $this->createItemForNetwork('bluesky_profile');
+        $item->setRaw(json_encode([
+            'post' => [
+                'embed' => [
+                    '$type' => 'app.bsky.embed.recordWithMedia#view',
+                    'media' => [
+                        '$type' => 'app.bsky.embed.video#view',
+                        'playlist' => 'https://video.bsky.app/watch/abc/playlist.m3u8',
+                    ],
+                ],
+            ],
+        ]));
+
+        $this->assertSame('https://example.com/post/1', $this->extractor->extractVideoUrl($item));
+    }
+
+    public function testExtractVideoUrlReturnsNullForBlueskyImageEmbed(): void
+    {
+        $item = $this->createItemForNetwork('bluesky_profile');
+        $item->setRaw(json_encode([
+            'post' => [
+                'embed' => [
+                    '$type' => 'app.bsky.embed.images#view',
+                    'images' => [
+                        ['fullsize' => 'https://bsky.example.com/image.jpg'],
+                    ],
+                ],
+            ],
+        ]));
+
+        $this->assertNull($this->extractor->extractVideoUrl($item));
+    }
+
+    public function testExtractVideoUrlReturnsNullForBlueskyTextPost(): void
+    {
+        $item = $this->createItemForNetwork('bluesky_profile');
+        $item->setRaw(json_encode([
+            'post' => [
+                'record' => ['text' => 'Just text, no media'],
+            ],
+        ]));
+
+        $this->assertNull($this->extractor->extractVideoUrl($item));
+    }
+
+    public function testExtractVideoUrlReturnsPermalinkForNonDetectableNetwork(): void
+    {
+        $item = $this->createItemForNetwork('instagram_profile');
+
+        $this->assertSame('https://example.com/post/1', $this->extractor->extractVideoUrl($item));
+    }
+
+    public function testExtractPhotoUrlsFromBlueskyPostNestedEmbed(): void
+    {
+        $item = new Item();
+        $item->setRaw(json_encode([
+            'post' => [
+                'embed' => [
+                    'images' => [
+                        ['fullsize' => 'https://bsky.example.com/image1.jpg'],
+                        ['thumb' => 'https://bsky.example.com/thumb2.jpg'],
+                    ],
+                ],
+            ],
+        ]));
+
+        $this->assertSame([
+            'https://bsky.example.com/image1.jpg',
+            'https://bsky.example.com/thumb2.jpg',
+        ], $this->extractor->extractPhotoUrls($item));
     }
 }

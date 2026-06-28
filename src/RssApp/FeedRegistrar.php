@@ -31,9 +31,7 @@ class FeedRegistrar
             return RegistrationResult::notApplicable();
         }
 
-        $additionalData = $profile->getAdditionalData() ?? [];
-
-        if (isset($additionalData['rss_feed_id'])) {
+        if ($profile->getRssAppFeedId() !== null) {
             return RegistrationResult::notApplicable();
         }
 
@@ -47,8 +45,7 @@ class FeedRegistrar
             $existingFeedId = $this->rssApp->findRssAppFeedIdBySourceUrl($sourceUrl);
 
             if ($existingFeedId !== null) {
-                $additionalData['rss_feed_id'] = $existingFeedId;
-                $profile->setAdditionalData($additionalData);
+                $profile->setRssAppFeedId($existingFeedId);
 
                 $importedCount = $this->importInitialItems($profile);
 
@@ -56,8 +53,7 @@ class FeedRegistrar
             }
 
             $feedData = $this->rssApp->createFeed($sourceUrl);
-            $additionalData['rss_feed_id'] = $feedData['id'];
-            $profile->setAdditionalData($additionalData);
+            $profile->setRssAppFeedId($feedData['id']);
 
             return RegistrationResult::newlyCreated();
         } catch (\Throwable $e) {
@@ -72,9 +68,7 @@ class FeedRegistrar
 
     public function linkExistingFeedAndImport(Profile $profile, string $feedId): int
     {
-        $additionalData = $profile->getAdditionalData() ?? [];
-        $additionalData['rss_feed_id'] = $feedId;
-        $profile->setAdditionalData($additionalData);
+        $profile->setRssAppFeedId($feedId);
 
         return $this->importInitialItems($profile);
     }
@@ -94,6 +88,7 @@ class FeedRegistrar
         $modelProfile->setIdentifier($profile->getIdentifier());
         $modelProfile->setNetwork($profile->getNetwork()->getIdentifier());
         $modelProfile->setAdditionalData($profile->getAdditionalData());
+        $modelProfile->setRssAppFeedId($profile->getRssAppFeedId());
 
         $fetcher = null;
         foreach ($this->feedFetcher->getNetworkFetcherList() as $networkFetcher) {

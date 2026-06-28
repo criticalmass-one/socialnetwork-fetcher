@@ -37,6 +37,8 @@ class VideoDownloader
         $process->run();
 
         if (!$process->isSuccessful()) {
+            $this->removeDirectoryIfEmpty($outputDir);
+
             throw new \RuntimeException(sprintf('yt-dlp failed: %s', $process->getErrorOutput() ?: $process->getOutput()));
         }
 
@@ -45,6 +47,8 @@ class VideoDownloader
         $absolutePath = $this->findVideoFile($outputDir);
 
         if ($absolutePath === null) {
+            $this->removeDirectoryIfEmpty($outputDir);
+
             throw new \RuntimeException('yt-dlp produced no video output file');
         }
 
@@ -84,6 +88,19 @@ class VideoDownloader
         }
 
         return [];
+    }
+
+    private function removeDirectoryIfEmpty(string $dir): void
+    {
+        if (!is_dir($dir)) {
+            return;
+        }
+
+        $entries = scandir($dir);
+
+        if ($entries !== false && count($entries) === 2) {
+            @rmdir($dir);
+        }
     }
 
     public function isAvailable(): bool

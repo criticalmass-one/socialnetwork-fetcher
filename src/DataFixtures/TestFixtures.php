@@ -49,7 +49,8 @@ class TestFixtures extends Fixture implements DependentFixtureInterface
         $profileShared->setIdentifier('https://mastodon.social/@shared');
         $profileShared->setNetwork($networkMastodon);
         $profileShared->setCreatedAt(new \DateTimeImmutable());
-        $profileShared->setAdditionalData(['rss_feed_id' => 'fixture-feed-shared']);
+        $profileShared->setRssAppFeedId('fixture-feed-shared');
+        $profileShared->setAdditionalData(['fixture_note' => 'shared']);
         $manager->persist($profileShared);
         $clientA->addProfile($profileShared);
         $clientB->addProfile($profileShared);

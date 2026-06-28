@@ -124,16 +124,15 @@ class ClientScopedProfileProcessor implements ProcessorInterface
 
     private function deleteRssAppFeedIfNeeded(Profile $profile): void
     {
-        $additionalData = $profile->getAdditionalData() ?? [];
+        $feedId = $profile->getRssAppFeedId();
 
-        if (!isset($additionalData['rss_feed_id'])) {
+        if ($feedId === null) {
             return;
         }
 
         try {
-            $this->rssApp->deleteFeed($additionalData['rss_feed_id']);
-            unset($additionalData['rss_feed_id']);
-            $profile->setAdditionalData($additionalData ?: null);
+            $this->rssApp->deleteFeed($feedId);
+            $profile->setRssAppFeedId(null);
         } catch (\Throwable) {
             // RSS.app deletion failure should not block profile soft-delete
         }

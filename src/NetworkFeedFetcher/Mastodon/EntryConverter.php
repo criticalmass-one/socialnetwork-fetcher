@@ -13,7 +13,7 @@ class EntryConverter
 
     }
 
-    public static function convert(Profile $profile, Status $status): ?Item
+    public static function convert(Profile $profile, Status $status, ?array $rawEntry = null): ?Item
     {
         $feedItem = new Item();
         $feedItem->setProfileId($profile->getId());
@@ -31,6 +31,10 @@ class EntryConverter
                     ->setText($text)
                     ->setDateTime($dateTime)
                 ;
+
+                if ($rawEntry !== null) {
+                    $feedItem->setRaw(json_encode($rawEntry, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+                }
 
                 return $feedItem;
             }

@@ -17,7 +17,7 @@ class ProfileTest extends TestCase
     public function testGetAdditionalDataDecodesJson(): void
     {
         $profile = new Profile();
-        $data = ['rss_feed_id' => 'abc123', 'key' => 'value'];
+        $data = ['foo' => 'abc123', 'key' => 'value'];
         $profile->setAdditionalData($data);
 
         $this->assertSame($data, $profile->getAdditionalData());
