@@ -127,10 +127,20 @@ class MediaDownloadService
             && in_array($networkIdentifier, self::YTDLP_PHOTO_NETWORKS, true)
             && $this->ytDlpPhotoDownloader->isAvailable()
         ) {
-            $paths = $this->ytDlpPhotoDownloader->download($permalink, $profile->getId(), $item->getId());
+            try {
+                $paths = $this->ytDlpPhotoDownloader->download($permalink, $profile->getId(), $item->getId());
 
-            if (!empty($paths)) {
-                return $paths;
+                if (!empty($paths)) {
+                    return $paths;
+                }
+            } catch (\Throwable $e) {
+                // yt-dlp kann manche Instagram-Post-Typen nicht extrahieren
+                // ("No video formats found" o. Ä.). Kein harter Fehler – auf den
+                // raw-Daten-Fallback (description_html / thumbnail) ausweichen.
+                $this->logger->warning('yt-dlp photo extraction failed for item {itemId}, falling back to raw media URLs: {message}', [
+                    'itemId' => $item->getId(),
+                    'message' => $e->getMessage(),
+                ]);
             }
         }
 

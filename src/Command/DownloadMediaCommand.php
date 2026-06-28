@@ -27,7 +27,7 @@ class DownloadMediaCommand extends Command
         $this
             ->setName('app:download-media')
             ->setDescription('Download media (photos/videos) for feed items')
-            ->addOption('profile', null, InputOption::VALUE_REQUIRED, 'Download media for a specific profile ID')
+            ->addOption('profile-id', null, InputOption::VALUE_REQUIRED, 'Download media for a specific profile ID')
             ->addOption('retry-failed', null, InputOption::VALUE_NONE, 'Retry previously failed downloads')
             ->addOption('photos-only', null, InputOption::VALUE_NONE, 'Download only photos')
             ->addOption('videos-only', null, InputOption::VALUE_NONE, 'Download only videos')
@@ -37,7 +37,7 @@ class DownloadMediaCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $profileId = $input->getOption('profile');
+        $profileId = $input->getOption('profile-id');
         $retryFailed = $input->getOption('retry-failed');
         $photosOnly = $input->getOption('photos-only');
         $videosOnly = $input->getOption('videos-only');

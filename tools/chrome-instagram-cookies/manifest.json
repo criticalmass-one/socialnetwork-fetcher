@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Instagram Cookies → feeds.maltehuebner.dev",
+  "version": "1.0.0",
+  "description": "Liest die Instagram-Session-Cookies aus dem Browser und lädt sie als yt-dlp cookies.txt direkt in die feeds-App hoch.",
+  "permissions": ["cookies", "storage"],
+  "host_permissions": [
+    "https://*.instagram.com/*",
+    "https://feeds.maltehuebner.dev/*"
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Instagram-Cookies an feeds senden"
+  },
+  "options_page": "options.html"
+}
