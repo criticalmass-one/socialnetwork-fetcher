@@ -10,6 +10,7 @@ class VideoDownloader
 
     public function __construct(
         private readonly string $mediaDirectory,
+        private readonly string $ytDlpCookiesFile = '',
     ) {
     }
 
@@ -26,6 +27,7 @@ class VideoDownloader
         $process = new Process([
             'yt-dlp',
             '--no-playlist',
+            ...$this->cookieArgs(),
             '--max-filesize', '100M',
             '-o', $outputTemplate,
             $url,
@@ -65,6 +67,23 @@ class VideoDownloader
         }
 
         return null;
+    }
+
+    /**
+     * yt-dlp cookie arguments for sites that require a login (e.g. Instagram).
+     * Only applied when a non-empty cookies file is configured and present.
+     *
+     * @return list<string>
+     */
+    private function cookieArgs(): array
+    {
+        $file = $this->ytDlpCookiesFile;
+
+        if ($file !== '' && is_file($file) && filesize($file) > 0) {
+            return ['--cookies', $file];
+        }
+
+        return [];
     }
 
     public function isAvailable(): bool

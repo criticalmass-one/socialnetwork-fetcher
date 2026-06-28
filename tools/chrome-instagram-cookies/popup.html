@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: system-ui, sans-serif; width: 320px; margin: 0; padding: 14px; }
+    h1 { font-size: 15px; margin: 0 0 4px; }
+    p { font-size: 12px; color: #444; margin: 0 0 10px; }
+    button { font-size: 14px; padding: 9px 12px; width: 100%; border: 0; border-radius: 6px;
+             background: #EC008C; color: #fff; cursor: pointer; }
+    button:disabled { opacity: .6; cursor: default; }
+    #status { font-size: 12px; margin-top: 10px; white-space: pre-wrap; word-break: break-word; }
+    .ok { color: #117a3d; } .err { color: #b00020; }
+    a { font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>Instagram-Cookies senden</h1>
+  <p>Lädt die aktuellen Instagram-Cookies dieses Browsers als <code>cookies.txt</code> in die feeds-App.</p>
+  <button id="send">Cookies an feeds senden</button>
+  <div id="status"></div>
+  <p style="margin-top:10px"><a href="#" id="opts">Einstellungen (Endpoint &amp; Token)…</a></p>
+  <script src="popup.js"></script>
+</body>
+</html>

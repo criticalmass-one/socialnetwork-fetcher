@@ -10,6 +10,7 @@ class YtDlpPhotoDownloader
 
     public function __construct(
         private readonly string $mediaDirectory,
+        private readonly string $ytDlpCookiesFile = '',
     ) {
     }
 
@@ -29,6 +30,7 @@ class YtDlpPhotoDownloader
         $process = new Process([
             'yt-dlp',
             '--no-playlist',
+            ...$this->cookieArgs(),
             '--write-thumbnail',
             '--skip-download',
             '--convert-thumbnails', 'jpg',
@@ -81,6 +83,23 @@ class YtDlpPhotoDownloader
         }
 
         return $images;
+    }
+
+    /**
+     * yt-dlp cookie arguments for sites that require a login (e.g. Instagram).
+     * Only applied when a non-empty cookies file is configured and present.
+     *
+     * @return list<string>
+     */
+    private function cookieArgs(): array
+    {
+        $file = $this->ytDlpCookiesFile;
+
+        if ($file !== '' && is_file($file) && filesize($file) > 0) {
+            return ['--cookies', $file];
+        }
+
+        return [];
     }
 
     public function isAvailable(): bool
