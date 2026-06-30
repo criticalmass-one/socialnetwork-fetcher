@@ -247,6 +247,71 @@ class ProfileApiTest extends AbstractApiTestCase
         }
     }
 
+    public function testPatchTogglesMediaFlags(): void
+    {
+        $response = $this->requestWithToken('PATCH', '/api/profiles/90001', self::TOKEN_A, [
+            'headers' => ['Content-Type' => 'application/merge-patch+json'],
+            'body' => json_encode(['savePhotos' => true, 'saveVideos' => true]),
+        ]);
+
+        $this->assertResponseIsSuccessful();
+        $data = $response->toArray();
+        $this->assertTrue($data['savePhotos']);
+        $this->assertTrue($data['saveVideos']);
+    }
+
+    public function testPatchProfileNotLinkedReturns404(): void
+    {
+        // profileOnlyA (90002) is linked to client A, not client B
+        $this->requestWithToken('PATCH', '/api/profiles/90002', self::TOKEN_B, [
+            'headers' => ['Content-Type' => 'application/merge-patch+json'],
+            'body' => json_encode(['savePhotos' => true]),
+        ]);
+
+        $this->assertResponseStatusCodeSame(404);
+    }
+
+    public function testDownloadMediaTriggerRequiresFlag(): void
+    {
+        // profileOnlyA (90002) belongs to client A but has no media flags set
+        $this->requestAsClientA('POST', '/api/profiles/90002/download-media', [
+            'headers' => ['Content-Type' => 'application/ld+json'],
+        ]);
+
+        $this->assertResponseStatusCodeSame(422);
+    }
+
+    public function testDownloadMediaTriggerQueuesProfileItems(): void
+    {
+        $this->requestWithToken('PATCH', '/api/profiles/90002', self::TOKEN_A, [
+            'headers' => ['Content-Type' => 'application/merge-patch+json'],
+            'body' => json_encode(['savePhotos' => true]),
+        ]);
+        $this->assertResponseIsSuccessful();
+
+        $this->requestAsClientA('POST', '/api/profiles/90002/download-media', [
+            'headers' => ['Content-Type' => 'application/ld+json'],
+        ]);
+        $this->assertResponseStatusCodeSame(202);
+
+        $data = $this->requestAsClientA('GET', '/api/items?profile=/api/profiles/90002')->toArray();
+        $items = $data['hydra:member'] ?? $data['member'] ?? [];
+        $this->assertNotEmpty($items);
+        foreach ($items as $item) {
+            $this->assertSame('pending', $item['mediaStatus']);
+        }
+    }
+
+    public function testDownloadMediaTriggerProfileNotLinkedReturns404(): void
+    {
+        // profileOnlyB (90003) is not linked to client A
+        $this->requestAsClientA('POST', '/api/profiles/90003/download-media', [
+            'headers' => ['Content-Type' => 'application/ld+json'],
+        ]);
+
+        $this->assertResponseStatusCodeSame(404);
+    }
+
     private function getMastodonNetworkIri(): string
     {
         return $this->getNetworkIri('mastodon');

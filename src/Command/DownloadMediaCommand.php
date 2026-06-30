@@ -28,6 +28,7 @@ class DownloadMediaCommand extends Command
             ->setName('app:download-media')
             ->setDescription('Download media (photos/videos) for feed items')
             ->addOption('profile-id', null, InputOption::VALUE_REQUIRED, 'Download media for a specific profile ID')
+            ->addOption('pending', null, InputOption::VALUE_NONE, 'Process items queued for download via the API (mediaStatus=pending)')
             ->addOption('retry-failed', null, InputOption::VALUE_NONE, 'Retry previously failed downloads')
             ->addOption('photos-only', null, InputOption::VALUE_NONE, 'Download only photos')
             ->addOption('videos-only', null, InputOption::VALUE_NONE, 'Download only videos')
@@ -37,6 +38,14 @@ class DownloadMediaCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
+
+        if ($input->getOption('pending')) {
+            $count = $this->mediaDownloadService->downloadPendingItems();
+            $io->success(sprintf('Processed %d pending item(s).', $count));
+
+            return Command::SUCCESS;
+        }
+
         $profileId = $input->getOption('profile-id');
         $retryFailed = $input->getOption('retry-failed');
         $photosOnly = $input->getOption('photos-only');

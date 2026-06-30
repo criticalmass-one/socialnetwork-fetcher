@@ -41,6 +41,7 @@ php bin/console app:rssapp:sync-feed-ids -v           # show all profiles includ
 
 php bin/console app:download-media                    # download media for all enabled profiles
 php bin/console app:download-media --profile=42       # download for specific profile
+php bin/console app:download-media --pending          # process items queued via the API (mediaStatus=pending)
 php bin/console app:download-media --retry-failed     # retry previously failed downloads
 php bin/console app:download-media --photos-only      # only photos
 php bin/console app:download-media --videos-only      # only videos
@@ -90,10 +91,11 @@ Profiles can opt into automatic photo/video downloads via `savePhotos` and `save
 - **`PhotoDownloader`** — downloads images via HttpClient, stores as `{profileId}/{itemId}/photo_{index}.{ext}` in Flysystem
 - **`YtDlpPhotoDownloader`** — extracts photos (including carousel/album images) via `yt-dlp` in original quality. Used for Instagram, Threads, and Facebook where RSS.app only provides a single thumbnail. Falls back to `PhotoDownloader` if `yt-dlp` is unavailable or returns no results.
 - **`VideoDownloader`** — downloads videos via `yt-dlp` process, stores as `{profileId}/{itemId}/video.{ext}` on disk. Requires `yt-dlp` to be installed; gracefully skips if unavailable.
-- **`MediaDownloadService`** — orchestrates downloads, manages `mediaStatus` lifecycle (`downloading` → `completed`/`failed`). Selects download strategy per network: `yt-dlp` for RSS.app-based networks (Instagram, Threads, Facebook), direct URL download for Bluesky/Mastodon.
-- **`DownloadMediaCommand`** — CLI for bulk downloads with `--profile`, `--retry-failed`, `--photos-only`, `--videos-only` options
+- **`MediaDownloadService`** — orchestrates downloads, manages `mediaStatus` lifecycle (`pending` → `downloading` → `completed`/`failed`). Selects download strategy per network: `yt-dlp` for RSS.app-based networks (Instagram, Threads, Facebook), direct URL download for Bluesky/Mastodon. `queueItem()`/`queueProfile()` mark items `pending` (used by the API trigger); `downloadPendingItems()` processes the queue.
+- **`DownloadMediaCommand`** — CLI for bulk downloads with `--profile-id`, `--pending`, `--retry-failed`, `--photos-only`, `--videos-only` options. `--pending` drains the API-queued items.
 - Auto-download triggers after feed fetch when profile has `savePhotos`/`saveVideos` enabled
 - Manual download via button on item detail page (Stimulus `media_download_controller`)
+- **API-triggered (re)download**: `POST /api/items/{id}/download-media` and `POST /api/profiles/{id}/download-media` (`?force=true` to re-queue all) mark items `pending` via `ItemMediaDownloadProcessor`/`ProfileMediaDownloadProcessor` (client-scoped, 202, require `savePhotos`/`saveVideos`); the actual download runs out-of-band via the `app:download-media --pending` cron. No Messenger — the queue is the `mediaStatus=pending` column.
 - Item entity stores `photoPaths` (JSON array of relative paths), `videoPath` (string), `mediaStatus`, `mediaError`
 
 ### Serializer
@@ -125,6 +127,8 @@ Custom `App\Serializer\Serializer` (not Symfony's framework serializer). Uses `N
 - All endpoints under `/api/` require Bearer token (except `/api/docs`)
 - Profiles, items: client-scoped via custom State Providers/Processors
 - Timeline endpoint: `GET /api/timeline` (chronological feed, filters: limit, since, until, network)
+- `PATCH /api/profiles/{id}` (merge-patch): partial profile update, e.g. toggle `savePhotos`/`saveVideos`
+- `POST /api/profiles/{id}/download-media` and `POST /api/items/{id}/download-media`: queue media (re)download (202, client-scoped, drained by `app:download-media --pending`)
 - Networks: public read access
 - OpenAPI docs at `/api/docs`
 

@@ -215,4 +215,67 @@ class ItemApiTest extends AbstractApiTestCase
         $this->assertNotContains('Shared item 3', $texts);
         $this->assertNotContains('OnlyA item 2', $texts);
     }
+
+    private function firstItemIdForProfile(int $profileId): int
+    {
+        $data = $this->requestAsClientA('GET', '/api/items?profile=/api/profiles/' . $profileId)->toArray();
+        $items = $data['hydra:member'] ?? $data['member'] ?? [];
+        $this->assertNotEmpty($items, 'Expected at least one item for profile ' . $profileId);
+
+        return $items[0]['id'];
+    }
+
+    private function enableSavePhotos(int $profileId): void
+    {
+        $this->requestWithToken('PATCH', '/api/profiles/' . $profileId, self::TOKEN_A, [
+            'headers' => ['Content-Type' => 'application/merge-patch+json'],
+            'body' => json_encode(['savePhotos' => true]),
+        ]);
+        $this->assertResponseIsSuccessful();
+    }
+
+    public function testDownloadMediaTriggerQueuesItem(): void
+    {
+        $this->enableSavePhotos(90001);
+        $itemId = $this->firstItemIdForProfile(90001);
+
+        $this->requestAsClientA('POST', '/api/items/' . $itemId . '/download-media', [
+            'headers' => ['Content-Type' => 'application/ld+json'],
+        ]);
+        $this->assertResponseStatusCodeSame(202);
+
+        $detail = $this->requestAsClientA('GET', '/api/items/' . $itemId)->toArray();
+        $this->assertSame('pending', $detail['mediaStatus']);
+    }
+
+    public function testDownloadMediaTriggerRequiresProfileFlag(): void
+    {
+        // profileOnlyA (90002) has savePhotos/saveVideos disabled by default
+        $itemId = $this->firstItemIdForProfile(90002);
+
+        $this->requestAsClientA('POST', '/api/items/' . $itemId . '/download-media', [
+            'headers' => ['Content-Type' => 'application/ld+json'],
+        ]);
+        $this->assertResponseStatusCodeSame(422);
+    }
+
+    public function testDownloadMediaTriggerNotOwnedReturns404(): void
+    {
+        $dataB = $this->requestAsClientB('GET', '/api/items')->toArray();
+        $itemsB = $dataB['hydra:member'] ?? $dataB['member'] ?? [];
+
+        $onlyBItemId = null;
+        foreach ($itemsB as $item) {
+            if (str_contains($item['text'], 'OnlyB')) {
+                $onlyBItemId = $item['id'];
+                break;
+            }
+        }
+        $this->assertNotNull($onlyBItemId);
+
+        $this->requestAsClientA('POST', '/api/items/' . $onlyBItemId . '/download-media', [
+            'headers' => ['Content-Type' => 'application/ld+json'],
+        ]);
+        $this->assertResponseStatusCodeSame(404);
+    }
 }
