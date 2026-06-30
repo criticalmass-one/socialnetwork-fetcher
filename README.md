@@ -155,12 +155,19 @@ Download photos and videos for feed items. For Instagram, Threads, and Facebook,
 ```bash
 php bin/console app:download-media                    # all profiles with savePhotos/saveVideos enabled
 php bin/console app:download-media --profile=42       # specific profile
+php bin/console app:download-media --pending          # process items queued via the API (mediaStatus=pending)
 php bin/console app:download-media --retry-failed     # retry previously failed downloads
 php bin/console app:download-media --photos-only      # only photos
 php bin/console app:download-media --videos-only      # only videos (requires yt-dlp)
 ```
 
 Media files are stored in `public/media/{profileId}/{itemId}/`. Profiles must have `savePhotos` and/or `saveVideos` enabled (toggle in Web UI or API). When enabled, media is also downloaded automatically after each feed fetch.
+
+Downloads can also be triggered through the REST API (see below): the trigger endpoints mark items `mediaStatus=pending` and return immediately, and the actual (slow) download is performed out-of-band by `app:download-media --pending`. Schedule that command on a cron, e.g.:
+
+```
+*/5 * * * * cd /path/to/app && php bin/console app:download-media --pending >/dev/null 2>&1
+```
 
 ## Web UI
 
@@ -192,13 +199,18 @@ Tokens are generated via `app:client:create`.
 - `GET /api/profiles/{id}` — Get single profile
 - `POST /api/profiles` — Create or link an existing profile (idempotent)
 - `PUT /api/profiles/{id}` — Update profile
+- `PATCH /api/profiles/{id}` — Partially update a profile, e.g. toggle media storage with `{"savePhotos": true}` (Content-Type: `application/merge-patch+json`)
 - `DELETE /api/profiles/{id}` — Unlink from client; soft-deletes if no other clients remain
+- `POST /api/profiles/{id}/download-media` — Queue a media (re)download for the profile's items (new + previously failed; `?force=true` re-queues all). Returns 202; requires `savePhotos`/`saveVideos` enabled (422 otherwise)
 
 **Items** (client-scoped):
-- `GET /api/items` — List feed items (paginated, 50 per page)
+- `GET /api/items` — List feed items (paginated, 50 per page). Each item exposes `mediaStatus` and absolute `photoUrls`/`videoUrl` for any media stored on the server
 - `GET /api/items/{id}` — Get single item
 - `POST /api/items` — Create item
 - `PUT /api/items/{id}` — Update item
+- `POST /api/items/{id}/download-media` — Queue a media (re)download for this single item. Returns 202; requires the item's profile to have `savePhotos`/`saveVideos` enabled (422 otherwise)
+
+Media downloads triggered via the API are processed asynchronously by the `app:download-media --pending` cron (see Media Download above). Once stored, an item's `photoUrls`/`videoUrl` point to the locally hosted files under `/media/...` instead of the original CDN URLs.
 
 **Timeline**:
 - `GET /api/timeline` — Chronological feed (default: last 24h, max 100 items)
