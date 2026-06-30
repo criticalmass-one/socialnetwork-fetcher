@@ -82,6 +82,7 @@ Network fetchers are auto-discovered: any class implementing `NetworkFeedFetcher
 - **Item** — Feed item: `id`, `profile` (FK), `uniqueIdentifier`, `text`, `title`, `dateTime`, `permalink`, `raw`, `hidden`, `deleted`, `photoPaths` (JSON array), `videoPath`, `mediaStatus`, `mediaError`. Supports soft-delete, hide toggles, and media downloads.
 - **Network** — Social network definition: `id`, `identifier`, `name`, `icon`, `backgroundColor`, `textColor`, `cronExpression`.
 - **Client** — API client: `id`, `name`, `token`, `enabled`, `profiles` (ManyToMany via `client_profile` join table), `createdAt`.
+- **Group** — Named bundle of a client's profiles (table `profile_group`, unique `(client_id, name)`): `id`, `name`, `description`, `color`, `client` (ManyToOne, NOT NULL — a group belongs to exactly one client, unlike shared profiles), `profiles` (ManyToMany via `profile_group_profile`), `createdAt`. Serialization groups `group:read` (incl. `profileCount`), `group:detail` (embeds `profiles`), `group:write`. Used to read a combined feed per group.
 
 ### Media Download System
 
@@ -129,6 +130,7 @@ Custom `App\Serializer\Serializer` (not Symfony's framework serializer). Uses `N
 - Timeline endpoint: `GET /api/timeline` (chronological feed, filters: limit, since, until, network)
 - `PATCH /api/profiles/{id}` (merge-patch): partial profile update, e.g. toggle `savePhotos`/`saveVideos`
 - `POST /api/profiles/{id}/download-media` and `POST /api/items/{id}/download-media`: queue media (re)download (202, client-scoped, drained by `app:download-media --pending`)
+- Groups: full CRUD `GET/POST/PUT/PATCH/DELETE /api/groups[/{id}]` (writes via `ClientScopedGroupProcessor`, GET scoped by `ClientScopedGroupExtension`). Membership convenience routes `POST /api/groups/{id}/profiles` + `DELETE /api/groups/{id}/profiles/{profileId}` in `GroupMembershipController`. Combined feed `GET /api/groups/{groupId}/items` via `GroupItemsProvider` (filters since/until/network, excludes hidden/deleted), plus RSS at `GET /api/feeds/groups/{id}.rss`. Referenced profiles must belong to the client (400); foreign groups 404.
 - Networks: public read access
 - OpenAPI docs at `/api/docs`
 
