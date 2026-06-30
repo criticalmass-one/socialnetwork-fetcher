@@ -34,11 +34,21 @@ class ClientScopedGroupProcessor implements ProcessorInterface
             return $this->handleDelete($client, (int) $uriVariables['id']);
         }
 
-        return $this->handleUpsert($client, $data);
+        return $this->handleUpsert($client, $data, $uriVariables);
     }
 
-    private function handleUpsert(Client $client, Group $group): Group
+    /** @param array<string, mixed> $uriVariables */
+    private function handleUpsert(Client $client, Group $group, array $uriVariables): Group
     {
+        // PUT hands us a freshly deserialized object without an id, so a blind
+        // persist() would INSERT a duplicate instead of updating. When the URI
+        // carries an id (PUT/PATCH), rebind the incoming data onto the managed
+        // entity so we UPDATE in place. PATCH already arrives as the managed
+        // entity (id set) and is left untouched.
+        if ($group->getId() === null && isset($uriVariables['id'])) {
+            $group = $this->applyOntoExisting($client, (int) $uriVariables['id'], $group);
+        }
+
         $existingClient = $group->getClient();
 
         if ($existingClient !== null && $existingClient->getId() !== $client->getId()) {
@@ -57,6 +67,32 @@ class ClientScopedGroupProcessor implements ProcessorInterface
         $this->em->flush();
 
         return $group;
+    }
+
+    /**
+     * Copy the deserialized group's writable fields onto the existing managed
+     * entity (full replacement, PUT semantics) so the operation updates in place.
+     */
+    private function applyOntoExisting(Client $client, int $id, Group $incoming): Group
+    {
+        $existing = $this->em->getRepository(Group::class)->find($id);
+
+        if ($existing === null || $existing->getClient()?->getId() !== $client->getId()) {
+            throw new NotFoundHttpException('Group not found.');
+        }
+
+        $existing->setName($incoming->getName());
+        $existing->setDescription($incoming->getDescription());
+        $existing->setColor($incoming->getColor());
+
+        foreach ($existing->getProfiles()->toArray() as $profile) {
+            $existing->removeProfile($profile);
+        }
+        foreach ($incoming->getProfiles() as $profile) {
+            $existing->addProfile($profile);
+        }
+
+        return $existing;
     }
 
     private function handleDelete(Client $client, int $groupId): null

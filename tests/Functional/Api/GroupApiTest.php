@@ -167,6 +167,30 @@ class GroupApiTest extends AbstractApiTestCase
         $this->assertResponseStatusCodeSame(404);
     }
 
+    public function testPutReplacesGroupNameAndProfiles(): void
+    {
+        $sharedIri = $this->ownedProfileIri('https://mastodon.social/@shared');
+        $groupId = $this->createGroup('Before Put', [$sharedIri]);
+
+        $this->requestAsClientA('PUT', '/api/groups/' . $groupId, [
+            'json' => [
+                'name' => 'After Put',
+                'color' => '#123456',
+                'profiles' => [],
+            ],
+        ]);
+        $this->assertResponseIsSuccessful();
+
+        // Update happens in place (no duplicate group is created)
+        $collection = $this->extractMembers($this->requestAsClientA('GET', '/api/groups'));
+        $this->assertCount(1, $collection);
+
+        $check = $this->requestAsClientA('GET', '/api/groups/' . $groupId)->toArray();
+        $this->assertSame('After Put', $check['name']);
+        $this->assertSame('#123456', $check['color']);
+        $this->assertSame([], $check['profiles']);
+    }
+
     public function testPutForeignGroupReturns404(): void
     {
         $groupId = $this->createGroup('Foreign Put', [], 'B');
