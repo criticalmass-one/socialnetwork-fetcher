@@ -200,6 +200,21 @@ Tokens are generated via `app:client:create`.
 - `POST /api/items` — Create item
 - `PUT /api/items/{id}` — Update item
 
+**Groups** (client-scoped): bundle a client's profiles and read their combined feed. A group belongs to exactly one client (it is *not* shared across clients like profiles are).
+- `GET /api/groups` — List the client's groups (slim: includes `profileCount`, not the embedded profiles)
+- `GET /api/groups/{id}` — Get a single group with its embedded `profiles`
+- `POST /api/groups` — Create a group. Body: `{"name": "My Mix", "color": "#16a34a", "description": "...", "profiles": ["/api/profiles/42"]}` (all but `name` optional)
+- `PATCH /api/groups/{id}` — Update a group (e.g. `{"name": "Renamed", "profiles": ["/api/profiles/42"]}`, Content-Type `application/merge-patch+json`). **Use PATCH for updates** — `PUT` currently does not update in place (see note below).
+- `DELETE /api/groups/{id}` — Delete the group (the profiles themselves stay untouched)
+- `POST /api/groups/{id}/profiles` — Add profiles (idempotent). Body: `{"profileIds": [42, 43]}` *or* `{"profiles": ["/api/profiles/42"]}`
+- `DELETE /api/groups/{id}/profiles/{profileId}` — Remove a single profile from the group
+- `GET /api/groups/{groupId}/items` — Combined feed of all member profiles, `dateTime` DESC, paginated (50/page, max 200). Filters: `since`, `until` (ISO 8601), `network` (identifier). Hidden / soft-deleted items and items of soft-deleted profiles are excluded.
+- `GET /api/feeds/groups/{id}.rss` — The same feed as RSS 2.0
+
+  Every profile referenced when creating/updating a group or adding members must already be linked to the authenticated client (otherwise `400`); foreign or unknown groups return `404`.
+
+  > **Known issue:** `PUT /api/groups/{id}` currently creates a *new* group instead of updating the existing one (the processor persists the deserialized object without the existing id). Use `PATCH` to update a group until this is fixed.
+
 **Timeline**:
 - `GET /api/timeline` — Chronological feed (default: last 24h, max 100 items)
   - Query params: `limit`, `since`, `until`, `network`
