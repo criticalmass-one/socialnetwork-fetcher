@@ -166,4 +166,63 @@ class MediaDownloadService
             $this->downloadMedia($item, $profile->isSavePhotos(), $profile->isSaveVideos());
         }
     }
+
+    /**
+     * Queue a single item for (re)download. The actual download is performed
+     * out-of-band by `app:download-media --pending`, so this returns immediately.
+     */
+    public function queueItem(Item $item): void
+    {
+        $item->setMediaStatus('pending');
+        $item->setMediaError(null);
+        $this->entityManager->flush();
+    }
+
+    /**
+     * Queue a profile's items for (re)download. By default this covers items
+     * without media yet (mediaStatus null) and items whose last attempt failed.
+     * With $force = true, every item of the profile is re-queued (e.g. to renew
+     * expired CDN media). Returns the number of items queued.
+     */
+    public function queueProfile(Profile $profile, bool $force = false): int
+    {
+        $items = $force
+            ? $this->itemRepository->findBy(['profile' => $profile])
+            : $this->itemRepository->findNewOrFailedForProfile($profile);
+
+        foreach ($items as $item) {
+            $item->setMediaStatus('pending');
+            $item->setMediaError(null);
+        }
+
+        $this->entityManager->flush();
+
+        return count($items);
+    }
+
+    /**
+     * Download all items currently queued (mediaStatus = 'pending'), respecting
+     * each item's profile savePhotos/saveVideos flags. Returns the number of
+     * items processed.
+     */
+    public function downloadPendingItems(?int $limit = null): int
+    {
+        $items = $this->itemRepository->findBy(
+            ['mediaStatus' => 'pending'],
+            ['id' => 'ASC'],
+            $limit,
+        );
+
+        foreach ($items as $item) {
+            $profile = $item->getProfile();
+
+            if (!$profile) {
+                continue;
+            }
+
+            $this->downloadMedia($item, $profile->isSavePhotos(), $profile->isSaveVideos());
+        }
+
+        return count($items);
+    }
 }
