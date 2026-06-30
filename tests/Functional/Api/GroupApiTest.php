@@ -167,6 +167,37 @@ class GroupApiTest extends AbstractApiTestCase
         $this->assertResponseStatusCodeSame(404);
     }
 
+    public function testPutForeignGroupReturns404(): void
+    {
+        $groupId = $this->createGroup('Foreign Put', [], 'B');
+
+        $this->requestAsClientA('PUT', '/api/groups/' . $groupId, [
+            'json' => ['name' => 'Hijacked', 'profiles' => []],
+        ]);
+
+        $this->assertResponseStatusCodeSame(404);
+    }
+
+    public function testPatchUpdatesNameAndKeepsProfiles(): void
+    {
+        $sharedIri = $this->ownedProfileIri('https://mastodon.social/@shared');
+        $groupId = $this->createGroup('Before Patch', [$sharedIri]);
+
+        $response = $this->requestWithToken('PATCH', '/api/groups/' . $groupId, self::TOKEN_A, [
+            'headers' => ['Content-Type' => 'application/merge-patch+json'],
+            'body' => json_encode(['name' => 'After Patch', 'color' => '#00aa00']),
+        ]);
+
+        $this->assertResponseIsSuccessful();
+        $data = $response->toArray();
+        $this->assertSame('After Patch', $data['name']);
+        $this->assertSame('#00aa00', $data['color']);
+
+        // Partielles Update lässt die Mitgliedschaft unberührt
+        $check = $this->requestAsClientA('GET', '/api/groups/' . $groupId)->toArray();
+        $this->assertCount(1, $check['profiles']);
+    }
+
     public function testGroupItemsEndpoint(): void
     {
         $sharedIri = $this->ownedProfileIri('https://mastodon.social/@shared');
