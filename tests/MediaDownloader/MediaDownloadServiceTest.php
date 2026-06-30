@@ -312,4 +312,91 @@ class MediaDownloadServiceTest extends TestCase
         $this->assertStringContainsString('Photo:', $item->getMediaError());
         $this->assertStringContainsString('Video:', $item->getMediaError());
     }
+
+    public function testQueueItemSetsPendingAndClearsError(): void
+    {
+        $item = $this->createItem();
+        $item->setMediaStatus('failed');
+        $item->setMediaError('boom');
+
+        $this->em->expects($this->once())->method('flush');
+
+        $this->service->queueItem($item);
+
+        $this->assertSame('pending', $item->getMediaStatus());
+        $this->assertNull($item->getMediaError());
+    }
+
+    public function testQueueProfileQueuesNewAndFailedItems(): void
+    {
+        $profile = new Profile();
+        $profile->setId(42);
+        $profile->setIdentifier('test');
+        $profile->setNetwork(new Network());
+
+        $a = $this->createItem();
+        $b = $this->createItem();
+
+        $this->itemRepository->expects($this->once())
+            ->method('findNewOrFailedForProfile')
+            ->with($profile)
+            ->willReturn([$a, $b]);
+        $this->itemRepository->expects($this->never())->method('findBy');
+        $this->em->expects($this->once())->method('flush');
+
+        $count = $this->service->queueProfile($profile);
+
+        $this->assertSame(2, $count);
+        $this->assertSame('pending', $a->getMediaStatus());
+        $this->assertSame('pending', $b->getMediaStatus());
+    }
+
+    public function testQueueProfileWithForceQueuesAllItems(): void
+    {
+        $profile = new Profile();
+        $profile->setId(42);
+        $profile->setIdentifier('test');
+        $profile->setNetwork(new Network());
+
+        $a = $this->createItem();
+
+        $this->itemRepository->expects($this->once())
+            ->method('findBy')
+            ->with(['profile' => $profile])
+            ->willReturn([$a]);
+        $this->itemRepository->expects($this->never())->method('findNewOrFailedForProfile');
+
+        $count = $this->service->queueProfile($profile, force: true);
+
+        $this->assertSame(1, $count);
+        $this->assertSame('pending', $a->getMediaStatus());
+    }
+
+    public function testDownloadPendingItemsRespectsProfileFlags(): void
+    {
+        $profile = new Profile();
+        $profile->setId(42);
+        $profile->setIdentifier('test');
+        $profile->setNetwork(new Network());
+        $profile->setSavePhotos(true);
+        $profile->setSaveVideos(false);
+
+        $item = $this->createItem();
+        $item->setProfile($profile);
+        $item->setMediaStatus('pending');
+
+        $this->itemRepository->expects($this->once())
+            ->method('findBy')
+            ->with(['mediaStatus' => 'pending'], ['id' => 'ASC'], null)
+            ->willReturn([$item]);
+
+        // savePhotos=true → photos attempted (none found here); saveVideos=false → video skipped
+        $this->extractor->method('extractPhotoUrls')->willReturn([]);
+        $this->extractor->expects($this->never())->method('extractVideoUrl');
+
+        $count = $this->service->downloadPendingItems();
+
+        $this->assertSame(1, $count);
+        $this->assertSame('completed', $item->getMediaStatus());
+    }
 }

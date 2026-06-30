@@ -16,6 +16,7 @@ use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use ApiPlatform\OpenApi\Model\Parameter;
 use App\State\GroupItemsProvider;
+use App\State\ItemMediaDownloadProcessor;
 use App\State\TimelineProvider;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
@@ -79,6 +80,18 @@ use Symfony\Component\Serializer\Attribute\Groups;
         ),
         new Post(
             description: 'Creates a new feed item.',
+        ),
+        new Post(
+            uriTemplate: '/items/{id}/download-media',
+            status: 202,
+            read: true,
+            deserialize: false,
+            validate: false,
+            processor: ItemMediaDownloadProcessor::class,
+            normalizationContext: ['groups' => ['item:read']],
+            description: <<<'TEXT'
+            Queues a (re)download of this item's media (photos/videos) onto the server. The item is marked `mediaStatus=pending` and the files are fetched out-of-band by the `app:download-media --pending` cron, so the request returns immediately (202). Once downloaded, `photoUrls`/`videoUrl` point to the locally stored copies. Requires the item's profile to have `savePhotos` and/or `saveVideos` enabled (422 otherwise). Returns 404 if the item is not linked to the authenticated client.
+            TEXT,
         ),
         new Put(
             description: 'Updates an existing feed item.',

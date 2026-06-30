@@ -25,6 +25,23 @@ class ItemRepository extends ServiceEntityRepository
     }
 
     /**
+     * Items of a profile that have no media yet (mediaStatus null) or whose last
+     * download attempt failed. Used to (re)queue media downloads.
+     *
+     * @return list<Item>
+     */
+    public function findNewOrFailedForProfile(Profile $profile): array
+    {
+        return $this->createQueryBuilder('i')
+            ->andWhere('i.profile = :profile')
+            ->andWhere('i.mediaStatus IS NULL OR i.mediaStatus = :failed')
+            ->setParameter('profile', $profile)
+            ->setParameter('failed', 'failed')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Paginated items across all profiles in a group, excluding hidden /
      * soft-deleted items and items belonging to soft-deleted profiles.
      *

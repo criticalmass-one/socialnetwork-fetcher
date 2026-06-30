@@ -8,11 +8,13 @@ use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use App\State\ClientScopedProfileProcessor;
+use App\State\ProfileMediaDownloadProcessor;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -41,6 +43,20 @@ use Symfony\Component\Serializer\Attribute\Groups;
         ),
         new Put(
             description: 'Updates an existing profile.',
+        ),
+        new Patch(
+            description: 'Partially updates a profile linked to the authenticated client — e.g. to toggle media storage with `{"savePhotos": true}` (Content-Type: application/merge-patch+json). Returns 404 if the profile is not linked to the client.',
+        ),
+        new Post(
+            uriTemplate: '/profiles/{id}/download-media',
+            status: 202,
+            read: true,
+            deserialize: false,
+            validate: false,
+            processor: ProfileMediaDownloadProcessor::class,
+            description: <<<'TEXT'
+            Queues a (re)download of media for this profile's items onto the server. By default it queues items that have no media yet and items whose last attempt failed; pass `?force=true` to re-queue every item (e.g. to renew expired media). Items are marked `mediaStatus=pending` and fetched out-of-band by the `app:download-media --pending` cron, so the request returns immediately (202). Requires `savePhotos` and/or `saveVideos` enabled (422 otherwise). Returns 404 if the profile is not linked to the authenticated client.
+            TEXT,
         ),
     ],
     description: 'A social network profile (e.g. a Mastodon account, Instagram page). Profiles are scoped to the authenticated API client.',
