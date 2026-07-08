@@ -325,7 +325,7 @@ class ProfileController extends AbstractController
         $this->addFlash('success', 'Feed wurde von RSS.app entfernt.');
     }
 
-    #[Route('/{id}/toggle-{field}', name: 'app_profile_toggle', requirements: ['id' => '\d+', 'field' => 'autoFetch|fetchSource|savePhotos|saveVideos'], methods: ['POST'])]
+    #[Route('/{id}/toggle-{field}', name: 'app_profile_toggle', requirements: ['id' => '\d+', 'field' => 'autoFetch|fetchSource|savePhotos|saveVideos|transcribeVideos'], methods: ['POST'])]
     public function toggle(Request $request, Profile $profile, string $field, EntityManagerInterface $em): JsonResponse
     {
         if (!$this->isCsrfTokenValid('toggle-profile-' . $profile->getId(), $request->request->getString('_token'))) {
@@ -338,6 +338,7 @@ class ProfileController extends AbstractController
             'fetchSource' => 'isFetchSource',
             'savePhotos' => 'isSavePhotos',
             'saveVideos' => 'isSaveVideos',
+            'transcribeVideos' => 'isTranscribeVideos',
         };
 
         $newValue = !$profile->$getter();

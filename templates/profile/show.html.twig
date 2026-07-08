@@ -81,6 +81,12 @@
                             </td>
                         </tr>
                         <tr>
+                            <th>Videos transkribieren</th>
+                            <td>
+                                {% include '_partials/_profile_toggle.html.twig' with { profile: profile, field: 'transcribeVideos', state: profile.transcribeVideos } %}
+                            </td>
+                        </tr>
+                        <tr>
                             <th>Erstellt am</th>
                             <td>{{ profile.createdAt ? profile.createdAt|date('d.m.Y H:i:s') : '-' }}</td>
                         </tr>

@@ -8,6 +8,7 @@ Symfony 8 application that fetches social media feeds from various networks and 
 - Composer
 - Docker & Docker Compose (for PostgreSQL)
 - yt-dlp (optional, for video downloads and Instagram/Threads/Facebook photo extraction)
+- ffmpeg + whisper.cpp CLI and a ggml model (optional, for automatic video transcription)
 
 ## Installation
 
@@ -169,6 +170,24 @@ Downloads can also be triggered through the REST API (see below): the trigger en
 */5 * * * * cd /path/to/app && php bin/console app:download-media --pending >/dev/null 2>&1
 ```
 
+### Video transcription
+
+Profiles with the `transcribeVideos` flag enabled (in addition to `saveVideos`) get their downloaded videos transcribed locally via [whisper.cpp](https://github.com/ggml-org/whisper.cpp). The transcript is shown on the item detail page in the Web UI and exposed on the single-item REST endpoint. Transcription runs decoupled from the fetch/download via a `transcriptStatus` queue (`pending` → `running` → `completed`/`failed`).
+
+```bash
+php bin/console app:transcribe                        # all profiles with transcribeVideos enabled
+php bin/console app:transcribe --profile-id=42        # specific profile (backfills existing videos)
+php bin/console app:transcribe --item-id=99           # single item
+php bin/console app:transcribe --pending              # process items queued via the API / after fetch
+php bin/console app:transcribe --retry-failed         # retry previously failed transcriptions
+```
+
+Requires `ffmpeg` and the whisper.cpp CLI + a ggml model installed on the server; configure `WHISPER_CLI_PATH`, `WHISPER_MODEL_PATH` and `WHISPER_LANGUAGE` (an empty model path disables transcription). After a feed fetch, videos are queued automatically; drain the queue on a cron alongside the media download:
+
+```
+*/5 * * * * cd /path/to/app && php bin/console app:transcribe --pending >/dev/null 2>&1
+```
+
 ## Web UI
 
 The admin interface is accessible after login at `/login`. It provides:
@@ -202,6 +221,7 @@ Tokens are generated via `app:client:create`.
 - `PATCH /api/profiles/{id}` — Partially update a profile, e.g. toggle media storage with `{"savePhotos": true}` (Content-Type: `application/merge-patch+json`)
 - `DELETE /api/profiles/{id}` — Unlink from client; soft-deletes if no other clients remain
 - `POST /api/profiles/{id}/download-media` — Queue a media (re)download for the profile's items (new + previously failed; `?force=true` re-queues all). Returns 202; requires `savePhotos`/`saveVideos` enabled (422 otherwise)
+- `POST /api/profiles/{id}/transcribe` — Queue a (re)transcription of the profile's videos (`?force=true` re-transcribes all). Returns 202; requires `transcribeVideos` enabled (422 otherwise)
 
 **Items** (client-scoped):
 - `GET /api/items` — List feed items (paginated, 50 per page). Each item exposes `mediaStatus` and absolute `photoUrls`/`videoUrl` for any media stored on the server
@@ -209,6 +229,7 @@ Tokens are generated via `app:client:create`.
 - `POST /api/items` — Create item
 - `PUT /api/items/{id}` — Update item
 - `POST /api/items/{id}/download-media` — Queue a media (re)download for this single item. Returns 202; requires the item's profile to have `savePhotos`/`saveVideos` enabled (422 otherwise)
+- `POST /api/items/{id}/transcribe` — Queue a (re)transcription of this item's video. Returns 202; requires `transcribeVideos` enabled and a downloaded video (422 otherwise). The transcript is available in the `transcript` field on the single-item GET
 
 Media downloads triggered via the API are processed asynchronously by the `app:download-media --pending` cron (see Media Download above). Once stored, an item's `photoUrls`/`videoUrl` point to the locally hosted files under `/media/...` instead of the original CDN URLs.
 
@@ -287,8 +308,8 @@ src/NetworkFeedFetcher/YourNetwork/
 
 | Entity | Purpose |
 |---|---|
-| `Profile` | Social network profile (URL identifier, optional title, network reference, fetch metadata, savePhotos/saveVideos flags) |
-| `Item` | Feed item (text, title, permalink, timestamps, hidden/deleted flags, photoPaths, videoPath, mediaStatus) |
+| `Profile` | Social network profile (URL identifier, optional title, network reference, fetch metadata, savePhotos/saveVideos/transcribeVideos flags) |
+| `Item` | Feed item (text, title, permalink, timestamps, hidden/deleted flags, photoPaths, videoPath, mediaStatus, transcript/transcriptStatus) |
 | `Network` | Social network definition (name, icon, colors, cron expression) |
 | `Client` | API client (name, Bearer token, enabled flag, linked profiles) |
 

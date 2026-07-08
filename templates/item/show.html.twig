@@ -85,6 +85,44 @@
                 </div>
             </div>
 
+            {% if item.videoPath or item.transcript or item.transcriptStatus %}
+                <div class="data-card mb-4" id="transcript-card">
+                    <div class="data-card-header">Transkript</div>
+                    <div class="data-card-body">
+                        {% if item.transcript %}
+                            <p class="mb-0" style="white-space: pre-wrap;">{{ item.transcript }}</p>
+                        {% elseif item.transcriptStatus in ['pending', 'running'] %}
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-hourglass-half me-1"></i>Transkription {{ item.transcriptStatus == 'running' ? 'läuft' : 'ausstehend' }}…
+                            </p>
+                        {% elseif item.transcriptStatus == 'failed' %}
+                            <p class="text-muted mb-0">Transkription fehlgeschlagen.</p>
+                        {% else %}
+                            <p class="text-muted mb-0">Kein Transkript vorhanden.</p>
+                        {% endif %}
+                        {% if item.transcriptStatus == 'failed' and item.transcriptError %}
+                            <div class="alert alert-danger mt-3 mb-0">
+                                <i class="fas fa-exclamation-triangle me-1"></i>{{ item.transcriptError }}
+                            </div>
+                        {% endif %}
+                        {% if item.transcriptStatus %}
+                            <div class="mt-2">
+                                <small class="text-muted">Status: </small>
+                                {% if item.transcriptStatus == 'completed' %}
+                                    <span class="badge bg-success">{{ item.transcriptStatus }}</span>
+                                {% elseif item.transcriptStatus == 'failed' %}
+                                    <span class="badge bg-danger">{{ item.transcriptStatus }}</span>
+                                {% elseif item.transcriptStatus == 'running' %}
+                                    <span class="badge bg-info">{{ item.transcriptStatus }}</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">{{ item.transcriptStatus }}</span>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+
             {% if item.raw %}
                 <div class="data-card mb-4">
                     <div class="data-card-header">Rohdaten</div>

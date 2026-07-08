@@ -17,6 +17,7 @@ use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use ApiPlatform\OpenApi\Model\Parameter;
 use App\State\GroupItemsProvider;
 use App\State\ItemMediaDownloadProcessor;
+use App\State\ItemTranscriptionProcessor;
 use App\State\TimelineProvider;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
@@ -91,6 +92,18 @@ use Symfony\Component\Serializer\Attribute\Groups;
             normalizationContext: ['groups' => ['item:read']],
             description: <<<'TEXT'
             Queues a (re)download of this item's media (photos/videos) onto the server. The item is marked `mediaStatus=pending` and the files are fetched out-of-band by the `app:download-media --pending` cron, so the request returns immediately (202). Once downloaded, `photoUrls`/`videoUrl` point to the locally stored copies. Requires the item's profile to have `savePhotos` and/or `saveVideos` enabled (422 otherwise). Returns 404 if the item is not linked to the authenticated client.
+            TEXT,
+        ),
+        new Post(
+            uriTemplate: '/items/{id}/transcribe',
+            status: 202,
+            read: true,
+            deserialize: false,
+            validate: false,
+            processor: ItemTranscriptionProcessor::class,
+            normalizationContext: ['groups' => ['item:read']],
+            description: <<<'TEXT'
+            Queues a (re)transcription of this item's downloaded video onto the server. The item is marked `transcriptStatus=pending` and the transcript is generated out-of-band by the `app:transcribe --pending` cron, so the request returns immediately (202). Once done, the `transcript` field (item:detail) holds the text. Requires the item's profile to have `transcribeVideos` enabled and the item to have a downloaded video (422 otherwise). Returns 404 if the item is not linked to the authenticated client.
             TEXT,
         ),
         new Put(
@@ -228,6 +241,21 @@ class Item
     #[Groups(['item:read'])]
     #[ApiProperty(description: 'Error message from a failed media download attempt.', readable: true, writable: false)]
     private ?string $mediaError = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['item:detail'])]
+    #[ApiProperty(description: 'Transcribed text of the downloaded video, if transcription is enabled for the profile. Only included on the single-item endpoint, not in collections.', readable: true, writable: false)]
+    private ?string $transcript = null;
+
+    #[ORM\Column(type: 'string', length: 20, nullable: true)]
+    #[Groups(['item:read'])]
+    #[ApiProperty(description: 'Video transcription status: null, pending, running, completed, failed.', readable: true, writable: false)]
+    private ?string $transcriptStatus = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    #[Groups(['item:read'])]
+    #[ApiProperty(description: 'Error message from a failed transcription attempt.', readable: true, writable: false)]
+    private ?string $transcriptError = null;
 
     public function __construct()
     {
@@ -436,6 +464,42 @@ class Item
     public function setMediaError(?string $mediaError): self
     {
         $this->mediaError = $mediaError;
+
+        return $this;
+    }
+
+    public function getTranscript(): ?string
+    {
+        return $this->transcript;
+    }
+
+    public function setTranscript(?string $transcript): self
+    {
+        $this->transcript = $transcript;
+
+        return $this;
+    }
+
+    public function getTranscriptStatus(): ?string
+    {
+        return $this->transcriptStatus;
+    }
+
+    public function setTranscriptStatus(?string $transcriptStatus): self
+    {
+        $this->transcriptStatus = $transcriptStatus;
+
+        return $this;
+    }
+
+    public function getTranscriptError(): ?string
+    {
+        return $this->transcriptError;
+    }
+
+    public function setTranscriptError(?string $transcriptError): self
+    {
+        $this->transcriptError = $transcriptError;
 
         return $this;
     }

@@ -42,6 +42,25 @@ class ItemRepository extends ServiceEntityRepository
     }
 
     /**
+     * Items of a profile that have a downloaded video and either no transcript
+     * yet or whose last transcription attempt failed. Used to (re)queue
+     * transcriptions.
+     *
+     * @return list<Item>
+     */
+    public function findTranscribableForProfile(Profile $profile): array
+    {
+        return $this->createQueryBuilder('i')
+            ->andWhere('i.profile = :profile')
+            ->andWhere('i.videoPath IS NOT NULL')
+            ->andWhere('i.transcript IS NULL OR i.transcriptStatus = :failed')
+            ->setParameter('profile', $profile)
+            ->setParameter('failed', 'failed')
+            ->getQuery()
+            ->getResult();
+    }
+
+    /**
      * Paginated items across all profiles in a group, excluding hidden /
      * soft-deleted items and items belonging to soft-deleted profiles.
      *

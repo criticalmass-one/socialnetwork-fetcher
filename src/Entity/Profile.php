@@ -15,6 +15,7 @@ use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use App\State\ClientScopedProfileProcessor;
 use App\State\ProfileMediaDownloadProcessor;
+use App\State\ProfileTranscriptionProcessor;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
@@ -56,6 +57,17 @@ use Symfony\Component\Serializer\Attribute\Groups;
             processor: ProfileMediaDownloadProcessor::class,
             description: <<<'TEXT'
             Queues a (re)download of media for this profile's items onto the server. By default it queues items that have no media yet and items whose last attempt failed; pass `?force=true` to re-queue every item (e.g. to renew expired media). Items are marked `mediaStatus=pending` and fetched out-of-band by the `app:download-media --pending` cron, so the request returns immediately (202). Requires `savePhotos` and/or `saveVideos` enabled (422 otherwise). Returns 404 if the profile is not linked to the authenticated client.
+            TEXT,
+        ),
+        new Post(
+            uriTemplate: '/profiles/{id}/transcribe',
+            status: 202,
+            read: true,
+            deserialize: false,
+            validate: false,
+            processor: ProfileTranscriptionProcessor::class,
+            description: <<<'TEXT'
+            Queues a (re)transcription of this profile's downloaded videos onto the server. By default it queues items with a video that have not been transcribed yet and items whose last attempt failed; pass `?force=true` to re-transcribe every video. Items are marked `transcriptStatus=pending` and processed out-of-band by the `app:transcribe --pending` cron, so the request returns immediately (202). Requires `transcribeVideos` enabled (422 otherwise). Returns 404 if the profile is not linked to the authenticated client.
             TEXT,
         ),
     ],
@@ -161,6 +173,11 @@ class Profile
     #[Groups(['profile:read', 'profile:write'])]
     #[ApiProperty(description: 'Whether to automatically download videos for new feed items.')]
     private bool $saveVideos = false;
+
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    #[Groups(['profile:read', 'profile:write'])]
+    #[ApiProperty(description: 'Whether to automatically transcribe downloaded videos for new feed items. Only takes effect together with saveVideos (a video must be downloaded first).')]
+    private bool $transcribeVideos = false;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     #[Groups(['profile:read'])]
@@ -350,6 +367,18 @@ class Profile
     public function setSaveVideos(bool $saveVideos): self
     {
         $this->saveVideos = $saveVideos;
+
+        return $this;
+    }
+
+    public function isTranscribeVideos(): bool
+    {
+        return $this->transcribeVideos;
+    }
+
+    public function setTranscribeVideos(bool $transcribeVideos): self
+    {
+        $this->transcribeVideos = $transcribeVideos;
 
         return $this;
     }

@@ -98,6 +98,14 @@ class MediaDownloadService
             $item->setMediaError($videoOnlyFailure ? implode("\n", $errors) : null);
         }
 
+        // Queue transcription of the freshly downloaded video. The actual work is
+        // done out-of-band by `app:transcribe --pending`, so this only flags the
+        // item and does not block the download run.
+        if ($videoDownloaded && $profile->isTranscribeVideos()) {
+            $item->setTranscriptStatus('pending');
+            $item->setTranscriptError(null);
+        }
+
         $this->entityManager->flush();
     }
 
