@@ -312,6 +312,49 @@ class ProfileApiTest extends AbstractApiTestCase
         $this->assertResponseStatusCodeSame(404);
     }
 
+    public function testChangeIdentifierUpdatesProfile(): void
+    {
+        $this->requestAsClientA('POST', '/api/profiles/90001/change-identifier', [
+            'headers' => ['Content-Type' => 'application/ld+json'],
+            'body' => json_encode(['identifier' => 'https://mastodon.social/@renamed']),
+        ]);
+        $this->assertResponseIsSuccessful();
+
+        $data = $this->requestAsClientA('GET', '/api/profiles/90001')->toArray();
+        $this->assertSame('https://mastodon.social/@renamed', $data['identifier']);
+    }
+
+    public function testChangeIdentifierRejectsInvalidValue(): void
+    {
+        $this->requestAsClientA('POST', '/api/profiles/90001/change-identifier', [
+            'headers' => ['Content-Type' => 'application/ld+json'],
+            'body' => json_encode(['identifier' => 'not-a-valid-mastodon-handle']),
+        ]);
+
+        $this->assertResponseStatusCodeSame(422);
+    }
+
+    public function testChangeIdentifierRejectsEmptyValue(): void
+    {
+        $this->requestAsClientA('POST', '/api/profiles/90001/change-identifier', [
+            'headers' => ['Content-Type' => 'application/ld+json'],
+            'body' => json_encode(['identifier' => '']),
+        ]);
+
+        $this->assertResponseStatusCodeSame(400);
+    }
+
+    public function testChangeIdentifierProfileNotLinkedReturns404(): void
+    {
+        // profileOnlyB (90003) is not linked to client A
+        $this->requestAsClientA('POST', '/api/profiles/90003/change-identifier', [
+            'headers' => ['Content-Type' => 'application/ld+json'],
+            'body' => json_encode(['identifier' => 'https://mastodon.social/@whatever']),
+        ]);
+
+        $this->assertResponseStatusCodeSame(404);
+    }
+
     private function getMastodonNetworkIri(): string
     {
         return $this->getNetworkIri('mastodon');

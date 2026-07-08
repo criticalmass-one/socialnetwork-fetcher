@@ -14,6 +14,7 @@ use ApiPlatform\Metadata\Put;
 use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use App\State\ClientScopedProfileProcessor;
+use App\State\ProfileChangeIdentifierProcessor;
 use App\State\ProfileMediaDownloadProcessor;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -56,6 +57,18 @@ use Symfony\Component\Serializer\Attribute\Groups;
             processor: ProfileMediaDownloadProcessor::class,
             description: <<<'TEXT'
             Queues a (re)download of media for this profile's items onto the server. By default it queues items that have no media yet and items whose last attempt failed; pass `?force=true` to re-queue every item (e.g. to renew expired media). Items are marked `mediaStatus=pending` and fetched out-of-band by the `app:download-media --pending` cron, so the request returns immediately (202). Requires `savePhotos` and/or `saveVideos` enabled (422 otherwise). Returns 404 if the profile is not linked to the authenticated client.
+            TEXT,
+        ),
+        new Post(
+            uriTemplate: '/profiles/{id}/change-identifier',
+            status: 200,
+            read: true,
+            deserialize: false,
+            validate: false,
+            processor: ProfileChangeIdentifierProcessor::class,
+            normalizationContext: ['groups' => ['profile:read', 'profile:detail']],
+            description: <<<'TEXT'
+            Changes this profile's network identifier — e.g. after a user renames their account — and, for RSS.app-based networks, re-links the RSS.app feed. Because RSS.app cannot re-point an existing feed, the old feed is deleted and a new one is created (or an existing feed for the new URL is adopted), then its current items are imported. The profile row and all previously imported items are preserved, so no history is lost. Send the new value as `{"identifier": "https://…"}`. Returns 422 if the identifier is empty, invalid for the network, or already used by another profile in the same network; 404 if the profile is not linked to the authenticated client.
             TEXT,
         ),
     ],
