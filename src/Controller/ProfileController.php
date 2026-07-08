@@ -11,6 +11,9 @@ use App\FeedFetcher\FetchInfo;
 use App\FeedFetcher\FetchResult;
 use App\FeedItemPersister\FeedItemPersisterInterface;
 use App\Model\Profile as ModelProfile;
+use App\Profile\IdentifierChangeException;
+use App\Profile\IdentifierChangeResult;
+use App\Profile\IdentifierChanger;
 use App\Repository\GroupRepository;
 use App\Repository\ItemRepository;
 use App\Repository\NetworkRepository;
@@ -247,6 +250,53 @@ class ProfileController extends AbstractController
             'profile' => $profile,
             'form' => $form,
         ]);
+    }
+
+    #[Route('/{id}/change-identifier', name: 'app_profile_change_identifier', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function changeIdentifier(Request $request, Profile $profile, IdentifierChanger $identifierChanger): Response
+    {
+        if (!$this->isCsrfTokenValid('change-identifier-' . $profile->getId(), $request->request->getString('_token'))) {
+            return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
+        }
+
+        try {
+            $result = $identifierChanger->change($profile, $request->request->getString('identifier'));
+
+            $this->addFlash(
+                $result->relinkError !== null ? 'warning' : 'success',
+                $this->buildIdentifierChangeFlashMessage($result),
+            );
+        } catch (IdentifierChangeException $e) {
+            $this->addFlash('danger', $e->getMessage());
+        }
+
+        return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
+    }
+
+    private function buildIdentifierChangeFlashMessage(IdentifierChangeResult $result): string
+    {
+        if (!$result->changed) {
+            return 'Identifier unverändert.';
+        }
+
+        if (!$result->rssAppApplicable) {
+            return 'Identifier wurde aktualisiert.';
+        }
+
+        if ($result->relinkError !== null) {
+            return sprintf(
+                'Identifier wurde aktualisiert, aber die RSS.app-Neuverknüpfung ist fehlgeschlagen: %s. Bitte manuell bei RSS.app registrieren.',
+                $result->relinkError,
+            );
+        }
+
+        return sprintf(
+            'Identifier wurde aktualisiert und %s RSS.app-Feed %s (%d Item%s importiert).',
+            $result->linkedToExistingFeed ? 'mit einem bestehenden' : 'ein neuer',
+            $result->linkedToExistingFeed ? 'verknüpft' : 'angelegt',
+            $result->importedItems,
+            $result->importedItems === 1 ? '' : 's',
+        );
     }
 
     #[Route('/{id}/delete', name: 'app_profile_delete', requirements: ['id' => '\d+'], methods: ['POST'])]

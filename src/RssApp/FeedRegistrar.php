@@ -8,6 +8,7 @@ use App\FeedFetcher\FetchInfo;
 use App\FeedFetcher\FetchResult;
 use App\FeedItemPersister\FeedItemPersisterInterface;
 use App\Model\Profile as ModelProfile;
+use App\Profile\IdentifierChangeResult;
 use Psr\Log\LoggerInterface;
 
 class FeedRegistrar
@@ -71,6 +72,74 @@ class FeedRegistrar
         $profile->setRssAppFeedId($feedId);
 
         return $this->importInitialItems($profile);
+    }
+
+    /**
+     * Re-links the profile's RSS.app feed after its identifier has changed.
+     *
+     * RSS.app cannot re-point an existing feed to a new source URL, so the old
+     * feed is deleted and a fresh feed is created (or an already-existing feed
+     * for the new URL is adopted) and its current items are imported. The
+     * profile is expected to already carry the new identifier; its stored items
+     * are untouched, so no historical data is lost.
+     */
+    public function relinkRssAppFeed(Profile $profile): IdentifierChangeResult
+    {
+        $networkIdentifier = $profile->getNetwork()?->getIdentifier();
+
+        if (!in_array($networkIdentifier, self::RSS_APP_NETWORKS, true)) {
+            return IdentifierChangeResult::identifierOnly();
+        }
+
+        $sourceUrl = $profile->getIdentifier();
+
+        if ($sourceUrl === null) {
+            return IdentifierChangeResult::identifierOnly();
+        }
+
+        $oldFeedId = $profile->getRssAppFeedId();
+        $oldFeedRemoved = false;
+
+        if ($oldFeedId !== null) {
+            try {
+                $this->rssApp->deleteFeed($oldFeedId);
+                $oldFeedRemoved = true;
+            } catch (\Throwable $e) {
+                $this->logger->warning('Failed to delete old RSS.app feed {feedId} while re-linking profile {id}: {message}', [
+                    'feedId' => $oldFeedId,
+                    'id' => $profile->getId(),
+                    'message' => $e->getMessage(),
+                ]);
+            }
+
+            $profile->setRssAppFeedId(null);
+        }
+
+        try {
+            $existingFeedId = $this->rssApp->findRssAppFeedIdBySourceUrl($sourceUrl);
+
+            if ($existingFeedId !== null) {
+                $importedCount = $this->linkExistingFeedAndImport($profile, $existingFeedId);
+
+                return IdentifierChangeResult::relinked($oldFeedRemoved, true, $importedCount);
+            }
+
+            $feedData = $this->rssApp->createFeed($sourceUrl);
+            $profile->setRssAppFeedId($feedData['id']);
+
+            $importedCount = $this->importInitialItems($profile);
+
+            return IdentifierChangeResult::relinked($oldFeedRemoved, false, $importedCount);
+        } catch (\Throwable $e) {
+            $this->logger->error('RSS.app feed re-link failed for {identifier}: {message}', [
+                'identifier' => $sourceUrl,
+                'message' => $e->getMessage(),
+            ]);
+
+            $profile->setRssAppFeedId(null);
+
+            return IdentifierChangeResult::relinkFailed($oldFeedRemoved, $e->getMessage());
+        }
     }
 
     private function importInitialItems(Profile $profile): int
