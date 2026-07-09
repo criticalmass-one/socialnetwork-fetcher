@@ -23,6 +23,8 @@ class TestFixtures extends Fixture implements DependentFixtureInterface
         $networkMastodon = $this->getReference(NetworkFixtures::NETWORK_MASTODON, Network::class);
         /** @var Network $networkBluesky */
         $networkBluesky = $this->getReference(NetworkFixtures::NETWORK_BLUESKY_PROFILE, Network::class);
+        /** @var Network $networkInstagram */
+        $networkInstagram = $this->getReference(NetworkFixtures::NETWORK_INSTAGRAM_PROFILE, Network::class);
 
         // --- Clients ---
         $clientA = new Client();
@@ -70,6 +72,18 @@ class TestFixtures extends Fixture implements DependentFixtureInterface
         $profileOnlyB->setCreatedAt(new \DateTimeImmutable());
         $manager->persist($profileOnlyB);
         $clientB->addProfile($profileOnlyB);
+
+        // RSS.app-based profile, intentionally linked to NO client and carrying NO items,
+        // so it stays invisible to the client-scoped API/timeline (keeping those tests
+        // untouched) while remaining reachable by the admin Web UI. Used to exercise the
+        // RSS.app feed re-link path on an identifier change.
+        $profileInstagram = new Profile();
+        $profileInstagram->setId(90005);
+        $profileInstagram->setIdentifier('https://www.instagram.com/oldname/');
+        $profileInstagram->setNetwork($networkInstagram);
+        $profileInstagram->setCreatedAt(new \DateTimeImmutable());
+        $profileInstagram->setRssAppFeedId('fixture-feed-instagram');
+        $manager->persist($profileInstagram);
 
         $profileDeleted = new Profile();
         $profileDeleted->setId(90004);
