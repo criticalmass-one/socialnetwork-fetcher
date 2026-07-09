@@ -149,6 +149,8 @@ php bin/console app:rssapp:sync-feed-ids --network=instagram_profile
 php bin/console app:rssapp:sync-feed-ids --force      # re-check existing feed IDs
 ```
 
+**Changing an identifier:** when an account is renamed (e.g. a new Instagram username), change the profile's identifier via the "Identifier ändern" action on the profile page in the Web UI or the `POST /api/profiles/{id}/change-identifier` endpoint. RSS.app cannot re-point an existing feed to a new source URL, so the old feed is deleted and a new one is created for the new identifier and its current items imported. The profile row and all previously imported items are kept, so no history is lost.
+
 ### Media download
 
 Download photos and videos for feed items. For Instagram, Threads, and Facebook, photos (including carousel/album images) are extracted in original quality via `yt-dlp`, with a fallback to the RSS.app thumbnail. Bluesky and Mastodon photos are downloaded directly from their API response (supports multiple photos per post natively). Videos are downloaded via `yt-dlp` from the item's permalink URL. For Mastodon and Bluesky, yt-dlp is only invoked when the post's raw data actually contains a video — posts without a video are skipped instead of being recorded as failed downloads.
@@ -219,6 +221,7 @@ Tokens are generated via `app:client:create`.
 - `POST /api/profiles` — Create or link an existing profile (idempotent)
 - `PUT /api/profiles/{id}` — Update profile
 - `PATCH /api/profiles/{id}` — Partially update a profile, e.g. toggle media storage with `{"savePhotos": true}` (Content-Type: `application/merge-patch+json`)
+- `POST /api/profiles/{id}/change-identifier` — Change the profile's identifier, e.g. after an account is renamed, with `{"identifier": "https://…"}`. For RSS.app-based networks the RSS.app feed is re-linked (old feed deleted, new one created and its items imported); the profile and all previously imported items are preserved. Returns 422 if the identifier is invalid for the network or already used by another profile in the same network
 - `DELETE /api/profiles/{id}` — Unlink from client; soft-deletes if no other clients remain
 - `POST /api/profiles/{id}/download-media` — Queue a media (re)download for the profile's items (new + previously failed; `?force=true` re-queues all). Returns 202; requires `savePhotos`/`saveVideos` enabled (422 otherwise)
 - `POST /api/profiles/{id}/transcribe` — Queue a (re)transcription of the profile's videos (`?force=true` re-transcribes all). Returns 202; requires `transcribeVideos` enabled (422 otherwise)

@@ -188,6 +188,120 @@ class FeedRegistrarTest extends TestCase
         $this->assertSame('adopted-feed-42', $profile->getRssAppFeedId());
     }
 
+    public function testRelinkNonRssNetworkReturnsIdentifierOnly(): void
+    {
+        $profile = $this->makeProfile('mastodon', 'https://mastodon.social/@foo');
+        $profile->setRssAppFeedId('should-stay');
+
+        $this->rssApp->expects($this->never())->method('deleteFeed');
+        $this->rssApp->expects($this->never())->method('createFeed');
+
+        $result = $this->registrar->relinkRssAppFeed($profile);
+
+        $this->assertTrue($result->changed);
+        $this->assertFalse($result->rssAppApplicable);
+        $this->assertSame('should-stay', $profile->getRssAppFeedId());
+    }
+
+    public function testRelinkDeletesOldFeedCreatesNewAndImports(): void
+    {
+        $profile = $this->makeProfile('instagram_profile', 'https://instagram.com/newname', 42);
+        $profile->setRssAppFeedId('old-feed');
+
+        $this->rssApp->expects($this->once())->method('deleteFeed')->with('old-feed');
+        $this->rssApp->expects($this->once())
+            ->method('findRssAppFeedIdBySourceUrl')
+            ->with('https://instagram.com/newname')
+            ->willReturn(null);
+        $this->rssApp->expects($this->once())
+            ->method('createFeed')
+            ->with('https://instagram.com/newname')
+            ->willReturn(['id' => 'new-feed-777']);
+
+        $this->wireImport([new ItemModel(), new ItemModel()]);
+
+        $result = $this->registrar->relinkRssAppFeed($profile);
+
+        $this->assertTrue($result->changed);
+        $this->assertTrue($result->rssAppApplicable);
+        $this->assertTrue($result->oldFeedRemoved);
+        $this->assertFalse($result->linkedToExistingFeed);
+        $this->assertSame(2, $result->importedItems);
+        $this->assertNull($result->relinkError);
+        $this->assertSame('new-feed-777', $profile->getRssAppFeedId());
+    }
+
+    public function testRelinkAdoptsExistingFeedForNewIdentifier(): void
+    {
+        $profile = $this->makeProfile('instagram_profile', 'https://instagram.com/newname', 42);
+        $profile->setRssAppFeedId('old-feed');
+
+        $this->rssApp->expects($this->once())->method('deleteFeed')->with('old-feed');
+        $this->rssApp->expects($this->once())
+            ->method('findRssAppFeedIdBySourceUrl')
+            ->with('https://instagram.com/newname')
+            ->willReturn('adopted-42');
+        $this->rssApp->expects($this->never())->method('createFeed');
+
+        $this->wireImport([new ItemModel()]);
+
+        $result = $this->registrar->relinkRssAppFeed($profile);
+
+        $this->assertTrue($result->linkedToExistingFeed);
+        $this->assertSame(1, $result->importedItems);
+        $this->assertSame('adopted-42', $profile->getRssAppFeedId());
+    }
+
+    public function testRelinkWithoutOldFeedDoesNotDelete(): void
+    {
+        $profile = $this->makeProfile('instagram_profile', 'https://instagram.com/newname', 42);
+
+        $this->rssApp->expects($this->never())->method('deleteFeed');
+        $this->rssApp->method('findRssAppFeedIdBySourceUrl')->willReturn(null);
+        $this->rssApp->expects($this->once())->method('createFeed')->willReturn(['id' => 'fresh-1']);
+
+        $this->wireImport([]);
+
+        $result = $this->registrar->relinkRssAppFeed($profile);
+
+        $this->assertFalse($result->oldFeedRemoved);
+        $this->assertSame('fresh-1', $profile->getRssAppFeedId());
+    }
+
+    public function testRelinkReturnsFailedWhenCreateThrows(): void
+    {
+        $profile = $this->makeProfile('instagram_profile', 'https://instagram.com/newname', 42);
+        $profile->setRssAppFeedId('old-feed');
+
+        $this->rssApp->expects($this->once())->method('deleteFeed')->with('old-feed');
+        $this->rssApp->method('findRssAppFeedIdBySourceUrl')->willReturn(null);
+        $this->rssApp->method('createFeed')->willThrowException(new \RuntimeException('Unsupported source URL'));
+
+        $this->feedItemPersister->expects($this->never())->method('persistFeedItemList');
+
+        $result = $this->registrar->relinkRssAppFeed($profile);
+
+        $this->assertTrue($result->changed);
+        $this->assertTrue($result->rssAppApplicable);
+        $this->assertTrue($result->oldFeedRemoved);
+        $this->assertNotNull($result->relinkError);
+        $this->assertStringContainsString('Unsupported source URL', $result->relinkError);
+        $this->assertNull($profile->getRssAppFeedId());
+    }
+
+    /** @param list<ItemModel> $items */
+    private function wireImport(array $items): void
+    {
+        $networkFetcher = $this->createMock(NetworkFeedFetcherInterface::class);
+        $networkFetcher->method('supports')->willReturn(true);
+        $networkFetcher->method('fetch')->willReturn($items);
+
+        $this->feedFetcher->method('getNetworkFetcherList')->willReturn([$networkFetcher]);
+
+        $this->feedItemPersister->method('persistFeedItemList')->with($items)->willReturnSelf();
+        $this->feedItemPersister->method('flush')->willReturnSelf();
+    }
+
     private function makeProfile(string $networkIdentifier, string $url, ?int $id = null): Profile
     {
         $network = new Network();

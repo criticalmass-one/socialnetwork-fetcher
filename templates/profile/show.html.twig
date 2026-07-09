@@ -108,6 +108,29 @@
             </div>
 
             <div class="data-card mb-4">
+                <div class="data-card-header">Identifier ändern</div>
+                <div class="data-card-body">
+                    <p class="text-muted small mb-2">
+                        Ändert den Identifier dieses Profils, z.&nbsp;B. nach einer Umbenennung des Accounts.
+                        Bei RSS.app-Netzwerken wird der bestehende Feed entfernt und für den neuen Identifier neu
+                        angelegt; das Profil und alle bereits importierten Items bleiben erhalten.
+                    </p>
+                    <form method="post" action="{{ path('app_profile_change_identifier', {id: profile.id}) }}"
+                          data-controller="confirm"
+                          data-confirm-message-value="Identifier wirklich ändern? Ein bestehender RSS.app-Feed wird dabei gelöscht und neu angelegt.">
+                        <input type="hidden" name="_token" value="{{ csrf_token('change-identifier-' ~ profile.id) }}">
+                        <div class="input-group">
+                            <input type="text" name="identifier" class="form-control"
+                                   value="{{ profile.identifier }}" required aria-label="Neuer Identifier">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-exchange-alt me-1"></i>Ändern
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="data-card mb-4">
                 <div class="data-card-header">Clients ({{ profile.clients|length }})</div>
                 <div class="data-card-body">
                     {% if profile.clients|length > 0 %}

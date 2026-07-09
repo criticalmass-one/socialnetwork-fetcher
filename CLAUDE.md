@@ -117,6 +117,15 @@ Profiles can opt into automatic transcription of downloaded videos via the `tran
 - The transcript is shown on the item detail page (Web-UI) and exposed on the single-item API GET (`item:detail` group). `transcriptStatus`/`transcriptError` are in `item:read`.
 - **Ops**: whisper.cpp binary + ggml model are a manual server-side install (see `WHISPER_*` env vars). Schedule `app:transcribe --pending` in cron alongside `app:download-media --pending`.
 
+### Changing a Profile Identifier
+
+When an account is renamed (e.g. a new Instagram username), the profile's `identifier` can be changed while preserving the profile row and all its items. RSS.app cannot re-point an existing feed to a new source URL (PATCH only edits title/description/icon), so for RSS.app-based networks the old feed is deleted and a fresh one created (or an already-existing feed for the new URL is adopted), then its current items are imported.
+
+- **`IdentifierChanger`** (`src/Profile/`) — shared orchestration: validates the new identifier (non-empty, matches `Network.profileUrlPattern`, not already used by another profile in the same network — throws `IdentifierChangeException` otherwise), sets it, calls `FeedRegistrar::relinkRssAppFeed()`, flushes. Returns an `IdentifierChangeResult` describing the outcome.
+- **`FeedRegistrar::relinkRssAppFeed(Profile)`** — the RSS.app side: deletes the old feed (best-effort), creates/links the new feed for the (already updated) identifier, imports its items. Non-RSS networks return `identifierOnly()`; a failed feed re-creation returns `relinkFailed()` (identifier stays changed, `rssAppFeedId` cleared — re-register manually).
+- **Web UI**: "Identifier ändern" card on the profile show page → `POST /profiles/{id}/change-identifier` (`ProfileController::changeIdentifier`).
+- **API**: `POST /api/profiles/{id}/change-identifier` (body `{"identifier": "…"}`) via `ProfileChangeIdentifierProcessor` (200, client-scoped; 422 on invalid/duplicate identifier). The generic `PATCH`/`PUT` still change `identifier` as a plain field **without** RSS.app re-linking — use the dedicated action to re-link.
+
 ### Serializer
 
 Custom `App\Serializer\Serializer` (not Symfony's framework serializer). Uses `NullableDateTimeNormalizer` to handle null values and Unix timestamps from the API. CamelCase-to-snake_case name conversion. `SKIP_NULL_VALUES` on serialization.
@@ -147,6 +156,7 @@ Custom `App\Serializer\Serializer` (not Symfony's framework serializer). Uses `N
 - Profiles, items: client-scoped via custom State Providers/Processors
 - Timeline endpoint: `GET /api/timeline` (chronological feed, filters: limit, since, until, network)
 - `PATCH /api/profiles/{id}` (merge-patch): partial profile update, e.g. toggle `savePhotos`/`saveVideos`
+- `POST /api/profiles/{id}/change-identifier`: change a profile's identifier (body `{"identifier": "…"}`), re-linking the RSS.app feed for RSS.app networks (200, client-scoped, `ProfileChangeIdentifierProcessor`). See "Changing a Profile Identifier" below
 - `POST /api/profiles/{id}/download-media` and `POST /api/items/{id}/download-media`: queue media (re)download (202, client-scoped, drained by `app:download-media --pending`)
 - `POST /api/profiles/{id}/transcribe` and `POST /api/items/{id}/transcribe`: queue video (re)transcription (202, client-scoped, require `transcribeVideos`, drained by `app:transcribe --pending`)
 - Groups: full CRUD `GET/POST/PUT/PATCH/DELETE /api/groups[/{id}]` (writes via `ClientScopedGroupProcessor`, GET scoped by `ClientScopedGroupExtension`). Membership convenience routes `POST /api/groups/{id}/profiles` + `DELETE /api/groups/{id}/profiles/{profileId}` in `GroupMembershipController`. Combined feed `GET /api/groups/{groupId}/items` via `GroupItemsProvider` (filters since/until/network, excludes hidden/deleted), plus RSS at `GET /api/feeds/groups/{id}.rss`. Referenced profiles must belong to the client (400); foreign groups 404.
