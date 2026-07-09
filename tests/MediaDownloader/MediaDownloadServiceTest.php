@@ -313,6 +313,47 @@ class MediaDownloadServiceTest extends TestCase
         $this->assertStringContainsString('Video:', $item->getMediaError());
     }
 
+    public function testVideoDownloadQueuesTranscriptionWhenEnabled(): void
+    {
+        $network = new Network();
+        $profile = new Profile();
+        $profile->setId(42);
+        $profile->setNetwork($network);
+        $profile->setIdentifier('test');
+        $profile->setTranscribeVideos(true);
+
+        $item = new Item();
+        $ref = new \ReflectionProperty(Item::class, 'id');
+        $ref->setValue($item, 100);
+        $item->setProfile($profile);
+
+        $this->extractor->method('extractPhotoUrls')->willReturn([]);
+        $this->extractor->method('extractVideoUrl')->willReturn('https://example.com/post/1');
+        $this->videoDownloader->method('isAvailable')->willReturn(true);
+        $this->videoDownloader->method('download')->willReturn('42/100/video.mp4');
+
+        $this->service->downloadMedia($item);
+
+        $this->assertSame('completed', $item->getMediaStatus());
+        $this->assertSame('42/100/video.mp4', $item->getVideoPath());
+        $this->assertSame('pending', $item->getTranscriptStatus());
+    }
+
+    public function testVideoDownloadDoesNotQueueTranscriptionWhenDisabled(): void
+    {
+        $item = $this->createItem();
+
+        $this->extractor->method('extractPhotoUrls')->willReturn([]);
+        $this->extractor->method('extractVideoUrl')->willReturn('https://example.com/post/1');
+        $this->videoDownloader->method('isAvailable')->willReturn(true);
+        $this->videoDownloader->method('download')->willReturn('42/100/video.mp4');
+
+        $this->service->downloadMedia($item);
+
+        $this->assertSame('completed', $item->getMediaStatus());
+        $this->assertNull($item->getTranscriptStatus());
+    }
+
     public function testQueueItemSetsPendingAndClearsError(): void
     {
         $item = $this->createItem();

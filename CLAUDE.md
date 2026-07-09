@@ -45,6 +45,12 @@ php bin/console app:download-media --pending          # process items queued via
 php bin/console app:download-media --retry-failed     # retry previously failed downloads
 php bin/console app:download-media --photos-only      # only photos
 php bin/console app:download-media --videos-only      # only videos
+
+php bin/console app:transcribe                        # transcribe videos for all profiles with transcribeVideos enabled
+php bin/console app:transcribe --profile-id=42        # transcribe a specific profile's videos
+php bin/console app:transcribe --item-id=99           # transcribe a single item's video
+php bin/console app:transcribe --pending              # process items queued via the API/fetch (transcriptStatus=pending)
+php bin/console app:transcribe --retry-failed         # retry previously failed transcriptions
 ```
 
 ## Architecture
@@ -78,8 +84,8 @@ Network fetchers are auto-discovered: any class implementing `NetworkFeedFetcher
 
 ### Entities
 
-- **Profile** — Social network profile: `id`, `identifier` (URL), `title` (optional display name), `network` (FK), `autoFetch`, `fetchSource`, `savePhotos`, `saveVideos`, `additionalData` (JSON), `deleted`/`deletedAt` (soft delete). `getDisplayName()` returns `title` if set, otherwise `identifier`.
-- **Item** — Feed item: `id`, `profile` (FK), `uniqueIdentifier`, `text`, `title`, `dateTime`, `permalink`, `raw`, `hidden`, `deleted`, `photoPaths` (JSON array), `videoPath`, `mediaStatus`, `mediaError`. Supports soft-delete, hide toggles, and media downloads.
+- **Profile** — Social network profile: `id`, `identifier` (URL), `title` (optional display name), `network` (FK), `autoFetch`, `fetchSource`, `savePhotos`, `saveVideos`, `transcribeVideos`, `additionalData` (JSON), `deleted`/`deletedAt` (soft delete). `getDisplayName()` returns `title` if set, otherwise `identifier`.
+- **Item** — Feed item: `id`, `profile` (FK), `uniqueIdentifier`, `text`, `title`, `dateTime`, `permalink`, `raw`, `hidden`, `deleted`, `photoPaths` (JSON array), `videoPath`, `mediaStatus`, `mediaError`, `transcript` (text), `transcriptStatus`, `transcriptError`. Supports soft-delete, hide toggles, media downloads, and video transcription.
 - **Network** — Social network definition: `id`, `identifier`, `name`, `icon`, `backgroundColor`, `textColor`, `cronExpression`.
 - **Client** — API client: `id`, `name`, `token`, `enabled`, `profiles` (ManyToMany via `client_profile` join table), `createdAt`.
 - **Group** — Named bundle of a client's profiles (table `profile_group`, unique `(client_id, name)`): `id`, `name`, `description`, `color`, `client` (ManyToOne, NOT NULL — a group belongs to exactly one client, unlike shared profiles), `profiles` (ManyToMany via `profile_group_profile`), `createdAt`. Serialization groups `group:read` (incl. `profileCount`), `group:detail` (embeds `profiles`), `group:write`. Used to read a combined feed per group.
@@ -98,6 +104,18 @@ Profiles can opt into automatic photo/video downloads via `savePhotos` and `save
 - Manual download via button on item detail page (Stimulus `media_download_controller`)
 - **API-triggered (re)download**: `POST /api/items/{id}/download-media` and `POST /api/profiles/{id}/download-media` (`?force=true` to re-queue all) mark items `pending` via `ItemMediaDownloadProcessor`/`ProfileMediaDownloadProcessor` (client-scoped, 202, require `savePhotos`/`saveVideos`); the actual download runs out-of-band via the `app:download-media --pending` cron. No Messenger — the queue is the `mediaStatus=pending` column.
 - Item entity stores `photoPaths` (JSON array of relative paths), `videoPath` (string), `mediaStatus`, `mediaError`
+
+### Video Transcription System
+
+Profiles can opt into automatic transcription of downloaded videos via the `transcribeVideos` flag (only meaningful together with `saveVideos` — a video must be downloaded first). Transcription runs local via whisper.cpp, decoupled from the fetch/download run through a `transcriptStatus` queue (`null` → `pending` → `running` → `completed`/`failed`), mirroring the media-download queue.
+
+- **`WhisperTranscriber`** (`src/Transcription/`) — low-level: extracts a 16 kHz mono WAV from the downloaded video with `ffmpeg`, then runs the whisper.cpp CLI (`-otxt`) and returns the transcript text. `isAvailable()` gracefully reports false unless the whisper binary, the model file and `ffmpeg` are all present. Configured via `$whisperCliPath`/`$whisperModelPath`/`$whisperLanguage` binds.
+- **`TranscriptionService`** (`src/Transcription/`) — orchestrates the status lifecycle and persistence. `transcribe(Item)` does the work; `queueItem()`/`queueProfile()` mark items `pending` (used by the API trigger); `transcribePendingItems()` drains the queue.
+- **Auto-queue**: after a video is downloaded, `MediaDownloadService::downloadMedia()` marks the item `transcriptStatus=pending` when the profile has `transcribeVideos` enabled. The actual transcription runs out-of-band via `app:transcribe --pending` (cron). No Messenger — the queue is the `transcriptStatus=pending` column, same pattern as media downloads.
+- **`TranscribeCommand`** (`app:transcribe`) — CLI for bulk/targeted transcription with `--profile-id`, `--item-id`, `--pending`, `--retry-failed`. Backfills videos downloaded before the flag was enabled. Errors out cleanly if whisper.cpp/ffmpeg are unavailable.
+- **API-triggered (re)transcription**: `POST /api/items/{id}/transcribe` and `POST /api/profiles/{id}/transcribe` (`?force=true` to re-queue all) mark items `pending` via `ItemTranscriptionProcessor`/`ProfileTranscriptionProcessor` (client-scoped, 202, require `transcribeVideos`; item route also requires a downloaded video).
+- The transcript is shown on the item detail page (Web-UI) and exposed on the single-item API GET (`item:detail` group). `transcriptStatus`/`transcriptError` are in `item:read`.
+- **Ops**: whisper.cpp binary + ggml model are a manual server-side install (see `WHISPER_*` env vars). Schedule `app:transcribe --pending` in cron alongside `app:download-media --pending`.
 
 ### Changing a Profile Identifier
 
@@ -140,6 +158,7 @@ Custom `App\Serializer\Serializer` (not Symfony's framework serializer). Uses `N
 - `PATCH /api/profiles/{id}` (merge-patch): partial profile update, e.g. toggle `savePhotos`/`saveVideos`
 - `POST /api/profiles/{id}/change-identifier`: change a profile's identifier (body `{"identifier": "…"}`), re-linking the RSS.app feed for RSS.app networks (200, client-scoped, `ProfileChangeIdentifierProcessor`). See "Changing a Profile Identifier" below
 - `POST /api/profiles/{id}/download-media` and `POST /api/items/{id}/download-media`: queue media (re)download (202, client-scoped, drained by `app:download-media --pending`)
+- `POST /api/profiles/{id}/transcribe` and `POST /api/items/{id}/transcribe`: queue video (re)transcription (202, client-scoped, require `transcribeVideos`, drained by `app:transcribe --pending`)
 - Groups: full CRUD `GET/POST/PUT/PATCH/DELETE /api/groups[/{id}]` (writes via `ClientScopedGroupProcessor`, GET scoped by `ClientScopedGroupExtension`). Membership convenience routes `POST /api/groups/{id}/profiles` + `DELETE /api/groups/{id}/profiles/{profileId}` in `GroupMembershipController`. Combined feed `GET /api/groups/{groupId}/items` via `GroupItemsProvider` (filters since/until/network, excludes hidden/deleted), plus RSS at `GET /api/feeds/groups/{id}.rss`. Referenced profiles must belong to the client (400); foreign groups 404.
 - Networks: public read access
 - OpenAPI docs at `/api/docs`
@@ -179,7 +198,7 @@ The app can run as a standalone instance that imports data from the criticalmass
 
 ## Environment Variables
 
-Key vars in `.env`: `CRITICALMASS_HOSTNAME` (API base URL), `RSS_APP_API_KEY`, `RSS_APP_API_SECRET`, `WEB_ADMIN_USERNAME`, `WEB_ADMIN_PASSWORD_HASH`, `DATABASE_URL`. The `$criticalmassHostname` binding in `services.yaml` injects into `ProfileFetcher`, `ImportProfilesCommand`, `ImportItemsCommand`, and `ProfilePersister`.
+Key vars in `.env`: `CRITICALMASS_HOSTNAME` (API base URL), `RSS_APP_API_KEY`, `RSS_APP_API_SECRET`, `WEB_ADMIN_USERNAME`, `WEB_ADMIN_PASSWORD_HASH`, `DATABASE_URL`, `WHISPER_CLI_PATH`/`WHISPER_MODEL_PATH`/`WHISPER_LANGUAGE` (video transcription; empty model path disables it). The `$criticalmassHostname` binding in `services.yaml` injects into `ProfileFetcher`, `ImportProfilesCommand`, `ImportItemsCommand`, and `ProfilePersister`.
 
 ## Local Development
 

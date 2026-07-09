@@ -58,6 +58,11 @@ class ProfileType extends AbstractType
                 'label' => 'Videos speichern',
                 'required' => false,
             ])
+            ->add('transcribeVideos', CheckboxType::class, [
+                'label' => 'Videos transkribieren',
+                'required' => false,
+                'help' => 'Heruntergeladene Videos automatisch per whisper.cpp transkribieren (benötigt „Videos speichern")',
+            ])
             ->add('additionalData', TextareaType::class, [
                 'label' => 'Zusätzliche Daten (JSON)',
                 'required' => false,
