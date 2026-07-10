@@ -6,6 +6,7 @@ use App\Entity\Client;
 use App\Entity\Group;
 use App\Entity\Profile;
 use App\Form\GroupType;
+use App\Group\PublicSlugGenerator;
 use App\Repository\ClientRepository;
 use App\Repository\GroupRepository;
 use App\Repository\ItemRepository;
@@ -13,6 +14,7 @@ use App\Repository\NetworkRepository;
 use App\Repository\ProfileRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -60,7 +62,7 @@ class GroupController extends AbstractController
     }
 
     #[Route('/new', name: 'app_group_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $em): Response
+    public function new(Request $request, EntityManagerInterface $em, PublicSlugGenerator $slugGenerator): Response
     {
         $group = new Group();
 
@@ -82,6 +84,7 @@ class GroupController extends AbstractController
             if ($error = $this->ensureProfilesBelongToClient($group)) {
                 $form->addError(new \Symfony\Component\Form\FormError($error));
             } else {
+                $this->applyPublicPageSettings($group, $form, $slugGenerator);
                 $em->persist($group);
                 $em->flush();
 
@@ -136,7 +139,7 @@ class GroupController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_group_edit', requirements: ['id' => '\d+'], methods: ['GET', 'POST'])]
-    public function edit(Request $request, Group $group, EntityManagerInterface $em): Response
+    public function edit(Request $request, Group $group, EntityManagerInterface $em, PublicSlugGenerator $slugGenerator): Response
     {
         $this->denyForeignClient($group);
 
@@ -149,6 +152,7 @@ class GroupController extends AbstractController
             if ($error = $this->ensureProfilesBelongToClient($group)) {
                 $form->addError(new \Symfony\Component\Form\FormError($error));
             } else {
+                $this->applyPublicPageSettings($group, $form, $slugGenerator);
                 $em->flush();
 
                 $this->addFlash('success', 'Gruppe wurde aktualisiert.');
@@ -175,6 +179,20 @@ class GroupController extends AbstractController
         }
 
         return $this->redirectToRoute('app_group_index');
+    }
+
+    #[Route('/{id}/regenerate-slug', name: 'app_group_regenerate_slug', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function regenerateSlug(Request $request, Group $group, EntityManagerInterface $em, PublicSlugGenerator $slugGenerator): Response
+    {
+        $this->denyForeignClient($group);
+
+        if ($this->isCsrfTokenValid('group-regenerate-slug-' . $group->getId(), $request->request->getString('_token'))) {
+            $group->setPublicSlug($slugGenerator->generate());
+            $em->flush();
+            $this->addFlash('success', 'Der öffentliche Link wurde neu erzeugt. Der alte Link ist nicht mehr gültig.');
+        }
+
+        return $this->redirectToRoute('app_group_show', ['id' => $group->getId()]);
     }
 
     #[Route('/{id}/profiles/add', name: 'app_group_profile_add', requirements: ['id' => '\d+'], methods: ['POST'])]
@@ -222,6 +240,27 @@ class GroupController extends AbstractController
         }
 
         return $this->redirectToRoute('app_group_show', ['id' => $group->getId()]);
+    }
+
+    /**
+     * Apply the unmapped public-page password fields and ensure an enabled page
+     * has a slug. An empty password field leaves an existing password untouched;
+     * the "remove" checkbox clears it.
+     */
+    private function applyPublicPageSettings(Group $group, FormInterface $form, PublicSlugGenerator $slugGenerator): void
+    {
+        if ($form->has('removePublicPassword') && $form->get('removePublicPassword')->getData() === true) {
+            $group->setPublicPasswordHash(null);
+        } elseif ($form->has('publicPassword')) {
+            $newPassword = (string) $form->get('publicPassword')->getData();
+            if ($newPassword !== '') {
+                $group->setPublicPassword($newPassword);
+            }
+        }
+
+        if ($group->isPublicPageEnabled() && $group->getPublicSlug() === null) {
+            $group->setPublicSlug($slugGenerator->generate());
+        }
     }
 
     private function loggedInClient(): ?Client

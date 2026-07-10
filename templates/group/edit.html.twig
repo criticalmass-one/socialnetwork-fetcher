@@ -15,6 +15,22 @@
                 {{ form_row(form.description) }}
                 {{ form_row(form.color) }}
                 {{ form_row(form.profiles) }}
+
+                <hr class="my-4">
+                <h5 class="mb-3">Öffentliche Seite</h5>
+                {{ form_row(form.publicPageEnabled) }}
+                {{ form_row(form.publicTitle) }}
+                {{ form_row(form.publicDescription) }}
+                {{ form_row(form.timeWindowDays) }}
+                <div class="row">
+                    <div class="col-sm-6">{{ form_row(form.showPhotos) }}</div>
+                    <div class="col-sm-6">{{ form_row(form.showVideos) }}</div>
+                    <div class="col-sm-6">{{ form_row(form.showTranscript) }}</div>
+                    <div class="col-sm-6">{{ form_row(form.showCaptions) }}</div>
+                </div>
+                {{ form_row(form.publicPassword) }}
+                {% if group.publicPasswordProtected %}{{ form_row(form.removePublicPassword) }}{% endif %}
+
                 <div class="mt-3 d-flex gap-2">
                     <button type="submit" class="btn btn-primary">Speichern</button>
                     <a href="{{ path('app_group_show', {id: group.id}) }}" class="btn btn-outline-secondary">Abbrechen</a>
