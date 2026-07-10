@@ -144,6 +144,13 @@ class Group
     #[ApiProperty(description: 'How many days back the public page shows items. Null shows all items.', example: 30)]
     private ?int $timeWindowDays = 30;
 
+    /**
+     * Not persisted; filled at serialization time by GroupPublicUrlNormalizer.
+     */
+    #[Groups(['group:read'])]
+    #[ApiProperty(description: 'Absolute URL of the public page, or null when disabled. Built from publicSlug against the current host.', readable: true, writable: false)]
+    private ?string $publicUrl = null;
+
     /** @var Collection<int, Profile> */
     #[ORM\ManyToMany(targetEntity: Profile::class)]
     #[ORM\JoinTable(name: 'profile_group_profile')]
@@ -405,6 +412,11 @@ class Group
         $this->timeWindowDays = $timeWindowDays;
 
         return $this;
+    }
+
+    public function getPublicUrl(): ?string
+    {
+        return $this->publicUrl;
     }
 
     /**

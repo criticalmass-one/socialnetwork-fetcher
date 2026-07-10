@@ -8,6 +8,7 @@ use ApiPlatform\State\ProcessorInterface;
 use App\Entity\Client;
 use App\Entity\Group;
 use App\Entity\Profile;
+use App\Group\PublicSlugGenerator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -20,6 +21,7 @@ class ClientScopedGroupProcessor implements ProcessorInterface
     public function __construct(
         private readonly EntityManagerInterface $em,
         private readonly Security $security,
+        private readonly PublicSlugGenerator $slugGenerator,
     ) {
     }
 
@@ -63,6 +65,11 @@ class ClientScopedGroupProcessor implements ProcessorInterface
 
         $this->ensureProfilesBelongToClient($client, $group);
 
+        // An enabled public page needs a slug; generate one lazily on first enable.
+        if ($group->isPublicPageEnabled() && $group->getPublicSlug() === null) {
+            $group->setPublicSlug($this->slugGenerator->generate());
+        }
+
         $this->em->persist($group);
         $this->em->flush();
 
@@ -84,6 +91,19 @@ class ClientScopedGroupProcessor implements ProcessorInterface
         $existing->setName($incoming->getName());
         $existing->setDescription($incoming->getDescription());
         $existing->setColor($incoming->getColor());
+
+        // Public-page settings (full replacement — PUT semantics). publicSlug is
+        // not writable, so the existing slug is preserved. An omitted publicPassword
+        // clears the password, consistent with PUT replacing the whole resource.
+        $existing->setPublicPageEnabled($incoming->isPublicPageEnabled());
+        $existing->setPublicTitle($incoming->getPublicTitle());
+        $existing->setPublicDescription($incoming->getPublicDescription());
+        $existing->setShowPhotos($incoming->isShowPhotos());
+        $existing->setShowVideos($incoming->isShowVideos());
+        $existing->setShowTranscript($incoming->isShowTranscript());
+        $existing->setShowCaptions($incoming->isShowCaptions());
+        $existing->setTimeWindowDays($incoming->getTimeWindowDays());
+        $existing->setPublicPasswordHash($incoming->getPublicPasswordHash());
 
         foreach ($existing->getProfiles()->toArray() as $profile) {
             $existing->removeProfile($profile);
