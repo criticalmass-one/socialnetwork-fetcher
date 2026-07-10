@@ -175,10 +175,24 @@ class PublicGroupController extends AbstractController
                 'videoUrl' => $videoUrl,
                 'poster' => $poster,
                 'transcript' => $transcript,
+                'hue' => $this->avatarHue($item),
             ];
         }
 
         return $view;
+    }
+
+    /** Deterministic 0–359 hue for a profile's avatar, matching the reference page. */
+    private function avatarHue(Item $item): int
+    {
+        $key = ($item->getProfile()?->getIdentifier() ?? '') . ($item->getProfile()?->getId() ?? '');
+        $hash = 0;
+        $len = strlen($key);
+        for ($i = 0; $i < $len; $i++) {
+            $hash = ($hash * 31 + ord($key[$i])) & 0xffff;
+        }
+
+        return $hash % 360;
     }
 
     private function mediaUrl(string $relativePath): string
