@@ -64,4 +64,64 @@ class GroupTest extends TestCase
         $this->assertSame('Some description.', $group->getDescription());
         $this->assertSame('#abcdef', $group->getColor());
     }
+
+    public function testPublicPageDefaults(): void
+    {
+        $group = new Group();
+
+        $this->assertFalse($group->isPublicPageEnabled());
+        $this->assertNull($group->getPublicSlug());
+        $this->assertTrue($group->isShowPhotos());
+        $this->assertTrue($group->isShowVideos());
+        $this->assertFalse($group->isShowTranscript());
+        $this->assertTrue($group->isShowCaptions());
+        $this->assertSame(30, $group->getTimeWindowDays());
+        $this->assertFalse($group->isPublicPasswordProtected());
+    }
+
+    public function testSetPublicPasswordSetsHashesAndVerifies(): void
+    {
+        $group = new Group();
+        $group->setPublicPassword('s3cret');
+
+        $this->assertTrue($group->isPublicPasswordProtected());
+        $this->assertNotSame('s3cret', $group->getPublicPasswordHash());
+        $this->assertTrue($group->verifyPublicPassword('s3cret'));
+        $this->assertFalse($group->verifyPublicPassword('wrong'));
+    }
+
+    public function testSetPublicPasswordNullLeavesHashUntouched(): void
+    {
+        $group = new Group();
+        $group->setPublicPassword('keepme');
+        $hash = $group->getPublicPasswordHash();
+
+        $group->setPublicPassword(null);
+
+        $this->assertSame($hash, $group->getPublicPasswordHash());
+        $this->assertTrue($group->verifyPublicPassword('keepme'));
+    }
+
+    public function testSetPublicPasswordEmptyStringClears(): void
+    {
+        $group = new Group();
+        $group->setPublicPassword('gone');
+
+        $group->setPublicPassword('');
+
+        $this->assertFalse($group->isPublicPasswordProtected());
+        $this->assertNull($group->getPublicPasswordHash());
+        $this->assertFalse($group->verifyPublicPassword('gone'));
+    }
+
+    public function testPublicHeadingFallsBackToName(): void
+    {
+        $group = new Group();
+        $group->setName('Klima');
+
+        $this->assertSame('Klima', $group->getPublicHeading());
+
+        $group->setPublicTitle('Klima-Feed Lüneburg');
+        $this->assertSame('Klima-Feed Lüneburg', $group->getPublicHeading());
+    }
 }
