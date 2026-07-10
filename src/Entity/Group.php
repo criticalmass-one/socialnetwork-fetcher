@@ -95,6 +95,55 @@ class Group
     #[ApiProperty(description: 'Timestamp when this group was created.', readable: true, writable: false)]
     private \DateTimeImmutable $createdAt;
 
+    #[ORM\Column(name: 'public_page_enabled', type: 'boolean', options: ['default' => false])]
+    #[Groups(['group:read', 'group:write'])]
+    #[ApiProperty(description: 'Whether the public feed page for this group is reachable at /p/{publicSlug}. A slug is generated automatically the first time this is enabled.', example: false)]
+    private bool $publicPageEnabled = false;
+
+    #[ORM\Column(name: 'public_slug', type: 'string', length: 32, nullable: true, unique: true)]
+    #[Groups(['group:read'])]
+    #[ApiProperty(description: 'Unguessable URL token of the public page (path /p/{publicSlug}). Generated server-side; not writable. Use the regenerate-slug action to rotate it.', readable: true, writable: false)]
+    private ?string $publicSlug = null;
+
+    #[ORM\Column(name: 'public_password_hash', type: 'string', nullable: true)]
+    #[ApiProperty(readable: false, writable: false)]
+    private ?string $publicPasswordHash = null;
+
+    #[ORM\Column(name: 'public_title', type: 'string', length: 120, nullable: true)]
+    #[Groups(['group:read', 'group:write'])]
+    #[ApiProperty(description: 'Optional heading shown on the public page. Falls back to the group name when empty.')]
+    private ?string $publicTitle = null;
+
+    #[ORM\Column(name: 'public_description', type: 'text', nullable: true)]
+    #[Groups(['group:read', 'group:write'])]
+    #[ApiProperty(description: 'Optional subtitle shown on the public page.')]
+    private ?string $publicDescription = null;
+
+    #[ORM\Column(name: 'show_photos', type: 'boolean', options: ['default' => true])]
+    #[Groups(['group:read', 'group:write'])]
+    #[ApiProperty(description: 'Whether photos are shown on the public page.', example: true)]
+    private bool $showPhotos = true;
+
+    #[ORM\Column(name: 'show_videos', type: 'boolean', options: ['default' => true])]
+    #[Groups(['group:read', 'group:write'])]
+    #[ApiProperty(description: 'Whether videos are shown on the public page.', example: true)]
+    private bool $showVideos = true;
+
+    #[ORM\Column(name: 'show_transcript', type: 'boolean', options: ['default' => false])]
+    #[Groups(['group:read', 'group:write'])]
+    #[ApiProperty(description: 'Whether video transcripts are shown on the public page.', example: false)]
+    private bool $showTranscript = false;
+
+    #[ORM\Column(name: 'show_captions', type: 'boolean', options: ['default' => true])]
+    #[Groups(['group:read', 'group:write'])]
+    #[ApiProperty(description: 'Whether the post text/caption is shown on the public page.', example: true)]
+    private bool $showCaptions = true;
+
+    #[ORM\Column(name: 'time_window_days', type: 'integer', nullable: true, options: ['default' => 30])]
+    #[Groups(['group:read', 'group:write'])]
+    #[ApiProperty(description: 'How many days back the public page shows items. Null shows all items.', example: 30)]
+    private ?int $timeWindowDays = 30;
+
     /** @var Collection<int, Profile> */
     #[ORM\ManyToMany(targetEntity: Profile::class)]
     #[ORM\JoinTable(name: 'profile_group_profile')]
@@ -202,5 +251,168 @@ class Group
     public function getProfileCount(): int
     {
         return $this->profiles->count();
+    }
+
+    public function isPublicPageEnabled(): bool
+    {
+        return $this->publicPageEnabled;
+    }
+
+    public function setPublicPageEnabled(bool $publicPageEnabled): self
+    {
+        $this->publicPageEnabled = $publicPageEnabled;
+
+        return $this;
+    }
+
+    public function getPublicSlug(): ?string
+    {
+        return $this->publicSlug;
+    }
+
+    public function setPublicSlug(?string $publicSlug): self
+    {
+        $this->publicSlug = $publicSlug;
+
+        return $this;
+    }
+
+    public function getPublicPasswordHash(): ?string
+    {
+        return $this->publicPasswordHash;
+    }
+
+    public function setPublicPasswordHash(?string $publicPasswordHash): self
+    {
+        $this->publicPasswordHash = $publicPasswordHash;
+
+        return $this;
+    }
+
+    /**
+     * Set the public-page password from a plain-text value. An empty string
+     * clears the password (page becomes freely accessible). Passing null leaves
+     * the current hash untouched — used so that "field absent" on a PATCH does
+     * not wipe an existing password.
+     */
+    #[Groups(['group:write'])]
+    #[ApiProperty(description: 'Write-only. Plain-text password protecting the public page. Send an empty string to remove the password. The stored hash is never returned.')]
+    public function setPublicPassword(?string $plain): self
+    {
+        if ($plain === null) {
+            return $this;
+        }
+
+        $this->publicPasswordHash = $plain === ''
+            ? null
+            : password_hash($plain, PASSWORD_DEFAULT);
+
+        return $this;
+    }
+
+    public function verifyPublicPassword(string $plain): bool
+    {
+        return $this->publicPasswordHash !== null
+            && password_verify($plain, $this->publicPasswordHash);
+    }
+
+    #[Groups(['group:read'])]
+    #[ApiProperty(description: 'Whether the public page is protected by a password.', readable: true, writable: false)]
+    public function isPublicPasswordProtected(): bool
+    {
+        return $this->publicPasswordHash !== null;
+    }
+
+    public function getPublicTitle(): ?string
+    {
+        return $this->publicTitle;
+    }
+
+    public function setPublicTitle(?string $publicTitle): self
+    {
+        $this->publicTitle = $publicTitle;
+
+        return $this;
+    }
+
+    public function getPublicDescription(): ?string
+    {
+        return $this->publicDescription;
+    }
+
+    public function setPublicDescription(?string $publicDescription): self
+    {
+        $this->publicDescription = $publicDescription;
+
+        return $this;
+    }
+
+    public function isShowPhotos(): bool
+    {
+        return $this->showPhotos;
+    }
+
+    public function setShowPhotos(bool $showPhotos): self
+    {
+        $this->showPhotos = $showPhotos;
+
+        return $this;
+    }
+
+    public function isShowVideos(): bool
+    {
+        return $this->showVideos;
+    }
+
+    public function setShowVideos(bool $showVideos): self
+    {
+        $this->showVideos = $showVideos;
+
+        return $this;
+    }
+
+    public function isShowTranscript(): bool
+    {
+        return $this->showTranscript;
+    }
+
+    public function setShowTranscript(bool $showTranscript): self
+    {
+        $this->showTranscript = $showTranscript;
+
+        return $this;
+    }
+
+    public function isShowCaptions(): bool
+    {
+        return $this->showCaptions;
+    }
+
+    public function setShowCaptions(bool $showCaptions): self
+    {
+        $this->showCaptions = $showCaptions;
+
+        return $this;
+    }
+
+    public function getTimeWindowDays(): ?int
+    {
+        return $this->timeWindowDays;
+    }
+
+    public function setTimeWindowDays(?int $timeWindowDays): self
+    {
+        $this->timeWindowDays = $timeWindowDays;
+
+        return $this;
+    }
+
+    /**
+     * Effective heading for the public page: the explicit public title, or the
+     * group name as a fallback.
+     */
+    public function getPublicHeading(): string
+    {
+        return $this->publicTitle ?? $this->name ?? '';
     }
 }
