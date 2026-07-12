@@ -1,8 +1,12 @@
 {% if pages > 1 %}
+{# Keep the current route's path parameters (e.g. the group id on app_group_show)
+   alongside the query string, otherwise regenerating the route drops required
+   path params and throws MissingMandatoryParametersException. #}
+{% set base_params = app.request.attributes.get('_route_params')|default({})|merge(app.request.query.all) %}
 <nav aria-label="Seitennavigation">
     <ul class="pagination justify-content-center">
         <li class="page-item {% if page <= 1 %}disabled{% endif %}">
-            <a class="page-link" href="{{ path(app.request.attributes.get('_route'), app.request.query.all|merge({page: page - 1})) }}">
+            <a class="page-link" href="{{ path(app.request.attributes.get('_route'), base_params|merge({page: page - 1})) }}">
                 <i class="fas fa-chevron-left"></i>
             </a>
         </li>
@@ -11,14 +15,14 @@
                 <li class="page-item active"><span class="page-link">{{ p }}</span></li>
             {% elseif p <= 3 or p > pages - 2 or (p >= page - 1 and p <= page + 1) %}
                 <li class="page-item">
-                    <a class="page-link" href="{{ path(app.request.attributes.get('_route'), app.request.query.all|merge({page: p})) }}">{{ p }}</a>
+                    <a class="page-link" href="{{ path(app.request.attributes.get('_route'), base_params|merge({page: p})) }}">{{ p }}</a>
                 </li>
             {% elseif p == 4 or p == pages - 2 %}
                 <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
             {% endif %}
         {% endfor %}
         <li class="page-item {% if page >= pages %}disabled{% endif %}">
-            <a class="page-link" href="{{ path(app.request.attributes.get('_route'), app.request.query.all|merge({page: page + 1})) }}">
+            <a class="page-link" href="{{ path(app.request.attributes.get('_route'), base_params|merge({page: page + 1})) }}">
                 <i class="fas fa-chevron-right"></i>
             </a>
         </li>
