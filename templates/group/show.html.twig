@@ -35,6 +35,37 @@
                 </div>
             </div>
 
+            <div class="data-card mb-3">
+                <div class="data-card-header">Öffentliche Seite</div>
+                <div class="data-card-body">
+                    {% if group.publicPageEnabled and group.publicSlug %}
+                        <p class="mb-2">
+                            <span class="badge bg-success">aktiv</span>
+                            {% if group.publicPasswordProtected %}<span class="badge bg-secondary"><i class="fas fa-lock me-1"></i>passwortgeschützt</span>{% endif %}
+                        </p>
+                        <div class="input-group input-group-sm mb-2">
+                            <input type="text" class="form-control" readonly value="{{ url('app_public_group', {slug: group.publicSlug}) }}">
+                            <a href="{{ path('app_public_group', {slug: group.publicSlug}) }}" target="_blank" rel="noopener" class="btn btn-outline-secondary">
+                                <i class="fas fa-external-link-alt me-1"></i>Öffnen
+                            </a>
+                        </div>
+                        <form method="post" action="{{ path('app_group_regenerate_slug', {id: group.id}) }}"
+                              data-controller="confirm"
+                              data-confirm-message-value="Neuen Link erzeugen? Der bisherige Link wird ungültig.">
+                            <input type="hidden" name="_token" value="{{ csrf_token('group-regenerate-slug-' ~ group.id) }}">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-rotate me-1"></i>Link neu erzeugen
+                            </button>
+                        </form>
+                    {% else %}
+                        <p class="text-muted mb-2">Die öffentliche Seite ist deaktiviert.</p>
+                        <a href="{{ path('app_group_edit', {id: group.id}) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-globe me-1"></i>Aktivieren
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
             <form method="post" action="{{ path('app_group_delete', {id: group.id}) }}"
                   data-controller="confirm"
                   data-confirm-message-value="Gruppe &quot;{{ group.name }}&quot; wirklich löschen? Profile bleiben erhalten.">

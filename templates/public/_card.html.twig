@@ -1,0 +1,54 @@
+{% set item = vi.item %}
+{% set profile = item.profile %}
+{% set net = profile ? profile.network : null %}
+{% set name = profile ? profile.displayName : '?' %}
+{% set initial = name|slice(0, 1)|upper %}
+{% set permalink = item.permalink ?: vi.photos|first|default('') %}
+{% set profileUrl = (profile and profile.identifier starts with 'http') ? profile.identifier : permalink %}
+<article class="post">
+    <div class="post-head">
+        <a class="avatar" style="background:hsl({{ vi.hue }}, 65%, 50%)" href="{{ profileUrl }}" target="_blank" rel="noopener nofollow">
+            {{ initial }}
+            {% if net %}<span class="net-badge" style="background:{{ net.backgroundColor }}"><i class="{{ net.icon }}"></i></span>{% endif %}
+        </a>
+        <div class="meta">
+            <a class="who" href="{{ profileUrl }}" target="_blank" rel="noopener nofollow">{{ name }}</a>
+            {% if item.dateTime %}<div class="when" title="{{ item.dateTime|date('d.m.Y H:i') }}">{{ item.dateTime|date('d.m.Y H:i') }}</div>{% endif %}
+        </div>
+    </div>
+
+    {% if vi.videoUrl %}
+        <div class="post-video">
+            <video controls preload="none"{% if vi.poster %} poster="{{ vi.poster }}"{% endif %} src="{{ vi.videoUrl }}"></video>
+        </div>
+    {% elseif vi.photos is not empty %}
+        {% if vi.photos|length == 1 %}
+            <a class="post-photo" href="{{ permalink }}" target="_blank" rel="noopener nofollow">
+                <img loading="lazy" referrerpolicy="no-referrer" src="{{ vi.photos|first }}" alt="" onerror="this.closest('.post-photo').style.display='none'">
+            </a>
+        {% else %}
+            <div class="post-photos count-{{ vi.photos|length > 4 ? 4 : vi.photos|length }}">
+                {% for p in vi.photos %}
+                    <a class="post-photo" href="{{ permalink }}" target="_blank" rel="noopener nofollow">
+                        <img loading="lazy" referrerpolicy="no-referrer" src="{{ p }}" alt="" onerror="this.closest('.post-photo').style.display='none'">
+                    </a>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endif %}
+
+    {% if (group.showCaptions and item.text) or vi.transcript %}
+        <div class="post-body">
+            {% if group.showCaptions and item.text %}
+                <div class="caption clamp"><span class="who-inline">{{ name }}</span> {{ item.text|public_linkify }}</div>
+                <span class="more" hidden>… mehr</span>
+            {% endif %}
+            {% if vi.transcript %}
+                <details class="transcript">
+                    <summary><i class="fas fa-closed-captioning"></i>Transkript</summary>
+                    <div class="transcript-text">{{ vi.transcript }}</div>
+                </details>
+            {% endif %}
+        </div>
+    {% endif %}
+</article>

@@ -91,6 +91,37 @@ class ItemRepository extends ServiceEntityRepository
         return (int) $qb->getQuery()->getSingleScalarResult();
     }
 
+    /**
+     * Items for a group's public page: live members only, hidden / soft-deleted
+     * items excluded, optionally limited to a time window, dateTime DESC.
+     *
+     * @return list<Item>
+     */
+    public function findPaginatedForPublicGroup(\App\Entity\Group $group, int $page, int $limit, ?\DateTimeImmutable $since = null): array
+    {
+        $qb = $this->groupQueryBuilder($group)
+            ->orderBy('i.dateTime', 'DESC')
+            ->setFirstResult(($page - 1) * $limit)
+            ->setMaxResults($limit);
+
+        if ($since !== null) {
+            $qb->andWhere('i.dateTime >= :since')->setParameter('since', $since);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
+    public function countForPublicGroup(\App\Entity\Group $group, ?\DateTimeImmutable $since = null): int
+    {
+        $qb = $this->groupQueryBuilder($group)->select('COUNT(i.id)');
+
+        if ($since !== null) {
+            $qb->andWhere('i.dateTime >= :since')->setParameter('since', $since);
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
     private function groupQueryBuilder(\App\Entity\Group $group): QueryBuilder
     {
         $profileIds = [];

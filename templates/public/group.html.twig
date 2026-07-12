@@ -1,0 +1,33 @@
+{% extends 'public/base.html.twig' %}
+
+{% block body %}
+    <header class="page-head">
+        <h1>{{ group.publicHeading }}</h1>
+        {% if group.publicDescription %}<p class="desc">{{ group.publicDescription }}</p>{% endif %}
+        <div class="sub">
+            {% if group.timeWindowDays %}<span><span class="dot">●</span> letzte {{ group.timeWindowDays }} Tage</span>{% endif %}
+            <span>{{ total }} {{ total == 1 ? 'Beitrag' : 'Beiträge' }}</span>
+        </div>
+    </header>
+
+    <main data-controller="public-feed"
+          data-public-feed-url-value="{{ path('app_public_group_more', {slug: group.publicSlug}) }}"
+          data-public-feed-page-value="{{ page }}"
+          data-public-feed-has-more-value="{{ hasMore ? 'true' : 'false' }}">
+        {% if viewItems is empty %}
+            <div class="empty">
+                <i class="fas fa-inbox"></i>
+                Noch keine Beiträge{% if group.timeWindowDays %} in den letzten {{ group.timeWindowDays }} Tagen{% endif %}.
+            </div>
+        {% else %}
+            <div data-public-feed-target="feed">
+                {% include 'public/_cards.html.twig' with {viewItems: viewItems, group: group, hasMore: hasMore} %}
+            </div>
+            <div class="sentinel" data-public-feed-target="sentinel"></div>
+        {% endif %}
+    </main>
+{% endblock %}
+
+{% block javascripts %}
+    {{ importmap('public') }}
+{% endblock %}

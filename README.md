@@ -199,6 +199,7 @@ The admin interface is accessible after login at `/login`. It provides:
 - **Profiles** — Searchable/filterable list with auto-fetch toggle, save photos/videos toggles, fetch status, manual fetch trigger, RSS.app registration
 - **RSS.app** — Overview of all profiles linked to an RSS.app feed (sortable DataTable), showing feed ID and last-post date. Per-row button to delete the feed at RSS.app and unlink it locally.
 - **Items** — Searchable/filterable list with hide/delete toggles, media status indicators, network and profile filters, manual media download
+- **Groups** — Bundle a client's profiles, read their combined timeline, and configure a public feed page (`/p/{slug}`) with content toggles and an optional password
 - **Clients** — API client management with token display, enable/disable
 
 The frontend uses Bootstrap 5, Stimulus controllers for interactive features (toggles, AJAX pagination, search), Handlebars for client-side template rendering, and DataTables for client-side sortable tables (RSS.app overview). Assets are managed via Symfony Asset Mapper (no build step needed).
@@ -249,6 +250,20 @@ Media downloads triggered via the API are processed asynchronously by the `app:d
 - `GET /api/feeds/groups/{id}.rss` — The same feed as RSS 2.0
 
   Every profile referenced when creating/updating a group or adding members must already be linked to the authenticated client (otherwise `400`); foreign or unknown groups return `404`.
+
+  A group can also expose a **public page** (see below). The public-page settings are read/written on the same group resource: `publicPageEnabled`, `publicTitle`, `publicDescription`, `showPhotos`, `showVideos`, `showTranscript`, `showCaptions`, `timeWindowDays`, and the write-only `publicPassword` (send `""` to remove it, never returned). The response carries the generated `publicSlug`, the absolute `publicUrl`, and `publicPasswordProtected`. Enabling the page generates the slug automatically.
+
+### Public group page
+
+Each group can be published as an unauthenticated, mobile-first feed page at `/p/{slug}` (Instagram-style single column with photos, videos, transcripts and captions). Configure it in the group's settings in the Web UI (or via the API):
+
+- **Enable / disable** the page and set an optional **title** and **description**.
+- **Content toggles**: show photos, show videos, show video transcription, show captions.
+- **Time window**: how many days back to show (empty = all).
+- **Optional password**: protects the page behind an unlock form.
+- The URL uses an unguessable slug; the *"Link neu erzeugen"* action rotates it (invalidating the old link).
+
+Disabled media is filtered out server-side, so e.g. an unpublished transcript is never sent to the browser.
 
 **Timeline**:
 - `GET /api/timeline` — Chronological feed (default: last 24h, max 100 items)

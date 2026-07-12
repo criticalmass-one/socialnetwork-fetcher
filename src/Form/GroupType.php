@@ -8,7 +8,10 @@ use App\Entity\Profile;
 use Doctrine\ORM\EntityRepository;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ColorType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
+use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -60,6 +63,59 @@ class GroupType extends AbstractType
                     ->orderBy('n.name', 'ASC')
                     ->addOrderBy('p.identifier', 'ASC'),
                 'help' => 'Profile, die zur Gruppe gehören. Profile, die nicht zum gewählten Client verknüpft sind, werden beim Speichern abgewiesen.',
+            ]);
+
+        // --- Öffentliche Seite ---
+        $builder
+            ->add('publicPageEnabled', CheckboxType::class, [
+                'label' => 'Öffentliche Seite aktivieren',
+                'required' => false,
+                'help' => 'Macht die Gruppe unter /p/{Slug} ohne Login abrufbar. Beim ersten Aktivieren wird automatisch ein Slug erzeugt.',
+            ])
+            ->add('publicTitle', TextType::class, [
+                'label' => 'Öffentlicher Titel',
+                'required' => false,
+                'help' => 'Überschrift der öffentlichen Seite. Leer = Gruppenname.',
+            ])
+            ->add('publicDescription', TextareaType::class, [
+                'label' => 'Öffentliche Beschreibung',
+                'required' => false,
+                'attr' => ['rows' => 2],
+            ])
+            ->add('showPhotos', CheckboxType::class, [
+                'label' => 'Fotos anzeigen',
+                'required' => false,
+            ])
+            ->add('showVideos', CheckboxType::class, [
+                'label' => 'Videos anzeigen',
+                'required' => false,
+            ])
+            ->add('showTranscript', CheckboxType::class, [
+                'label' => 'Video-Transkription anzeigen',
+                'required' => false,
+            ])
+            ->add('showCaptions', CheckboxType::class, [
+                'label' => 'Beitragstext anzeigen',
+                'required' => false,
+            ])
+            ->add('timeWindowDays', IntegerType::class, [
+                'label' => 'Zeitfenster (Tage)',
+                'required' => false,
+                'help' => 'Wie viele Tage zurück angezeigt werden. Leer = alle Beiträge.',
+                'attr' => ['min' => 1],
+            ])
+            ->add('publicPassword', PasswordType::class, [
+                'label' => 'Passwort',
+                'required' => false,
+                'mapped' => false,
+                'help' => 'Optionaler Passwortschutz. Leer lassen, um ein vorhandenes Passwort unverändert zu lassen.',
+                'attr' => ['autocomplete' => 'new-password'],
+            ])
+            ->add('removePublicPassword', CheckboxType::class, [
+                'label' => 'Passwort entfernen',
+                'required' => false,
+                'mapped' => false,
+                'help' => 'Entfernt einen bestehenden Passwortschutz.',
             ]);
     }
 

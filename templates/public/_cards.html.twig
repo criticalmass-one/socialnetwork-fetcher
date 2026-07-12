@@ -1,0 +1,19 @@
+{% set weekdays = ['Sonntag', 'Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag'] %}
+{% set months = ['', 'Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'] %}
+{% set today = 'now'|date('Y-m-d') %}
+{% set yesterday = '-1 day'|date('Y-m-d') %}
+{% set lastDay = null %}
+{% for vi in viewItems %}
+    {% set dk = vi.item.dateTime ? vi.item.dateTime|date('Y-m-d') : '' %}
+    {% if dk and dk != lastDay %}
+        <div class="day-heading"><span>
+            {%- if dk == today -%}Heute
+            {%- elseif dk == yesterday -%}Gestern
+            {%- else -%}{{ weekdays[vi.item.dateTime|date('w')] }}, {{ vi.item.dateTime|date('j') }}. {{ months[vi.item.dateTime|date('n')] }}
+            {%- endif -%}
+        </span></div>
+        {% set lastDay = dk %}
+    {% endif %}
+    {% include 'public/_card.html.twig' with {vi: vi, group: group} %}
+{% endfor %}
+<template data-more-meta data-has-more="{{ hasMore ? '1' : '0' }}"></template>

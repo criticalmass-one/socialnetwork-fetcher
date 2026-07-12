@@ -88,7 +88,7 @@ Network fetchers are auto-discovered: any class implementing `NetworkFeedFetcher
 - **Item** — Feed item: `id`, `profile` (FK), `uniqueIdentifier`, `text`, `title`, `dateTime`, `permalink`, `raw`, `hidden`, `deleted`, `photoPaths` (JSON array), `videoPath`, `mediaStatus`, `mediaError`, `transcript` (text), `transcriptStatus`, `transcriptError`. Supports soft-delete, hide toggles, media downloads, and video transcription.
 - **Network** — Social network definition: `id`, `identifier`, `name`, `icon`, `backgroundColor`, `textColor`, `cronExpression`.
 - **Client** — API client: `id`, `name`, `token`, `enabled`, `profiles` (ManyToMany via `client_profile` join table), `createdAt`.
-- **Group** — Named bundle of a client's profiles (table `profile_group`, unique `(client_id, name)`): `id`, `name`, `description`, `color`, `client` (ManyToOne, NOT NULL — a group belongs to exactly one client, unlike shared profiles), `profiles` (ManyToMany via `profile_group_profile`), `createdAt`. Serialization groups `group:read` (incl. `profileCount`), `group:detail` (embeds `profiles`), `group:write`. Used to read a combined feed per group.
+- **Group** — Named bundle of a client's profiles (table `profile_group`, unique `(client_id, name)`): `id`, `name`, `description`, `color`, `client` (ManyToOne, NOT NULL — a group belongs to exactly one client, unlike shared profiles), `profiles` (ManyToMany via `profile_group_profile`), `createdAt`. Also carries the **public page** config: `publicPageEnabled`, `publicSlug` (unique), `publicPasswordHash`, `publicTitle`, `publicDescription`, `showPhotos`, `showVideos`, `showTranscript`, `showCaptions`, `timeWindowDays`. Serialization groups `group:read` (incl. `profileCount`, `publicUrl`, `publicPasswordProtected`), `group:detail` (embeds `profiles`), `group:write` (incl. write-only `publicPassword`). Used to read a combined feed per group. See "Public Group Page" below.
 
 ### Media Download System
 
@@ -126,6 +126,19 @@ When an account is renamed (e.g. a new Instagram username), the profile's `ident
 - **Web UI**: "Identifier ändern" card on the profile show page → `POST /profiles/{id}/change-identifier` (`ProfileController::changeIdentifier`).
 - **API**: `POST /api/profiles/{id}/change-identifier` (body `{"identifier": "…"}`) via `ProfileChangeIdentifierProcessor` (200, client-scoped; 422 on invalid/duplicate identifier). The generic `PATCH`/`PUT` still change `identifier` as a plain field **without** RSS.app re-linking — use the dedicated action to re-link.
 
+### Public Group Page
+
+A group can expose an unauthenticated, mobile-first feed page (Instagram-style
+single column) at `/p/{publicSlug}`, configurable per group.
+
+- **`Group` public-page fields** (see the entity above): `publicPageEnabled` gates reachability, `publicSlug` (unique, unguessable) is the URL token, `publicPasswordHash` an optional password, `publicTitle`/`publicDescription` the heading, `showPhotos`/`showVideos`/`showTranscript`/`showCaptions` the content toggles, `timeWindowDays` the look-back window (null = all).
+- **`PublicSlugGenerator`** (`src/Group/`) — 16-char base62 slug, collision-checked against `public_slug`. A slug is generated automatically the first time the page is enabled (Web-UI controller and API processor); it is never overwritten on later edits and can be rotated via the regenerate action.
+- **`PublicGroupController`** (`/p/{slug}`, no auth) — `page` renders the feed, `more` returns the next infinite-scroll fragment, `unlock` handles the password gate (verified password stored in the session). **Media/caption exposure is decided server-side** in `buildViewItems()` — disabled photos/videos/transcripts never reach the browser. Uses `ItemRepository::findPaginatedForPublicGroup()` / `countForPublicGroup()` (live members, hidden/deleted excluded, optional time window). 404 when the group is missing or its page is disabled.
+- **Security**: `/p/` is opened as `PUBLIC_ACCESS` in `security.yaml` (before the admin catch-all). Password-protected pages are gated purely in the controller via a session flag — no user/login system.
+- **Rendering**: standalone Twig under `templates/public/` (`base` with its own light/dark CSS, `group`, `_cards`, `_card`, `password`), a dedicated `public` importmap entrypoint (`assets/public.js`) that boots only the `public_feed` Stimulus controller (infinite scroll + "… mehr" caption clamp), and the `public_linkify` Twig filter (`src/Twig/`, escapes then linkifies URLs/hashtags/mentions).
+- **Admin Web-UI**: "Öffentliche Seite" section in `GroupType` (enable, title, description, time window, content toggles, optional password with a remove toggle — a blank password field keeps the existing one), a status/URL card on the group show page, and `POST /groups/{id}/regenerate-slug`.
+- **REST API**: the public-page fields are in `group:read`/`group:write`; `publicPassword` is write-only (hashed by the entity, never returned) and `publicUrl` is a computed absolute URL added by `GroupPublicUrlNormalizer`. Enabling the page via POST/PUT/PATCH auto-generates the slug; PUT preserves the non-writable slug.
+
 ### Serializer
 
 Custom `App\Serializer\Serializer` (not Symfony's framework serializer). Uses `NullableDateTimeNormalizer` to handle null values and Unix timestamps from the API. CamelCase-to-snake_case name conversion. `SKIP_NULL_VALUES` on serialization.
@@ -144,9 +157,9 @@ Custom `App\Serializer\Serializer` (not Symfony's framework serializer). Uses `N
 ### Web UI
 
 - **Authentication**: Form login at `/login`, in-memory admin user via `WEB_ADMIN_USERNAME`/`WEB_ADMIN_PASSWORD_HASH` env vars, implemented in `WebUserProvider`
-- **Controllers**: `DashboardController`, `NetworkController`, `ProfileController`, `ItemController`, `ClientController`, `LoginController`
+- **Controllers**: `DashboardController`, `NetworkController`, `ProfileController`, `ItemController`, `ClientController`, `GroupController`, `LoginController`. `PublicGroupController` serves the unauthenticated public group page at `/p/{slug}` (see "Public Group Page").
 - **Frontend stack**: Bootstrap 5.3, Stimulus controllers, Handlebars templates, Symfony Asset Mapper (no build step)
-- **Stimulus controllers** (`assets/controllers/`): `profile_list_controller`, `item_list_controller`, `profile_fetch_controller`, `profile_toggle_controller`, `toggle_controller`, `confirm_controller`, `flash_controller`, `media_download_controller`
+- **Stimulus controllers** (`assets/controllers/`): `profile_list_controller`, `item_list_controller`, `profile_fetch_controller`, `profile_toggle_controller`, `toggle_controller`, `confirm_controller`, `flash_controller`, `media_download_controller`, `public_feed_controller` (public group page, loaded via the separate `public` importmap entrypoint)
 - **CSS**: Custom design system in `assets/styles/app.css` (dark sidebar, stat cards, network cards, data tables)
 - **AJAX patterns**: Profile and item lists use Stimulus + Handlebars for client-side rendering with AJAX pagination, search, and filtering. Controllers return JSON when `X-Requested-With: XMLHttpRequest` header is present.
 
@@ -159,7 +172,7 @@ Custom `App\Serializer\Serializer` (not Symfony's framework serializer). Uses `N
 - `POST /api/profiles/{id}/change-identifier`: change a profile's identifier (body `{"identifier": "…"}`), re-linking the RSS.app feed for RSS.app networks (200, client-scoped, `ProfileChangeIdentifierProcessor`). See "Changing a Profile Identifier" below
 - `POST /api/profiles/{id}/download-media` and `POST /api/items/{id}/download-media`: queue media (re)download (202, client-scoped, drained by `app:download-media --pending`)
 - `POST /api/profiles/{id}/transcribe` and `POST /api/items/{id}/transcribe`: queue video (re)transcription (202, client-scoped, require `transcribeVideos`, drained by `app:transcribe --pending`)
-- Groups: full CRUD `GET/POST/PUT/PATCH/DELETE /api/groups[/{id}]` (writes via `ClientScopedGroupProcessor`, GET scoped by `ClientScopedGroupExtension`). Membership convenience routes `POST /api/groups/{id}/profiles` + `DELETE /api/groups/{id}/profiles/{profileId}` in `GroupMembershipController`. Combined feed `GET /api/groups/{groupId}/items` via `GroupItemsProvider` (filters since/until/network, excludes hidden/deleted), plus RSS at `GET /api/feeds/groups/{id}.rss`. Referenced profiles must belong to the client (400); foreign groups 404.
+- Groups: full CRUD `GET/POST/PUT/PATCH/DELETE /api/groups[/{id}]` (writes via `ClientScopedGroupProcessor`, GET scoped by `ClientScopedGroupExtension`). Membership convenience routes `POST /api/groups/{id}/profiles` + `DELETE /api/groups/{id}/profiles/{profileId}` in `GroupMembershipController`. Combined feed `GET /api/groups/{groupId}/items` via `GroupItemsProvider` (filters since/until/network, excludes hidden/deleted), plus RSS at `GET /api/feeds/groups/{id}.rss`. Public-page settings (incl. write-only `publicPassword`, computed `publicUrl`) are read/written on the same resource — see "Public Group Page". Referenced profiles must belong to the client (400); foreign groups 404.
 - Networks: public read access
 - OpenAPI docs at `/api/docs`
 

@@ -45,6 +45,8 @@ security:
         - { path: ^/api/docs, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: ROLE_API_CLIENT }
         - { path: ^/login, roles: PUBLIC_ACCESS }
+        # Public per-group feed pages are reachable without authentication.
+        - { path: ^/p/, roles: PUBLIC_ACCESS }
         # Group management is available to both admins and client-token users.
         - { path: ^/groups, roles: [ROLE_ADMIN, ROLE_API_CLIENT] }
         - { path: ^/, roles: ROLE_ADMIN }
