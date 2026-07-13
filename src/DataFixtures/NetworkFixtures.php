@@ -102,7 +102,7 @@ class NetworkFixtures extends Fixture
                 'icon' => 'fab fa-instagram',
                 'backgroundColor' => 'rgb(203, 44, 128)',
                 'textColor' => 'white',
-                'profileUrlPattern' => '#^https?://(www\.)?instagram\.[A-Za-z]{2,3}/[A-Za-z0-9\-_]{5,}/?$#i',
+                'profileUrlPattern' => '#^https?://(www\.)?instagram\.[A-Za-z]{2,3}/[A-Za-z0-9._\-]{5,}/?$#i',
             ],
             self::NETWORK_INSTAGRAM_PHOTO => [
                 'identifier' => 'instagram_photo',
