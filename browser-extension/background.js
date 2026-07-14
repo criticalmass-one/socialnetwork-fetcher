@@ -23,7 +23,7 @@ async function fetchAsFile(url, fallbackName) {
     return new File([blob], name, { type: blob.type });
 }
 
-async function upload({ permalink, videoUrl, imageUrl }) {
+async function upload({ permalink, videoUrl, imageUrl, text, dateTime, author }) {
     const { appUrl, token } = await getSettings();
     if (!token) {
         throw new Error('Kein Token gesetzt — bitte in den Optionen konfigurieren.');
@@ -31,6 +31,9 @@ async function upload({ permalink, videoUrl, imageUrl }) {
 
     const form = new FormData();
     form.append('permalink', permalink);
+    if (text) form.append('text', text);
+    if (dateTime) form.append('dateTime', dateTime);
+    if (author) form.append('author', author);
 
     if (videoUrl) {
         form.append('video', await fetchAsFile(videoUrl, 'video.mp4'));
@@ -59,7 +62,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
     upload(message.payload)
         .then((data) => {
-            notify('Hochgeladen', `Video: ${data.video ? 'ja' : 'nein'}, Fotos: ${data.photos}${data.transcriptQueued ? ' — Transkription eingereiht' : ''}`);
+            notify('Hochgeladen', `${data.created ? 'Item angelegt. ' : ''}Video: ${data.video ? 'ja' : 'nein'}, Fotos: ${data.photos}${data.transcriptQueued ? ' — Transkription eingereiht' : ''}`);
             sendResponse({ ok: true, data });
         })
         .catch((err) => {

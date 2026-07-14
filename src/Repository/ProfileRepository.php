@@ -15,6 +15,29 @@ class ProfileRepository extends ServiceEntityRepository
         parent::__construct($registry, Profile::class);
     }
 
+    /**
+     * Find a live profile whose identifier URL ends with the given account name
+     * (last path segment), e.g. "patrickpietruck" ->
+     * https://www.instagram.com/patrickpietruck/. Used to attach browser-uploaded
+     * media to the right profile when no item exists yet.
+     */
+    public function findOneByAccountName(string $account): ?Profile
+    {
+        $account = trim($account, "/ \t\n\r\0\x0B");
+        if ($account === '') {
+            return null;
+        }
+
+        return $this->createQueryBuilder('p')
+            ->andWhere('p.deleted = false')
+            ->andWhere('p.identifier LIKE :withSlash OR p.identifier LIKE :noSlash')
+            ->setParameter('withSlash', '%/' . $account . '/')
+            ->setParameter('noSlash', '%/' . $account)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
     public function findOneByNetworkAndIdentifier(Network $network, string $identifier): ?Profile
     {
         return $this->findOneBy(['network' => $network, 'identifier' => $identifier]);

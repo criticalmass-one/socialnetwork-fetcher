@@ -2,7 +2,10 @@
 
 namespace App\Controller;
 
+use App\Entity\Item;
+use App\Entity\Profile;
 use App\Repository\ItemRepository;
+use App\Repository\ProfileRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use League\Flysystem\FilesystemOperator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -25,6 +28,7 @@ class MediaUploadController extends AbstractController
 
     public function __construct(
         private readonly ItemRepository $itemRepository,
+        private readonly ProfileRepository $profileRepository,
         private readonly EntityManagerInterface $entityManager,
         private readonly FilesystemOperator $defaultStorage,
         private readonly string $mediaUploadToken,
@@ -44,8 +48,24 @@ class MediaUploadController extends AbstractController
         }
 
         $item = $this->findItemByPermalink($permalink);
+        $created = false;
+
         if ($item === null) {
-            return new JsonResponse(['error' => 'no item found for permalink'], Response::HTTP_NOT_FOUND);
+            // Post not fetched yet: create the item so media can be attached now.
+            // Using the permalink as uniqueIdentifier matches the RSS.app fetcher,
+            // so a later fetch updates this item instead of duplicating it.
+            $author = trim((string) $request->request->get('author', ''));
+            if ($author === '') {
+                return new JsonResponse(['error' => 'no item found for permalink'], Response::HTTP_NOT_FOUND);
+            }
+
+            $profile = $this->profileRepository->findOneByAccountName($author);
+            if ($profile === null) {
+                return new JsonResponse(['error' => sprintf('no tracked profile for account "%s"', $author)], Response::HTTP_UNPROCESSABLE_ENTITY);
+            }
+
+            $item = $this->createItem($profile, rtrim($permalink, '/'), $request);
+            $created = true;
         }
 
         $profile = $item->getProfile();
@@ -103,10 +123,34 @@ class MediaUploadController extends AbstractController
         return new JsonResponse([
             'status' => 'stored',
             'itemId' => $item->getId(),
+            'created' => $created,
             'video' => $stored['video'],
             'photos' => $stored['photos'],
             'transcriptQueued' => $stored['video'] && $profile->isTranscribeVideos(),
         ]);
+    }
+
+    private function createItem(Profile $profile, string $permalink, Request $request): Item
+    {
+        $dateRaw = trim((string) $request->request->get('dateTime', ''));
+        try {
+            $dateTime = $dateRaw !== '' ? new \DateTimeImmutable($dateRaw) : new \DateTimeImmutable();
+        } catch (\Exception) {
+            $dateTime = new \DateTimeImmutable();
+        }
+
+        $item = new Item();
+        $item->setProfile($profile)
+            ->setUniqueIdentifier($permalink)
+            ->setPermalink($permalink)
+            ->setText(trim((string) $request->request->get('text', '')))
+            ->setDateTime($dateTime);
+
+        $this->entityManager->persist($item);
+        // Flush now so the item has an id for the {profileId}/{itemId} media path.
+        $this->entityManager->flush();
+
+        return $item;
     }
 
     /**
