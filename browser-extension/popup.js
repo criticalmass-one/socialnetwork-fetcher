@@ -11,7 +11,7 @@ document.getElementById('opts').addEventListener('click', (e) => {
     chrome.runtime.openOptionsPage();
 });
 
-// Injected into the page: read the post's canonical URL and media via og: tags.
+// Injected into the page: read the post's canonical URL, media and metadata.
 function extractMedia() {
     const canonical = document.querySelector('link[rel="canonical"]')?.href || location.href;
     const permalink = canonical.split('?')[0].split('#')[0];
@@ -24,8 +24,22 @@ function extractMedia() {
         if (src && !src.startsWith('blob:')) videoUrl = src;
     }
     const imageUrl = og('og:image');
+    const text = og('og:description') || '';
+    const dateTime = document.querySelector('time[datetime]')?.getAttribute('datetime') || '';
 
-    return { permalink, videoUrl: videoUrl || null, imageUrl: imageUrl || null };
+    // Author handle, so the app can create the item if it hasn't fetched the post yet.
+    let author = null;
+    const skip = ['p', 'reel', 'reels', 'explore', 'accounts', 'direct', 'stories'];
+    for (const a of document.querySelectorAll('a[href^="/"]')) {
+        const m = (a.getAttribute('href') || '').match(/^\/([A-Za-z0-9._]+)\/$/);
+        if (m && !skip.includes(m[1])) { author = m[1]; break; }
+    }
+    if (!author) {
+        const mm = document.documentElement.innerHTML.match(/"username":"([^"]+)"/);
+        if (mm) author = mm[1];
+    }
+
+    return { permalink, videoUrl: videoUrl || null, imageUrl: imageUrl || null, text, dateTime, author };
 }
 
 async function init() {
@@ -71,15 +85,24 @@ async function run(tabId) {
         const res = await chrome.runtime.sendMessage({ type: 'upload', payload: result });
 
         if (res?.ok) {
-            setStatus(`Fertig ✓ Video: ${res.data.video ? 'ja' : 'nein'}, Fotos: ${res.data.photos}` + (res.data.transcriptQueued ? '\nTranskription eingereiht.' : ''), 'ok');
+            const info = `${res.data.created ? '(Item angelegt) ' : ''}Video: ${res.data.video ? 'ja' : 'nein'}, Fotos: ${res.data.photos}`;
+            setStatus('Fertig ✓ ' + info + (res.data.transcriptQueued ? '\nTranskription eingereiht.' : ''), 'ok');
         } else {
-            setStatus('Fehler: ' + (res?.error || 'unbekannt'), 'err');
+            setStatus('Fehler: ' + friendlyError(res?.error), 'err');
             goBtn.disabled = false;
         }
     } catch (e) {
         setStatus('Fehler: ' + e.message, 'err');
         goBtn.disabled = false;
     }
+}
+
+function friendlyError(error) {
+    if (!error) return 'unbekannt';
+    if (error.includes('no item found')) return 'Post noch nicht in der App und Account nicht erkennbar.';
+    if (error.startsWith('no tracked profile')) return 'Dieser Account ist kein Profil in der App — bitte zuerst anlegen.';
+    if (error.includes('unauthorized')) return 'Token ungültig — bitte in den Einstellungen prüfen.';
+    return error;
 }
 
 function setStatus(text, cls) {

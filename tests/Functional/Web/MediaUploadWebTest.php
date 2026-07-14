@@ -78,6 +78,54 @@ class MediaUploadWebTest extends AbstractWebTestCase
         self::assertResponseStatusCodeSame(404);
     }
 
+    public function testCreatesItemWhenMissingAndAuthorMatchesProfile(): void
+    {
+        $em = $this->entityManager();
+        $network = $em->getRepository(Network::class)->findOneBy(['identifier' => 'instagram_profile']);
+
+        $profile = new Profile();
+        $profile->setId(95002);
+        $profile->setIdentifier('https://www.instagram.com/uploadtest2/');
+        $profile->setNetwork($network);
+        $profile->setCreatedAt(new \DateTimeImmutable());
+        $profile->setSaveVideos(true);
+        $profile->setTranscribeVideos(true);
+        $em->persist($profile);
+        $em->flush();
+
+        $permalink = 'https://www.instagram.com/p/BrandNew1/';
+
+        $this->client->request(
+            'POST',
+            '/media-upload',
+            ['permalink' => $permalink, 'author' => 'uploadtest2', 'text' => 'Neuer Post', 'dateTime' => '2026-07-15T10:00:00+00:00'],
+            ['video' => $this->fakeUpload('clip.mp4', 'video/mp4')],
+            ['HTTP_AUTHORIZATION' => 'Bearer test-upload-token'],
+        );
+
+        self::assertResponseIsSuccessful();
+
+        $em->clear();
+        // Stored without the trailing slash to match the RSS.app fetcher's uniqueIdentifier.
+        $item = $em->getRepository(Item::class)->findOneBy(['permalink' => rtrim($permalink, '/')]);
+        self::assertNotNull($item, 'item was created for the new permalink');
+        self::assertNotNull($item->getVideoPath());
+        self::assertSame('pending', $item->getTranscriptStatus());
+    }
+
+    public function testUnknownAuthorIs422(): void
+    {
+        $this->client->request(
+            'POST',
+            '/media-upload',
+            ['permalink' => 'https://www.instagram.com/p/Whatever/', 'author' => 'nobody_tracked'],
+            ['video' => $this->fakeUpload('clip.mp4', 'video/mp4')],
+            ['HTTP_AUTHORIZATION' => 'Bearer test-upload-token'],
+        );
+
+        self::assertResponseStatusCodeSame(422);
+    }
+
     public function testRejectsUnsupportedType(): void
     {
         $this->createItemWithTranscription();
