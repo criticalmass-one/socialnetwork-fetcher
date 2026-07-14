@@ -34,6 +34,7 @@ class GroupType extends AbstractType
                 'label' => 'Client',
                 'placeholder' => 'Client wählen...',
                 'help' => 'Eigentümer-Client der Gruppe. Bestimmt, wer sie über die API sieht.',
+                'attr' => ['data-controller' => 'searchable-select'],
             ]);
         }
 
@@ -54,7 +55,10 @@ class GroupType extends AbstractType
                 'expanded' => false,
                 'label' => 'Profile',
                 'required' => false,
-                'attr' => ['size' => 15],
+                'attr' => [
+                    'data-controller' => 'searchable-select',
+                    'data-searchable-select-placeholder-value' => 'Profil suchen und hinzufügen …',
+                ],
                 'choice_label' => fn(Profile $p) => sprintf('%s — %s', $p->getNetwork()?->getName() ?? '?', $p->getDisplayName()),
                 'query_builder' => fn(EntityRepository $repository) => $repository->createQueryBuilder('p')
                     ->leftJoin('p.network', 'n')
