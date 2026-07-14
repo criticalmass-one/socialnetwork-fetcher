@@ -12,6 +12,7 @@ import 'tom-select/dist/css/tom-select.bootstrap5.min.css';
 export default class extends Controller {
     static values = {
         placeholder: { type: String, default: 'Tippen zum Suchen …' },
+        searchFields: { type: Array, default: ['text'] },
     };
 
     connect() {
@@ -23,8 +24,9 @@ export default class extends Controller {
             maxOptions: null,
             maxItems: isMultiple ? null : 1,
             hidePlaceholder: false,
-            // Match against the visible label as well as the option value.
-            searchField: ['text'],
+            // Match against the visible label plus any per-option data-*
+            // fields (e.g. title, identifier) exposed as Tom Select option data.
+            searchField: this.searchFieldsValue,
             sortField: [{ field: 'text', direction: 'asc' }],
         });
     }
