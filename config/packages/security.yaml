@@ -34,6 +34,12 @@ security:
                 check_path: app_login
                 default_target_path: app_dashboard
                 enable_csrf: true
+            # "Angemeldet bleiben": signature-based (no DB table), only issued when
+            # the login form sends the _remember_me checkbox.
+            remember_me:
+                secret: '%kernel.secret%'
+                lifetime: 2592000 # 30 days
+                path: /
             custom_authenticators:
                 - App\Security\WebTokenAuthenticator
             logout:
