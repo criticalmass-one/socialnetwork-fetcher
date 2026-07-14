@@ -12,4 +12,7 @@ interface FeedItemPersisterInterface
     public function persistFeedItem(Item $item, ?FetchResult $fetchResult): FeedItemPersisterInterface;
 
     public function flush(): FeedItemPersisterInterface;
+
+    /** Running total of newly inserted items (not duplicates) since construction/reset. */
+    public function getNewCount(): int;
 }

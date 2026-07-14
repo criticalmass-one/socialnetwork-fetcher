@@ -44,6 +44,11 @@
         header.page-head .desc { color: var(--fg-muted); font-size: 13px; margin: 0 0 4px; white-space: pre-wrap; }
         header.page-head .sub { color: var(--fg-muted); font-size: 13px; display: flex; gap: 12px; flex-wrap: wrap; }
         header.page-head .sub .dot { color: var(--accent); }
+        header.page-head .push-subscribe { margin-top: 12px; }
+        .push-btn { font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--border, #d0d0d0); background: transparent; color: var(--fg, inherit); transition: background .15s, border-color .15s; }
+        .push-btn:hover:not(:disabled) { border-color: var(--accent); }
+        .push-btn:disabled { opacity: .6; cursor: default; }
+        .push-btn.is-on { background: var(--accent); border-color: var(--accent); color: #fff; }
 
         main { padding: 4px 12px 80px; max-width: 470px; margin: 0 auto; }
 

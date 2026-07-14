@@ -8,6 +8,7 @@ use App\NetworkFeedFetcher\NetworkFeedFetcherInterface;
 use App\Model\Profile;
 use App\ProfileFetcher\ProfileFetcherInterface;
 use App\ProfilePersister\ProfilePersisterInterface;
+use App\Push\GroupPushNotifier;
 use App\Repository\ProfileRepository;
 use App\SourceFetcher\SourceFetcher;
 
@@ -15,6 +16,7 @@ class FeedFetcher extends AbstractFeedFetcher
 {
     private MediaDownloadService $mediaDownloadService;
     private ProfileRepository $profileRepository;
+    private GroupPushNotifier $groupPushNotifier;
 
     public function __construct(
         FeedItemPersisterInterface $feedItemPersister,
@@ -23,10 +25,12 @@ class FeedFetcher extends AbstractFeedFetcher
         SourceFetcher $sourceFetcher,
         MediaDownloadService $mediaDownloadService,
         ProfileRepository $profileRepository,
+        GroupPushNotifier $groupPushNotifier,
     ) {
         parent::__construct($feedItemPersister, $profileFetcher, $profilePersister, $sourceFetcher);
         $this->mediaDownloadService = $mediaDownloadService;
         $this->profileRepository = $profileRepository;
+        $this->groupPushNotifier = $groupPushNotifier;
     }
     protected function getFeedFetcherForProfile(Profile $profile): ?NetworkFeedFetcherInterface
     {
@@ -68,7 +72,9 @@ class FeedFetcher extends AbstractFeedFetcher
                         ->setProfile($profile)
                         ->setCounterFetched(count($feedItemList));
 
+                    $newCountBefore = $this->feedItemPersister->getNewCount();
                     $this->feedItemPersister->persistFeedItemList($feedItemList, $fetchResult)->flush();
+                    $newItemsForProfile = $this->feedItemPersister->getNewCount() - $newCountBefore;
 
                     if (!$fetcherMarkedAsFailed) {
                         $profile->setLastFetchSuccessDateTime(new \DateTimeImmutable());
@@ -85,6 +91,11 @@ class FeedFetcher extends AbstractFeedFetcher
                         $this->mediaDownloadService->downloadNewItemsForProfile($entityProfile);
                     }
 
+                    if ($entityProfile) {
+                        // Accumulate per group; bundled notifications go out after the run.
+                        $this->groupPushNotifier->recordNewItems($entityProfile, $newItemsForProfile);
+                    }
+
                     $callback($fetchResult);
                 } catch (\Throwable $e) {
                     $profile->setLastFetchFailureDateTime(new \DateTimeImmutable());
@@ -93,6 +104,9 @@ class FeedFetcher extends AbstractFeedFetcher
                 }
             }
         }
+
+        // Send bundled push notifications for all groups that gained new items.
+        $this->groupPushNotifier->dispatch();
 
         return $this;
     }
