@@ -8,6 +8,15 @@
             {% if group.timeWindowDays %}<span><span class="dot">●</span> letzte {{ group.timeWindowDays }} Tage</span>{% endif %}
             <span>{{ total }} {{ total == 1 ? 'Beitrag' : 'Beiträge' }}</span>
         </div>
+        {% if pushEnabled %}
+            <div class="push-subscribe" hidden
+                 data-controller="push-subscribe"
+                 data-push-subscribe-vapid-public-key-value="{{ vapidPublicKey }}"
+                 data-push-subscribe-subscribe-url-value="{{ path('app_public_group_push_subscribe', {slug: group.publicSlug}) }}"
+                 data-push-subscribe-unsubscribe-url-value="{{ path('app_public_group_push_unsubscribe', {slug: group.publicSlug}) }}">
+                <button type="button" class="push-btn" data-push-subscribe-target="button" data-action="push-subscribe#toggle">🔔 Benachrichtigungen an</button>
+            </div>
+        {% endif %}
     </header>
 
     <main data-controller="public-feed"

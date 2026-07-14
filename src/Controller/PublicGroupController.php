@@ -4,9 +4,13 @@ namespace App\Controller;
 
 use App\Entity\Group;
 use App\Entity\Item;
+use App\Entity\PushSubscription;
 use App\Repository\GroupRepository;
 use App\Repository\ItemRepository;
+use App\Repository\PushSubscriptionRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\UrlHelper;
@@ -32,6 +36,9 @@ class PublicGroupController extends AbstractController
         private readonly GroupRepository $groupRepository,
         private readonly ItemRepository $itemRepository,
         private readonly UrlHelper $urlHelper,
+        private readonly PushSubscriptionRepository $pushSubscriptionRepository,
+        private readonly EntityManagerInterface $entityManager,
+        private readonly string $vapidPublicKey,
     ) {
     }
 
@@ -57,7 +64,57 @@ class PublicGroupController extends AbstractController
             'total' => $total,
             'page' => 1,
             'hasMore' => $total > self::ITEMS_PER_PAGE,
+            'pushEnabled' => $this->vapidPublicKey !== '',
+            'vapidPublicKey' => $this->vapidPublicKey,
         ]);
+    }
+
+    #[Route('/{slug}/push/subscribe', name: 'app_public_group_push_subscribe', methods: ['POST'])]
+    public function pushSubscribe(string $slug, Request $request): JsonResponse
+    {
+        $group = $this->requirePublicGroup($slug);
+
+        if ($this->isLocked($group, $request)) {
+            return new JsonResponse(['error' => 'locked'], Response::HTTP_FORBIDDEN);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $endpoint = is_array($data) ? ($data['endpoint'] ?? null) : null;
+        $p256dh = is_array($data) ? ($data['keys']['p256dh'] ?? null) : null;
+        $auth = is_array($data) ? ($data['keys']['auth'] ?? null) : null;
+
+        if (!is_string($endpoint) || !is_string($p256dh) || !is_string($auth) || $endpoint === '') {
+            return new JsonResponse(['error' => 'invalid subscription'], Response::HTTP_BAD_REQUEST);
+        }
+
+        $subscription = $this->pushSubscriptionRepository->findOneByGroupAndEndpoint($group, $endpoint)
+            ?? (new PushSubscription())->setGroup($group)->setEndpoint($endpoint)->setCreatedAt(new \DateTimeImmutable());
+
+        $subscription->setP256dh($p256dh)->setAuth($auth);
+
+        $this->entityManager->persist($subscription);
+        $this->entityManager->flush();
+
+        return new JsonResponse(['status' => 'subscribed'], Response::HTTP_CREATED);
+    }
+
+    #[Route('/{slug}/push/unsubscribe', name: 'app_public_group_push_unsubscribe', methods: ['POST'])]
+    public function pushUnsubscribe(string $slug, Request $request): JsonResponse
+    {
+        $group = $this->requirePublicGroup($slug);
+
+        $data = json_decode($request->getContent(), true);
+        $endpoint = is_array($data) ? ($data['endpoint'] ?? null) : null;
+
+        if (is_string($endpoint) && $endpoint !== '') {
+            $subscription = $this->pushSubscriptionRepository->findOneByGroupAndEndpoint($group, $endpoint);
+            if ($subscription !== null) {
+                $this->entityManager->remove($subscription);
+                $this->entityManager->flush();
+            }
+        }
+
+        return new JsonResponse(['status' => 'unsubscribed']);
     }
 
     #[Route('/{slug}/more', name: 'app_public_group_more', methods: ['GET'])]
