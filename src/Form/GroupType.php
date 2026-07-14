@@ -58,8 +58,13 @@ class GroupType extends AbstractType
                 'attr' => [
                     'data-controller' => 'searchable-select',
                     'data-searchable-select-placeholder-value' => 'Profil suchen und hinzufügen …',
+                    'data-searchable-select-search-fields-value' => json_encode(['text', 'title', 'identifier']),
                 ],
                 'choice_label' => fn(Profile $p) => sprintf('%s — %s', $p->getNetwork()?->getName() ?? '?', $p->getDisplayName()),
+                'choice_attr' => fn(Profile $p) => [
+                    'data-title' => (string) $p->getTitle(),
+                    'data-identifier' => (string) $p->getIdentifier(),
+                ],
                 'query_builder' => fn(EntityRepository $repository) => $repository->createQueryBuilder('p')
                     ->leftJoin('p.network', 'n')
                     ->addSelect('n')

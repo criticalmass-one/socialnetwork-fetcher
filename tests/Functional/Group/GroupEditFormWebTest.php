@@ -27,6 +27,29 @@ class GroupEditFormWebTest extends AbstractWebTestCase
         self::assertCount(1, $profilesSelect, 'profiles select is rendered');
         self::assertSame('searchable-select', $profilesSelect->attr('data-controller'));
         self::assertNotNull($profilesSelect->attr('multiple'));
+
+        // Search must cover the label plus the profile title and identifier.
+        $searchFields = $profilesSelect->attr('data-searchable-select-search-fields-value');
+        self::assertNotNull($searchFields);
+        self::assertStringContainsString('title', $searchFields);
+        self::assertStringContainsString('identifier', $searchFields);
+    }
+
+    public function testProfileOptionsExposeTitleAndIdentifierForSearch(): void
+    {
+        $group = $this->createGroup();
+
+        $this->loginAsAdmin();
+        $crawler = $this->client->request('GET', sprintf('/groups/%d/edit', $group->getId()));
+
+        self::assertResponseIsSuccessful();
+
+        // Profile 90001 (identifier https://mastodon.social/@shared, no title)
+        // must carry data attributes so Tom Select can match on them.
+        $option = $crawler->filter('select[name="group[profiles][]"] option[value="90001"]');
+        self::assertCount(1, $option);
+        self::assertSame('https://mastodon.social/@shared', $option->attr('data-identifier'));
+        self::assertNotNull($option->attr('data-title'));
     }
 
     private function createGroup(): Group
