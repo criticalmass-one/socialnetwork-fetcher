@@ -8,7 +8,6 @@ use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\CallbackTransformer;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
-use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -18,24 +17,21 @@ class ProfileType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
-        if ($options['is_new']) {
-            $builder->add('id', IntegerType::class, [
-                'label' => 'ID',
-                'help' => 'Eindeutige numerische ID für dieses Profil',
-            ]);
-        }
-
         $builder
             ->add('network', EntityType::class, [
                 'class' => Network::class,
                 'choice_label' => 'name',
-                'placeholder' => 'Netzwerk wählen...',
+                'required' => !$options['is_new'],
+                'placeholder' => $options['is_new'] ? 'Automatisch aus Identifier erkennen' : 'Netzwerk wählen...',
                 'label' => 'Netzwerk',
+                'help' => $options['is_new']
+                    ? 'Leer lassen — wird beim Speichern aus dem Identifier ermittelt. Nur bei Bedarf manuell wählen.'
+                    : null,
                 'query_builder' => fn (\Doctrine\ORM\EntityRepository $er) => $er->createQueryBuilder('n')->orderBy('n.name', 'ASC'),
             ])
             ->add('identifier', TextType::class, [
                 'label' => 'Identifier',
-                'help' => 'URL oder Benutzername im Netzwerk',
+                'help' => 'Vollständige URL des Profils (z. B. https://www.instagram.com/name/). Das Netzwerk wird daraus erkannt.',
             ])
             ->add('title', TextType::class, [
                 'label' => 'Titel',

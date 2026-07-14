@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Client;
 use App\Entity\Group;
+use App\Entity\Network;
 use App\Entity\Profile;
 use App\Form\ProfileType;
 use App\FeedFetcher\FeedFetcher;
@@ -14,6 +15,7 @@ use App\Model\Profile as ModelProfile;
 use App\Profile\IdentifierChangeException;
 use App\Profile\IdentifierChangeResult;
 use App\Profile\IdentifierChanger;
+use App\Profile\NetworkDetector;
 use App\Repository\GroupRepository;
 use App\Repository\ItemRepository;
 use App\Repository\NetworkRepository;
@@ -23,6 +25,7 @@ use App\RssApp\RegistrationResult;
 use App\RssApp\RssAppInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -84,8 +87,13 @@ class ProfileController extends AbstractController
     }
 
     #[Route('/new', name: 'app_profile_new')]
-    public function new(Request $request, EntityManagerInterface $em, FeedRegistrar $feedRegistrar): Response
-    {
+    public function new(
+        Request $request,
+        EntityManagerInterface $em,
+        FeedRegistrar $feedRegistrar,
+        ProfileRepository $profileRepository,
+        NetworkDetector $networkDetector,
+    ): Response {
         $profile = new Profile();
         $profile->setCreatedAt(new \DateTimeImmutable());
 
@@ -93,16 +101,40 @@ class ProfileController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $em->persist($profile);
-            $em->flush();
+            $networkError = false;
 
-            $result = $feedRegistrar->registerIfNeeded($profile);
+            // Network is optional in the form: derive it from the identifier
+            // unless the user picked one manually.
+            if ($profile->getNetwork() === null) {
+                $detection = $networkDetector->detect((string) $profile->getIdentifier());
 
-            $em->flush();
+                if ($detection->isDetected()) {
+                    $profile->setNetwork($detection->network);
+                } else {
+                    $form->get('network')->addError(new FormError($detection->isAmbiguous()
+                        ? sprintf(
+                            'Der Identifier passt auf mehrere Netzwerke (%s). Bitte wähle das Netzwerk manuell.',
+                            implode(', ', array_map(static fn (Network $n): string => (string) $n->getName(), $detection->candidates)),
+                        )
+                        : 'Das Netzwerk konnte nicht aus dem Identifier ermittelt werden. Bitte prüfe die URL oder wähle das Netzwerk manuell.'));
+                    $networkError = true;
+                }
+            }
 
-            $this->addFlash('success', $this->buildCreationFlashMessage($result));
+            if (!$networkError) {
+                // The id column is not auto-generated (profiles imported from
+                // criticalmass.in keep their id), so assign the next free one.
+                $profile->setId($profileRepository->findNextFreeId());
+                $em->persist($profile);
+                $em->flush();
 
-            return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
+                $result = $feedRegistrar->registerIfNeeded($profile);
+                $em->flush();
+
+                $this->addFlash('success', $this->buildCreationFlashMessage($result));
+
+                return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
+            }
         }
 
         return $this->render('profile/new.html.twig', [
