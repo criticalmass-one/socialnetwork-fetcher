@@ -47,6 +47,15 @@ class MediaUploadController extends AbstractController
             return new JsonResponse(['error' => 'permalink is required'], Response::HTTP_BAD_REQUEST);
         }
 
+        $video = $request->files->get('video');
+        /** @var list<UploadedFile> $photos */
+        $photos = array_values(array_filter($request->files->all('photos')));
+
+        // Validate media up front, so a media-less request never creates an item.
+        if (!$video instanceof UploadedFile && $photos === []) {
+            return new JsonResponse(['error' => 'no media provided'], Response::HTTP_BAD_REQUEST);
+        }
+
         $item = $this->findItemByPermalink($permalink);
         $created = false;
 
@@ -71,14 +80,6 @@ class MediaUploadController extends AbstractController
         $profile = $item->getProfile();
         if ($profile === null) {
             return new JsonResponse(['error' => 'item has no profile'], Response::HTTP_CONFLICT);
-        }
-
-        $video = $request->files->get('video');
-        /** @var list<UploadedFile> $photos */
-        $photos = array_values(array_filter($request->files->all('photos')));
-
-        if (!$video instanceof UploadedFile && $photos === []) {
-            return new JsonResponse(['error' => 'no media provided'], Response::HTTP_BAD_REQUEST);
         }
 
         $prefix = sprintf('%d/%d', $profile->getId(), $item->getId());
