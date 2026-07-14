@@ -3,9 +3,16 @@
 namespace App\RssApp;
 
 use Symfony\Contracts\HttpClient\HttpClientInterface;
+use Symfony\Contracts\HttpClient\ResponseInterface;
 
 class RssApp implements RssAppInterface
 {
+    /** Total attempts (1 initial + retries) for a rate-limited (429) request. */
+    private const MAX_ATTEMPTS = 4;
+
+    /** Never block a request longer than this per wait — surface the 429 instead. */
+    private const MAX_RETRY_WAIT_SECONDS = 8.0;
+
     private readonly string $bearer;
 
     public function __construct(
@@ -16,11 +23,55 @@ class RssApp implements RssAppInterface
         $this->bearer = sprintf('Bearer %s:%s', $rssAppApiKey, $rssAppApiSecret);
     }
 
+    /**
+     * RSS.app enforces a per-window API rate limit; registering a profile alone
+     * fans out into several calls (paginated feed listing + create), so a burst
+     * can trip a 429. Retry a rate-limited request a few times with backoff,
+     * honouring a numeric Retry-After when present, but give up (returning the
+     * 429 response) rather than blocking the caller for too long.
+     *
+     * @param array<string, mixed> $options
+     */
+    private function requestWithRetry(string $method, string $url, array $options): ResponseInterface
+    {
+        for ($attempt = 1; ; ++$attempt) {
+            $response = $this->httpClient->request($method, $url, $options);
+
+            // getStatusCode() forces the transfer, so a 429 is detectable here.
+            if ($response->getStatusCode() !== 429 || $attempt >= self::MAX_ATTEMPTS) {
+                return $response;
+            }
+
+            $wait = $this->retryDelaySeconds($response, $attempt);
+            if ($wait > self::MAX_RETRY_WAIT_SECONDS) {
+                // Would block the caller too long — surface the 429 instead.
+                return $response;
+            }
+
+            if ($wait > 0.0) {
+                usleep((int) ($wait * 1_000_000));
+            }
+        }
+    }
+
+    private function retryDelaySeconds(ResponseInterface $response, int $attempt): float
+    {
+        $headers = $response->getHeaders(throw: false);
+        $retryAfter = $headers['retry-after'][0] ?? null;
+
+        if ($retryAfter !== null && is_numeric($retryAfter)) {
+            return (float) $retryAfter;
+        }
+
+        // Exponential backoff: 1s, 2s, 4s, ...
+        return (float) (2 ** ($attempt - 1));
+    }
+
     public function getItems(string $feedId, int $count = 100): array
     {
         $url = sprintf('https://api.rss.app/v1/feeds/%s?limit=%d', $feedId, $count);
 
-        $response = $this->httpClient->request('GET', $url, [
+        $response = $this->requestWithRetry('GET', $url, [
             'headers' => ['Authorization' => $this->bearer]
         ]);
 
@@ -34,7 +85,7 @@ class RssApp implements RssAppInterface
         $url = sprintf('https://api.rss.app/v1/feeds/%s', $feedId);
 
         try {
-            $response = $this->httpClient->request('GET', $url, [
+            $response = $this->requestWithRetry('GET', $url, [
                 'headers' => ['Authorization' => $this->bearer]
             ]);
 
@@ -51,7 +102,7 @@ class RssApp implements RssAppInterface
         $limit = 100;
 
         do {
-            $response = $this->httpClient->request('GET', "https://api.rss.app/v1/feeds?limit=$limit&offset=$offset", [
+            $response = $this->requestWithRetry('GET', "https://api.rss.app/v1/feeds?limit=$limit&offset=$offset", [
                 'headers' => ['Authorization' => $this->bearer]
             ]);
 
@@ -81,7 +132,7 @@ class RssApp implements RssAppInterface
 
     public function createFeed(string $url): array
     {
-        $response = $this->httpClient->request('POST', 'https://api.rss.app/v1/feeds', [
+        $response = $this->requestWithRetry('POST', 'https://api.rss.app/v1/feeds', [
             'headers' => [
                 'Authorization' => $this->bearer,
                 'Content-Type' => 'application/json',
@@ -128,7 +179,7 @@ class RssApp implements RssAppInterface
 
     public function deleteFeed(string $feedId): void
     {
-        $this->httpClient->request('DELETE', sprintf('https://api.rss.app/v1/feeds/%s', $feedId), [
+        $this->requestWithRetry('DELETE', sprintf('https://api.rss.app/v1/feeds/%s', $feedId), [
             'headers' => ['Authorization' => $this->bearer],
         ]);
     }
