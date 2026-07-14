@@ -1,0 +1,21 @@
+{
+    "manifest_version": 3,
+    "name": "Feed Media Uploader",
+    "version": "1.0.0",
+    "description": "Lädt Video/Fotos eines offenen Instagram-Posts in die Social-Network-Fetcher-App (die der Server selbst nicht laden kann).",
+    "permissions": ["scripting", "storage", "activeTab", "notifications"],
+    "host_permissions": [
+        "https://www.instagram.com/*",
+        "https://*.cdninstagram.com/*",
+        "https://*.fbcdn.net/*",
+        "https://feeds.maltehuebner.dev/*"
+    ],
+    "action": {
+        "default_popup": "popup.html",
+        "default_title": "Instagram-Post in die App laden"
+    },
+    "options_page": "options.html",
+    "background": {
+        "service_worker": "background.js"
+    }
+}
