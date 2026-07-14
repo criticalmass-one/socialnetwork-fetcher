@@ -25,6 +25,20 @@ class PublicGroupControllerTest extends AbstractApiTestCase
         self::assertStringContainsString('Shared item 1', $this->body($client));
     }
 
+    public function testProfileNameShownAsHandleNotUrl(): void
+    {
+        $client = static::createClient();
+        $this->makeGroup('handle01', ['timeWindowDays' => null]);
+
+        $client->request('GET', '/p/handle01');
+        $body = $this->body($client);
+
+        // Profile 90001 has identifier "https://mastodon.social/@shared" and no
+        // title, so the displayed name must be the handle, not the full URL.
+        self::assertStringContainsString('>@shared</a>', $body);
+        self::assertStringNotContainsString('>https://mastodon.social/@shared</a>', $body);
+    }
+
     public function testDisabledGroupReturns404(): void
     {
         $client = static::createClient();

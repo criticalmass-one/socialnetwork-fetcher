@@ -1,7 +1,7 @@
 {% set item = vi.item %}
 {% set profile = item.profile %}
 {% set net = profile ? profile.network : null %}
-{% set name = profile ? profile.displayName : '?' %}
+{% set name = profile|public_profile_name %}
 {% set initial = name|slice(0, 1)|upper %}
 {% set permalink = item.permalink ?: vi.photos|first|default('') %}
 {% set profileUrl = (profile and profile.identifier starts with 'http') ? profile.identifier : permalink %}
