@@ -52,6 +52,50 @@ class GroupEditFormWebTest extends AbstractWebTestCase
         self::assertNotNull($option->attr('data-title'));
     }
 
+    public function testAdminAddingUnlinkedProfileAutoLinksToClientAndSaves(): void
+    {
+        $em = $this->entityManager();
+
+        /** @var Client $clientA */
+        $clientA = $em->getRepository(Client::class)->findOneBy(['name' => 'Client A']);
+
+        $group = new Group();
+        $group->setName('Autolink Group');
+        $group->setClient($clientA);
+        $group->setCreatedAt(new \DateTimeImmutable());
+        $group->addProfile($em->getRepository(Profile::class)->find(90001)); // already linked to A
+        $em->persist($group);
+        $em->flush();
+        $groupId = $group->getId();
+
+        // Profile 90003 is linked to Client B only — not to this group's client.
+        $profileB = $em->getRepository(Profile::class)->find(90003);
+        self::assertFalse($profileB->getClients()->contains($clientA), 'precondition: 90003 not linked to A');
+
+        $this->loginAsAdmin();
+        $crawler = $this->client->request('GET', sprintf('/groups/%d/edit', $groupId));
+        self::assertResponseIsSuccessful();
+
+        $form = $crawler->selectButton('Speichern')->form();
+        $form['group[profiles]'] = ['90001', '90003'];
+        $this->client->submit($form);
+
+        // Save succeeds (redirect to show) instead of being rejected.
+        self::assertResponseRedirects(sprintf('/groups/%d', $groupId));
+
+        $em->clear();
+        /** @var Group $reloaded */
+        $reloaded = $em->getRepository(Group::class)->find($groupId);
+        $ids = array_map(static fn (Profile $p): ?int => $p->getId(), $reloaded->getProfiles()->toArray());
+        self::assertContains(90003, $ids, 'newly added profile is saved into the group');
+
+        /** @var Profile $profileB */
+        $profileB = $em->getRepository(Profile::class)->find(90003);
+        /** @var Client $clientA */
+        $clientA = $em->getRepository(Client::class)->findOneBy(['name' => 'Client A']);
+        self::assertTrue($profileB->getClients()->contains($clientA), 'profile is auto-linked to the group client');
+    }
+
     private function createGroup(): Group
     {
         $em = $this->entityManager();

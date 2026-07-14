@@ -81,7 +81,7 @@ class GroupController extends AbstractController
                 // Force-set again in case form data was tampered with.
                 $group->setClient($clientUser);
             }
-            if ($error = $this->ensureProfilesBelongToClient($group)) {
+            if ($error = $this->reconcileGroupProfilesWithClient($group)) {
                 $form->addError(new \Symfony\Component\Form\FormError($error));
             } else {
                 $this->applyPublicPageSettings($group, $form, $slugGenerator);
@@ -149,7 +149,7 @@ class GroupController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            if ($error = $this->ensureProfilesBelongToClient($group)) {
+            if ($error = $this->reconcileGroupProfilesWithClient($group)) {
                 $form->addError(new \Symfony\Component\Form\FormError($error));
             } else {
                 $this->applyPublicPageSettings($group, $form, $slugGenerator);
@@ -211,9 +211,15 @@ class GroupController extends AbstractController
                 if ($profile === null) {
                     continue;
                 }
-                if (!$profile->getClients()->contains($group->getClient())) {
-                    $this->addFlash('warning', sprintf('Profil "%s" ist nicht mit dem Client der Gruppe verknüpft und wurde übersprungen.', $profile->getDisplayName()));
-                    continue;
+                $client = $group->getClient();
+                if ($client !== null && !$profile->getClients()->contains($client)) {
+                    // Client-token users may only add their own profiles; admins
+                    // pull any profile in and it is auto-linked to the client.
+                    if ($this->loggedInClient() !== null) {
+                        $this->addFlash('warning', sprintf('Profil "%s" ist nicht mit dem Client der Gruppe verknüpft und wurde übersprungen.', $profile->getDisplayName()));
+                        continue;
+                    }
+                    $client->addProfile($profile);
                 }
                 $group->addProfile($profile);
             }
@@ -278,21 +284,39 @@ class GroupController extends AbstractController
     }
 
     /** @return string|null  Error message if invalid, null if OK */
-    private function ensureProfilesBelongToClient(Group $group): ?string
+    /**
+     * Keeps the invariant that a group only contains profiles of its client.
+     * Admins may pull in any profile — it is auto-linked to the group's client
+     * on save. Client-token users stay restricted to their own profiles, so a
+     * client cannot grab a foreign profile by putting it into a group. Returns
+     * an error message for the restricted case, or null when reconciled.
+     */
+    private function reconcileGroupProfilesWithClient(Group $group): ?string
     {
         $client = $group->getClient();
         if ($client === null) {
             return null;
         }
+
+        $isAdmin = $this->loggedInClient() === null;
+
         foreach ($group->getProfiles() as $profile) {
-            if (!$profile->getClients()->contains($client)) {
-                return sprintf(
-                    'Profil "%s" ist nicht mit dem Client "%s" verknüpft. Verknüpfe es zuerst auf der Profil-Detailseite oder über die API.',
-                    $profile->getDisplayName(),
-                    $client->getName(),
-                );
+            if ($profile->getClients()->contains($client)) {
+                continue;
             }
+
+            if ($isAdmin) {
+                $client->addProfile($profile);
+                continue;
+            }
+
+            return sprintf(
+                'Profil "%s" ist nicht mit dem Client "%s" verknüpft. Verknüpfe es zuerst auf der Profil-Detailseite oder über die API.',
+                $profile->getDisplayName(),
+                $client->getName(),
+            );
         }
+
         return null;
     }
 }
