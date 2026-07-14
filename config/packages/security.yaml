@@ -47,6 +47,9 @@ security:
         - { path: ^/login, roles: PUBLIC_ACCESS }
         # Public per-group feed pages are reachable without authentication.
         - { path: ^/p/, roles: PUBLIC_ACCESS }
+        # Browser media-upload endpoint: authenticated by its own bearer token in
+        # the controller, so it is opened here (the admin catch-all would 302 it).
+        - { path: ^/media-upload, roles: PUBLIC_ACCESS }
         # Group management is available to both admins and client-token users.
         - { path: ^/groups, roles: [ROLE_ADMIN, ROLE_API_CLIENT] }
         - { path: ^/, roles: ROLE_ADMIN }

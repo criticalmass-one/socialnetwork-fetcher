@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font: 13px/1.4 system-ui, sans-serif; width: 300px; margin: 0; padding: 14px; }
+        h1 { font-size: 14px; margin: 0 0 10px; }
+        button { font: inherit; font-weight: 600; width: 100%; padding: 9px; border: 0; border-radius: 7px; background: #2f6feb; color: #fff; cursor: pointer; }
+        button:disabled { opacity: .6; cursor: default; }
+        .muted { color: #666; }
+        .permalink { word-break: break-all; font-size: 12px; margin: 6px 0 12px; color: #444; }
+        #status { margin-top: 12px; white-space: pre-wrap; }
+        .err { color: #c0392b; }
+        .ok { color: #1e824c; }
+        a { color: #2f6feb; }
+    </style>
+</head>
+<body>
+    <h1>Instagram-Post in die App laden</h1>
+    <div id="notReady" class="muted" hidden></div>
+    <div class="permalink" id="permalink"></div>
+    <button id="go" disabled>Laden &amp; hochladen</button>
+    <div id="status" class="muted"></div>
+    <div style="margin-top:12px"><a href="#" id="opts">Einstellungen</a></div>
+    <script src="popup.js"></script>
+</body>
+</html>
