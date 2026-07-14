@@ -53,8 +53,11 @@
                             <p class="text-muted mb-0">Keine Medien heruntergeladen.</p>
                         {% endif %}
                     </div>
-                    {% if item.mediaStatus == 'failed' and item.mediaError %}
-                        <div class="alert alert-danger mt-3 mb-0">
+                    {% if item.mediaError %}
+                        {# Video-only failures keep mediaStatus "completed" (photos were
+                           saved) but must still surface the video/Instagram error so a
+                           missing video isn't mistaken for a fully successful download. #}
+                        <div class="alert {{ item.mediaStatus == 'failed' ? 'alert-danger' : 'alert-warning' }} mt-3 mb-0">
                             <i class="fas fa-exclamation-triangle me-1"></i>{{ item.mediaError }}
                         </div>
                     {% endif %}
@@ -63,6 +66,9 @@
                             <small class="text-muted">Status: </small>
                             {% if item.mediaStatus == 'completed' %}
                                 <span class="badge bg-success">{{ item.mediaStatus }}</span>
+                                {% if item.mediaError %}
+                                    <span class="badge bg-warning text-dark">Video fehlgeschlagen</span>
+                                {% endif %}
                             {% elseif item.mediaStatus == 'failed' %}
                                 <span class="badge bg-danger">{{ item.mediaStatus }}</span>
                             {% elseif item.mediaStatus == 'downloading' %}
