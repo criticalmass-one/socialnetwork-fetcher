@@ -39,6 +39,7 @@ class PublicGroupController extends AbstractController
         private readonly PushSubscriptionRepository $pushSubscriptionRepository,
         private readonly EntityManagerInterface $entityManager,
         private readonly \App\PublicPage\PublicPageAnalytics $analytics,
+        private readonly \App\PublicPage\OutboundLinkSigner $outboundLinkSigner,
         private readonly string $vapidPublicKey,
     ) {
     }
@@ -71,17 +72,23 @@ class PublicGroupController extends AbstractController
         ]);
     }
 
-    #[Route('/{slug}/click', name: 'app_public_group_click', methods: ['POST'])]
-    public function trackClick(string $slug, Request $request): Response
+    #[Route('/{slug}/go', name: 'app_public_group_go', methods: ['GET'])]
+    public function trackOutbound(string $slug, Request $request): Response
     {
         $group = $this->requirePublicGroup($slug);
 
-        $url = (string) $request->request->get('url', '');
-        if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
-            $this->analytics->recordClick($group, $url);
+        $url = (string) $request->query->get('u', '');
+        $signature = (string) $request->query->get('s', '');
+        $isHttp = str_starts_with($url, 'http://') || str_starts_with($url, 'https://');
+
+        // A tampered/unsigned target must not turn this into an open redirect.
+        if (!$isHttp || !$this->outboundLinkSigner->verify($url, $signature)) {
+            return $this->redirectToRoute('app_public_group', ['slug' => $slug]);
         }
 
-        return new Response('', Response::HTTP_NO_CONTENT);
+        $this->analytics->recordClick($group, $url);
+
+        return $this->redirect($url);
     }
 
     #[Route('/{slug}/push/subscribe', name: 'app_public_group_push_subscribe', methods: ['POST'])]

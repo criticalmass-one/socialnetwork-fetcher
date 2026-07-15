@@ -84,8 +84,13 @@
         .post-photos.count-2 { grid-template-columns: 1fr 1fr; }
         .post-photos.count-3, .post-photos.count-4 { grid-template-columns: 1fr 1fr; }
 
-        .post-video { display: block; width: 100%; background: #000; }
+        .post-video { position: relative; width: 100%; background: #000; }
         .post-video video { display: block; width: 100%; height: auto; max-height: 70vh; }
+        .video-cover { display: block; position: relative; }
+        .video-cover img { display: block; width: 100%; height: auto; }
+        .video-cover .video-hint { position: absolute; left: 10px; bottom: 10px; background: rgba(0,0,0,.65); color: #fff; font-size: 12px; font-weight: 600; padding: 5px 9px; border-radius: 999px; }
+        .video-play { display: flex; align-items: center; justify-content: center; gap: 7px; width: 100%; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; border: 0; padding: 10px; background: var(--accent); color: #fff; }
+        .video-play:hover { filter: brightness(1.08); }
 
         .post-body { padding: 10px 14px 14px; font-size: 13px; line-height: 1.55; }
         .post-body .caption { white-space: pre-wrap; word-wrap: break-word; overflow-wrap: anywhere; }

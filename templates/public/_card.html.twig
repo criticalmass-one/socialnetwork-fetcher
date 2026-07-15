@@ -7,29 +7,38 @@
 {% set profileUrl = (profile and profile.identifier starts with 'http') ? profile.identifier : permalink %}
 <article class="post">
     <div class="post-head">
-        <a class="avatar" style="background:hsl({{ vi.hue }}, 65%, 50%)" href="{{ profileUrl }}" target="_blank" rel="noopener nofollow">
+        <a class="avatar" style="background:hsl({{ vi.hue }}, 65%, 50%)" href="{{ public_out(group, profileUrl) }}" target="_blank" rel="noopener nofollow">
             {{ initial }}
             {% if net %}<span class="net-badge" style="background:{{ net.backgroundColor }}"><i class="{{ net.icon }}"></i></span>{% endif %}
         </a>
         <div class="meta">
-            <a class="who" href="{{ profileUrl }}" target="_blank" rel="noopener nofollow">{{ name }}</a>
+            <a class="who" href="{{ public_out(group, profileUrl) }}" target="_blank" rel="noopener nofollow">{{ name }}</a>
             {% if item.dateTime %}<div class="when" title="{{ item.dateTime|date('d.m.Y H:i') }}">{{ item.dateTime|date('d.m.Y H:i') }}</div>{% endif %}
         </div>
     </div>
 
     {% if vi.videoUrl %}
         <div class="post-video">
-            <video controls preload="none"{% if vi.poster %} poster="{{ vi.poster }}"{% endif %} src="{{ vi.videoUrl }}"></video>
+            {# Default: the cover links to the original Instagram post (counted).
+               The play button reveals the local <video> for in-page playback. #}
+            <a class="video-cover" href="{{ public_out(group, permalink) }}" target="_blank" rel="noopener nofollow">
+                {% if vi.poster %}<img loading="lazy" referrerpolicy="no-referrer" src="{{ vi.poster }}" alt="">{% endif %}
+                <span class="video-hint"><i class="fab fa-instagram"></i> auf Instagram ansehen</span>
+            </a>
+            <button type="button" class="video-play" data-action="public-feed#playVideo">
+                <i class="fas fa-play"></i> Video hier abspielen
+            </button>
+            <video controls preload="none"{% if vi.poster %} poster="{{ vi.poster }}"{% endif %} src="{{ vi.videoUrl }}" hidden></video>
         </div>
     {% elseif vi.photos is not empty %}
         {% if vi.photos|length == 1 %}
-            <a class="post-photo" href="{{ permalink }}" target="_blank" rel="noopener nofollow">
+            <a class="post-photo" href="{{ public_out(group, permalink) }}" target="_blank" rel="noopener nofollow">
                 <img loading="lazy" referrerpolicy="no-referrer" src="{{ vi.photos|first }}" alt="" onerror="this.closest('.post-photo').style.display='none'">
             </a>
         {% else %}
             <div class="post-photos count-{{ vi.photos|length > 4 ? 4 : vi.photos|length }}">
                 {% for p in vi.photos %}
-                    <a class="post-photo" href="{{ permalink }}" target="_blank" rel="noopener nofollow">
+                    <a class="post-photo" href="{{ public_out(group, permalink) }}" target="_blank" rel="noopener nofollow">
                         <img loading="lazy" referrerpolicy="no-referrer" src="{{ p }}" alt="" onerror="this.closest('.post-photo').style.display='none'">
                     </a>
                 {% endfor %}
