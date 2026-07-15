@@ -38,6 +38,7 @@ class PublicGroupController extends AbstractController
         private readonly UrlHelper $urlHelper,
         private readonly PushSubscriptionRepository $pushSubscriptionRepository,
         private readonly EntityManagerInterface $entityManager,
+        private readonly \App\PublicPage\PublicPageAnalytics $analytics,
         private readonly string $vapidPublicKey,
     ) {
     }
@@ -46,6 +47,7 @@ class PublicGroupController extends AbstractController
     public function page(string $slug, Request $request): Response
     {
         $group = $this->requirePublicGroup($slug);
+        $this->analytics->recordView($group);
 
         if ($this->isLocked($group, $request)) {
             return $this->render('public/password.html.twig', [
@@ -67,6 +69,19 @@ class PublicGroupController extends AbstractController
             'pushEnabled' => $this->vapidPublicKey !== '',
             'vapidPublicKey' => $this->vapidPublicKey,
         ]);
+    }
+
+    #[Route('/{slug}/click', name: 'app_public_group_click', methods: ['POST'])]
+    public function trackClick(string $slug, Request $request): Response
+    {
+        $group = $this->requirePublicGroup($slug);
+
+        $url = (string) $request->request->get('url', '');
+        if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
+            $this->analytics->recordClick($group, $url);
+        }
+
+        return new Response('', Response::HTTP_NO_CONTENT);
     }
 
     #[Route('/{slug}/push/subscribe', name: 'app_public_group_push_subscribe', methods: ['POST'])]

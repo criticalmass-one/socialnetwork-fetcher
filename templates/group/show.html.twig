@@ -66,6 +66,38 @@
                 </div>
             </div>
 
+            {% if stats is not null %}
+                <div class="data-card mb-3">
+                    <div class="data-card-header"><i class="fas fa-chart-simple me-1"></i>Statistik (nur Admin)</div>
+                    <div class="data-card-body">
+                        <div class="row text-center g-2 mb-2">
+                            <div class="col-6">
+                                <div class="fs-4 fw-bold">{{ stats.views }}</div>
+                                <div class="small text-muted">Aufrufe gesamt</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="fs-4 fw-bold">{{ stats.clicks }}</div>
+                                <div class="small text-muted">Link-Klicks</div>
+                            </div>
+                        </div>
+                        <div class="small text-muted mb-3">
+                            Aufrufe: {{ stats.views7 }} (7 Tage) · {{ stats.views30 }} (30 Tage)
+                        </div>
+                        {% if stats.topLinks is not empty %}
+                            <div class="small fw-semibold mb-1">Meistgeklickte Links</div>
+                            <ul class="list-unstyled small mb-0">
+                                {% for link in stats.topLinks %}
+                                    <li class="d-flex justify-content-between gap-2">
+                                        <a href="{{ link.url }}" target="_blank" rel="noopener" class="text-truncate">{{ link.url }}</a>
+                                        <span class="badge bg-secondary">{{ link.count }}</span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+
             <form method="post" action="{{ path('app_group_delete', {id: group.id}) }}"
                   data-controller="confirm"
                   data-confirm-message-value="Gruppe &quot;{{ group.name }}&quot; wirklich löschen? Profile bleiben erhalten.">

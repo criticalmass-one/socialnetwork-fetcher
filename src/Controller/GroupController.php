@@ -105,6 +105,7 @@ class GroupController extends AbstractController
         Request $request,
         ItemRepository $itemRepository,
         NetworkRepository $networkRepository,
+        \App\PublicPage\PublicPageAnalytics $analytics,
     ): Response {
         $this->denyForeignClient($group);
         $page = max(1, $request->query->getInt('page', 1));
@@ -127,6 +128,9 @@ class GroupController extends AbstractController
         }
         usort($networks, static fn ($a, $b): int => strcasecmp($a->getName() ?? '', $b->getName() ?? ''));
 
+        // Public-page statistics are admin-only.
+        $stats = $this->isGranted('ROLE_ADMIN') ? $analytics->summary($group) : null;
+
         return $this->render('group/show.html.twig', [
             'group' => $group,
             'items' => $items,
@@ -135,6 +139,7 @@ class GroupController extends AbstractController
             'pages' => $pages,
             'networks' => array_values($networks),
             'selectedNetworkId' => $networkId,
+            'stats' => $stats,
         ]);
     }
 
