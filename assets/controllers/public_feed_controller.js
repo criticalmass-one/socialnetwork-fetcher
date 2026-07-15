@@ -11,7 +11,6 @@ export default class extends Controller {
         url: String,
         page: Number,
         hasMore: Boolean,
-        clickUrl: String,
     };
 
     connect() {
@@ -25,25 +24,29 @@ export default class extends Controller {
             );
             this.observer.observe(this.sentinelTarget);
         }
-
-        if (this.clickUrlValue) {
-            this.trackClick = this.trackClick.bind(this);
-            this.element.addEventListener('click', this.trackClick);
-        }
     }
 
     disconnect() {
         if (this.observer) this.observer.disconnect();
-        if (this.clickUrlValue) this.element.removeEventListener('click', this.trackClick);
     }
 
-    // Count clicks on outbound links without blocking the navigation.
-    trackClick(event) {
-        const link = event.target.closest('a[href^="http"]');
-        if (!link || !navigator.sendBeacon) return;
+    // Reveal and play the local <video> in place of the Instagram cover link.
+    playVideo(event) {
+        event.preventDefault();
+        const wrap = event.currentTarget.closest('.post-video');
+        if (!wrap) return;
 
-        const body = new URLSearchParams({ url: link.href });
-        navigator.sendBeacon(this.clickUrlValue, body);
+        const cover = wrap.querySelector('.video-cover');
+        const button = wrap.querySelector('.video-play');
+        const video = wrap.querySelector('video');
+
+        if (cover) cover.hidden = true;
+        if (button) button.hidden = true;
+        if (video) {
+            video.hidden = false;
+            const play = video.play();
+            if (play && typeof play.catch === 'function') play.catch(() => {});
+        }
     }
 
     async loadMore() {
