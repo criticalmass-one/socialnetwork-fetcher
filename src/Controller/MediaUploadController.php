@@ -73,7 +73,7 @@ class MediaUploadController extends AbstractController
                 return new JsonResponse(['error' => sprintf('no tracked profile for account "%s"', $author)], Response::HTTP_UNPROCESSABLE_ENTITY);
             }
 
-            $item = $this->createItem($profile, rtrim($permalink, '/'), $request);
+            $item = $this->createItem($profile, $this->canonicalPermalink($permalink), $request);
             $created = true;
         }
 
@@ -155,13 +155,13 @@ class MediaUploadController extends AbstractController
     }
 
     /**
-     * Instagram permalinks differ only by a trailing slash between the page's
-     * canonical URL and what was stored, so match both forms.
+     * The page's canonical URL and the stored permalink can differ by a trailing
+     * slash and by the path segment (Instagram serves the same post under /p/,
+     * /reel/, /reels/, /tv/ while RSS.app stores /p/), so match all forms.
      */
-    private function findItemByPermalink(string $permalink): ?\App\Entity\Item
+    private function findItemByPermalink(string $permalink): ?Item
     {
-        $base = rtrim($permalink, '/');
-        foreach (array_unique([$permalink, $base, $base . '/']) as $candidate) {
+        foreach ($this->permalinkCandidates($permalink) as $candidate) {
             $item = $this->itemRepository->findOneBy(['permalink' => $candidate]);
             if ($item !== null) {
                 return $item;
@@ -169,6 +169,32 @@ class MediaUploadController extends AbstractController
         }
 
         return null;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function permalinkCandidates(string $permalink): array
+    {
+        $base = rtrim(trim($permalink), '/');
+        $candidates = [$base, $base . '/'];
+
+        if (preg_match('~^(https?://[^/]+)/(?:p|reel|reels|tv)/([^/?#]+)~i', $permalink, $m) === 1) {
+            foreach (['p', 'reel'] as $segment) {
+                $candidates[] = sprintf('%s/%s/%s', $m[1], $segment, $m[2]);
+                $candidates[] = sprintf('%s/%s/%s/', $m[1], $segment, $m[2]);
+            }
+        }
+
+        return array_values(array_unique($candidates));
+    }
+
+    /** Normalise to the /p/ form RSS.app stores, so a created item dedupes on a later fetch. */
+    private function canonicalPermalink(string $permalink): string
+    {
+        $permalink = rtrim(trim($permalink), '/');
+
+        return preg_replace('#/(?:reel|reels|tv)/#i', '/p/', $permalink) ?? $permalink;
     }
 
     private function bearerToken(Request $request): string

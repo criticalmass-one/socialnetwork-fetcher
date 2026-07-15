@@ -78,6 +78,29 @@ class MediaUploadWebTest extends AbstractWebTestCase
         self::assertResponseStatusCodeSame(404);
     }
 
+    public function testMatchesReelUrlAgainstStoredPostUrl(): void
+    {
+        $this->createItemWithTranscription(); // stored as .../p/UploadTest1/
+
+        // A video post's canonical URL is often the /reel/ form; it must still
+        // match the stored /p/ item instead of creating a duplicate.
+        $this->client->request(
+            'POST',
+            '/media-upload',
+            ['permalink' => 'https://www.instagram.com/reel/UploadTest1/'],
+            ['video' => $this->fakeUpload('clip.mp4', 'video/mp4')],
+            ['HTTP_AUTHORIZATION' => 'Bearer test-upload-token'],
+        );
+
+        self::assertResponseIsSuccessful();
+
+        $em = $this->entityManager();
+        $em->clear();
+        self::assertSame(1, $em->getRepository(Item::class)->count(['uniqueIdentifier' => 'upload-test-1']), 'no duplicate created');
+        $item = $em->getRepository(Item::class)->findOneBy(['uniqueIdentifier' => 'upload-test-1']);
+        self::assertNotNull($item->getVideoPath(), 'media attached to the existing item');
+    }
+
     public function testCreatesItemWhenMissingAndAuthorMatchesProfile(): void
     {
         $em = $this->entityManager();
