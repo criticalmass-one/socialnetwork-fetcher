@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Group;
 use App\Entity\Item;
+use App\Entity\Profile;
 use App\Entity\PushSubscription;
 use App\Repository\GroupRepository;
 use App\Repository\ItemRepository;
@@ -69,7 +70,29 @@ class PublicGroupController extends AbstractController
             'hasMore' => $total > self::ITEMS_PER_PAGE,
             'pushEnabled' => $this->vapidPublicKey !== '',
             'vapidPublicKey' => $this->vapidPublicKey,
+            'groupProfiles' => $this->liveProfiles($group),
         ]);
+    }
+
+    /**
+     * Live (non-deleted) member profiles, sorted by display name, for the
+     * public page's collapsible profile list.
+     *
+     * @return list<Profile>
+     */
+    private function liveProfiles(Group $group): array
+    {
+        $profiles = array_filter(
+            $group->getProfiles()->toArray(),
+            static fn (Profile $profile): bool => !$profile->isDeleted(),
+        );
+
+        usort(
+            $profiles,
+            static fn (Profile $a, Profile $b): int => strcasecmp($a->getDisplayName(), $b->getDisplayName()),
+        );
+
+        return array_values($profiles);
     }
 
     #[Route('/{slug}/go', name: 'app_public_group_go', methods: ['GET'])]

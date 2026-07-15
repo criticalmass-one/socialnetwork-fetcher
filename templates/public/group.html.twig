@@ -8,14 +8,28 @@
             {% if group.timeWindowDays %}<span><span class="dot">●</span> letzte {{ group.timeWindowDays }} Tage</span>{% endif %}
             <span>{{ total }} {{ total == 1 ? 'Beitrag' : 'Beiträge' }}</span>
         </div>
-        {% if pushEnabled %}
-            <div class="push-subscribe" hidden
-                 data-controller="push-subscribe"
-                 data-push-subscribe-vapid-public-key-value="{{ vapidPublicKey }}"
-                 data-push-subscribe-subscribe-url-value="{{ path('app_public_group_push_subscribe', {slug: group.publicSlug}) }}"
-                 data-push-subscribe-unsubscribe-url-value="{{ path('app_public_group_push_unsubscribe', {slug: group.publicSlug}) }}">
-                <button type="button" class="push-btn" data-push-subscribe-target="button" data-action="push-subscribe#toggle">🔔 Benachrichtigungen an</button>
-            </div>
+        {% if groupProfiles is not empty %}
+            <details class="group-profiles">
+                <summary>{{ groupProfiles|length }} {{ groupProfiles|length == 1 ? 'Profil' : 'Profile' }} in dieser Gruppe</summary>
+                <ul>
+                    {% for p in groupProfiles %}
+                        {% set net = p.network %}
+                        <li>
+                            {% if p.identifier starts with 'http' %}
+                                <a href="{{ public_out(group, p.identifier) }}" target="_blank" rel="noopener nofollow">
+                                    {% if net %}<span class="net-dot" style="background:{{ net.backgroundColor }}"><i class="{{ net.icon }}"></i></span>{% endif %}
+                                    <span class="pname">{{ p|public_profile_name }}</span>
+                                </a>
+                            {% else %}
+                                <span class="nolink">
+                                    {% if net %}<span class="net-dot" style="background:{{ net.backgroundColor }}"><i class="{{ net.icon }}"></i></span>{% endif %}
+                                    <span class="pname">{{ p|public_profile_name }}</span>
+                                </span>
+                            {% endif %}
+                        </li>
+                    {% endfor %}
+                </ul>
+            </details>
         {% endif %}
     </header>
 
