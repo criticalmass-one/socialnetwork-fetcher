@@ -13,7 +13,13 @@
         </a>
         <div class="meta">
             <a class="who" href="{{ public_out(group, profileUrl) }}" target="_blank" rel="noopener nofollow">{{ name }}</a>
-            {% if item.dateTime %}<div class="when" title="{{ item.dateTime|date('d.m.Y H:i') }}">{{ item.dateTime|date('d.m.Y H:i') }}</div>{% endif %}
+            {% if item.dateTime %}
+                {% if permalink starts with 'http' %}
+                    <a class="when" href="{{ public_out(group, permalink) }}" target="_blank" rel="noopener nofollow" title="{{ item.dateTime|date('d.m.Y H:i') }}">{{ item.dateTime|date('d.m.Y H:i') }}</a>
+                {% else %}
+                    <div class="when" title="{{ item.dateTime|date('d.m.Y H:i') }}">{{ item.dateTime|date('d.m.Y H:i') }}</div>
+                {% endif %}
+            {% endif %}
         </div>
     </div>
 
