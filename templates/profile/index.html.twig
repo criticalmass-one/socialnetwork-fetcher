@@ -101,6 +101,15 @@
                         </li>
                     </ul>
                 </div>
+                <select class="form-select w-auto ms-auto" aria-label="Sortierung"
+                        data-profile-list-target="sortSelect"
+                        data-action="change->profile-list#onSortChange">
+                    <option value="identifier" {{ selectedSort == 'identifier' ? 'selected' : '' }}>Identifier A–Z</option>
+                    <option value="fetch_desc" {{ selectedSort == 'fetch_desc' ? 'selected' : '' }}>Letzter Fetch (neueste)</option>
+                    <option value="fetch_asc" {{ selectedSort == 'fetch_asc' ? 'selected' : '' }}>Letzter Fetch (älteste)</option>
+                    <option value="created_desc" {{ selectedSort == 'created_desc' ? 'selected' : '' }}>Angelegt (neueste)</option>
+                    <option value="created_asc" {{ selectedSort == 'created_asc' ? 'selected' : '' }}>Angelegt (älteste)</option>
+                </select>
             </div>
         </div>
 
