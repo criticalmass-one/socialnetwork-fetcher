@@ -47,11 +47,15 @@ class ProfileController extends AbstractController
             $networkIds = [$request->query->getInt('network')];
         }
         $status = $request->query->getString('status', '');
+        $sort = $request->query->getString('sort', 'identifier');
+        if (!in_array($sort, ProfileRepository::SORTS, true)) {
+            $sort = 'identifier';
+        }
 
         $total = $profileRepository->countFiltered($networkIds, $search, $status);
         $pages = max(1, (int) ceil($total / self::PROFILES_PER_PAGE));
         $page = min($page, $pages);
-        $profiles = $profileRepository->findPaginated($page, self::PROFILES_PER_PAGE, $networkIds, $search, $status);
+        $profiles = $profileRepository->findPaginated($page, self::PROFILES_PER_PAGE, $networkIds, $search, $status, $sort);
 
         $profileIds = array_map(static fn ($p) => $p->getId(), $profiles);
         $itemCounts = $itemRepository->countByProfileIds($profileIds);
@@ -83,6 +87,7 @@ class ProfileController extends AbstractController
             'search' => $search,
             'selectedNetworks' => $networkIds,
             'selectedStatus' => $status,
+            'selectedSort' => $sort,
         ]);
     }
 

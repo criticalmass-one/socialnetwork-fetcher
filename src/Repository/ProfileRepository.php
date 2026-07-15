@@ -72,20 +72,48 @@ class ProfileRepository extends ServiceEntityRepository
      * @param list<int> $networkIds
      * @return list<Profile>
      */
-    public function findPaginated(int $page, int $limit, array $networkIds = [], string $search = '', string $status = ''): array
+    public const SORTS = ['identifier', 'fetch_desc', 'fetch_asc', 'created_desc', 'created_asc'];
+
+    public function findPaginated(int $page, int $limit, array $networkIds = [], string $search = '', string $status = '', string $sort = 'identifier'): array
     {
         $qb = $this->createQueryBuilder('p')
             ->leftJoin('p.network', 'n')
-            ->addSelect('n')
-            ->orderBy('p.identifier', 'ASC');
+            ->addSelect('n');
 
         $this->applyFilters($qb, $networkIds, $search, $status);
+        $this->applySort($qb, $sort);
 
         return $qb
             ->setFirstResult(($page - 1) * $limit)
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
+    }
+
+    private function applySort(\Doctrine\ORM\QueryBuilder $qb, string $sort): void
+    {
+        // For date sorts, keep rows without a value at the bottom on both MySQL
+        // and PostgreSQL (their default NULL ordering differs) via a HIDDEN flag.
+        switch ($sort) {
+            case 'fetch_desc':
+                $qb->addSelect('CASE WHEN p.lastFetchSuccessDateTime IS NULL THEN 1 ELSE 0 END AS HIDDEN nullsLast')
+                    ->orderBy('nullsLast', 'ASC')
+                    ->addOrderBy('p.lastFetchSuccessDateTime', 'DESC');
+                break;
+            case 'fetch_asc':
+                $qb->addSelect('CASE WHEN p.lastFetchSuccessDateTime IS NULL THEN 1 ELSE 0 END AS HIDDEN nullsLast')
+                    ->orderBy('nullsLast', 'ASC')
+                    ->addOrderBy('p.lastFetchSuccessDateTime', 'ASC');
+                break;
+            case 'created_desc':
+                $qb->orderBy('p.createdAt', 'DESC');
+                break;
+            case 'created_asc':
+                $qb->orderBy('p.createdAt', 'ASC');
+                break;
+            default:
+                $qb->orderBy('p.identifier', 'ASC');
+        }
     }
 
     /**

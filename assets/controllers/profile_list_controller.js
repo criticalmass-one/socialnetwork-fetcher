@@ -7,7 +7,7 @@ export default class extends Controller {
         pages: Number,
     };
 
-    static targets = ['searchInput', 'networkCheckbox', 'networkCount', 'statusRadio', 'tableBody', 'pagination', 'totalBadge'];
+    static targets = ['searchInput', 'networkCheckbox', 'networkCount', 'statusRadio', 'sortSelect', 'tableBody', 'pagination', 'totalBadge'];
 
     _searchTimeout = null;
 
@@ -42,6 +42,11 @@ export default class extends Controller {
     }
 
     onStatusChange() {
+        this.pageValue = 1;
+        this._load();
+    }
+
+    onSortChange() {
         this.pageValue = 1;
         this._load();
     }
@@ -84,6 +89,10 @@ export default class extends Controller {
         const selectedStatus = this.statusRadioTargets.find(r => r.checked);
         if (selectedStatus) {
             params.set('status', selectedStatus.value);
+        }
+
+        if (this.hasSortSelectTarget && this.sortSelectTarget.value) {
+            params.set('sort', this.sortSelectTarget.value);
         }
 
         try {
