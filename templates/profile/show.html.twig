@@ -131,6 +131,27 @@
             </div>
 
             <div class="data-card mb-4">
+                <div class="data-card-header">RSS.app-Feed-ID</div>
+                <div class="data-card-body">
+                    <p class="text-muted small mb-2">
+                        Trägt die RSS.app-Feed-ID manuell ein (aus dem RSS.app-Dashboard), ohne die
+                        automatische Registrierung über die API — hilfreich, wenn dabei Fehler 429
+                        (Rate-Limit) auftreten. Leer lassen und speichern entfernt die ID.
+                    </p>
+                    <form method="post" action="{{ path('app_profile_set_rss_app_feed_id', {id: profile.id}) }}">
+                        <input type="hidden" name="_token" value="{{ csrf_token('set-rss-app-feed-id-' ~ profile.id) }}">
+                        <div class="input-group">
+                            <input type="text" name="rss_app_feed_id" class="form-control font-monospace"
+                                   value="{{ profile.rssAppFeedId }}" placeholder="z. B. jjutbdPwGeghjbC6" aria-label="RSS.app-Feed-ID">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Speichern
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="data-card mb-4">
                 <div class="data-card-header">Clients ({{ profile.clients|length }})</div>
                 <div class="data-card-body">
                     {% if profile.clients|length > 0 %}

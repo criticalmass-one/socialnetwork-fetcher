@@ -284,6 +284,24 @@ class ProfileController extends AbstractController
         ]);
     }
 
+    #[Route('/{id}/rss-app-feed-id', name: 'app_profile_set_rss_app_feed_id', requirements: ['id' => '\d+'], methods: ['POST'])]
+    public function setRssAppFeedId(Request $request, Profile $profile, EntityManagerInterface $em): Response
+    {
+        if (!$this->isCsrfTokenValid('set-rss-app-feed-id-' . $profile->getId(), $request->request->getString('_token'))) {
+            return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
+        }
+
+        $feedId = trim($request->request->getString('rss_app_feed_id'));
+        $profile->setRssAppFeedId($feedId !== '' ? $feedId : null);
+        $em->flush();
+
+        $this->addFlash('success', $feedId !== ''
+            ? sprintf('RSS.app-Feed-ID „%s" wurde gesetzt.', $feedId)
+            : 'RSS.app-Feed-ID wurde entfernt.');
+
+        return $this->redirectToRoute('app_profile_show', ['id' => $profile->getId()]);
+    }
+
     #[Route('/{id}/change-identifier', name: 'app_profile_change_identifier', requirements: ['id' => '\d+'], methods: ['POST'])]
     public function changeIdentifier(Request $request, Profile $profile, IdentifierChanger $identifierChanger): Response
     {
