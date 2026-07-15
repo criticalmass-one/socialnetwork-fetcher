@@ -4,6 +4,51 @@
  * endpoint. Runs in the service worker so it survives the popup closing.
  */
 
+const IG_APP_ID = '936619743392459';
+const SC_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+
+function shortcodeToMediaId(shortcode) {
+    let id = 0n;
+    for (const ch of shortcode) {
+        const idx = SC_ALPHABET.indexOf(ch);
+        if (idx < 0) return null;
+        id = id * 64n + BigInt(idx);
+    }
+    return id.toString();
+}
+
+function mediaFromItem(item) {
+    const nodes = item.carousel_media || [item];
+    let videoUrl = null;
+    let imageUrl = null;
+    for (const n of nodes) {
+        if (!videoUrl && n.video_versions?.length) {
+            videoUrl = n.video_versions[0].url;
+        }
+        if (!imageUrl && n.image_versions2?.candidates?.length) {
+            imageUrl = n.image_versions2.candidates[0].url;
+        }
+    }
+    return { videoUrl, imageUrl };
+}
+
+// Reliable path: ask Instagram's own media API (from the browser session) for
+// the direct CDN video/image URLs, instead of scraping the DOM/og: tags.
+async function fetchViaApi(shortcode) {
+    const mediaId = shortcodeToMediaId(shortcode);
+    if (!mediaId) return {};
+
+    const res = await fetch(`https://www.instagram.com/api/v1/media/${mediaId}/info/`, {
+        headers: { 'X-IG-App-ID': IG_APP_ID, 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'include',
+    });
+    if (!res.ok) return {};
+
+    const data = await res.json().catch(() => null);
+    const item = data?.items?.[0];
+    return item ? mediaFromItem(item) : {};
+}
+
 async function getSettings() {
     const { appUrl, token } = await chrome.storage.sync.get(['appUrl', 'token']);
     return {
@@ -23,10 +68,25 @@ async function fetchAsFile(url, fallbackName) {
     return new File([blob], name, { type: blob.type });
 }
 
-async function upload({ permalink, videoUrl, imageUrl, text, dateTime, author }) {
+async function upload({ permalink, shortcode, videoUrl, imageUrl, text, dateTime, author }) {
     const { appUrl, token } = await getSettings();
     if (!token) {
         throw new Error('Kein Token gesetzt — bitte in den Optionen konfigurieren.');
+    }
+
+    // Prefer Instagram's API for direct CDN URLs; fall back to page-extracted ones.
+    if (shortcode) {
+        try {
+            const api = await fetchViaApi(shortcode);
+            if (api.videoUrl) videoUrl = api.videoUrl;
+            if (api.imageUrl) imageUrl = api.imageUrl;
+        } catch (e) {
+            // keep the page-extracted URLs
+        }
+    }
+
+    if (!videoUrl && !imageUrl) {
+        throw new Error('Kein Medium gefunden (Instagram-API lieferte nichts).');
     }
 
     const form = new FormData();
