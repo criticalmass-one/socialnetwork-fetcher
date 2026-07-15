@@ -39,6 +39,20 @@ class PublicGroupControllerTest extends AbstractApiTestCase
         self::assertStringNotContainsString('>https://mastodon.social/@shared</a>', $body);
     }
 
+    public function testGroupProfilesListIsShown(): void
+    {
+        $client = static::createClient();
+        $this->makeGroup('profiles01', ['timeWindowDays' => null]);
+
+        $client->request('GET', '/p/profiles01');
+        $body = $this->body($client);
+
+        // Collapsible profile list with a tracked link to the member profile.
+        self::assertStringContainsString('group-profiles', $body);
+        self::assertStringContainsString('in dieser Gruppe', $body);
+        self::assertStringContainsString('/p/profiles01/go?', $body);
+    }
+
     public function testDisabledGroupReturns404(): void
     {
         $client = static::createClient();
