@@ -19,6 +19,15 @@ function extractMedia() {
 
     let videoUrl = og('og:video:secure_url') || og('og:video');
     if (!videoUrl) {
+        // Instagram usually plays the video from a blob: MediaSource, but embeds
+        // the direct CDN mp4 URL in the page's JSON ("video_url":"https:\/\/…").
+        const html = document.documentElement.innerHTML;
+        const m = html.match(/"video_url":"(https:[^"]+)"/);
+        if (m) {
+            videoUrl = m[1].replace(/\\u0026/g, '&').replace(/\\\//g, '/');
+        }
+    }
+    if (!videoUrl) {
         const v = document.querySelector('video');
         const src = v && (v.currentSrc || v.src);
         if (src && !src.startsWith('blob:')) videoUrl = src;
