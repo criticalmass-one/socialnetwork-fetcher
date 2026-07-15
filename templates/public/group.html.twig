@@ -22,7 +22,8 @@
     <main data-controller="public-feed"
           data-public-feed-url-value="{{ path('app_public_group_more', {slug: group.publicSlug}) }}"
           data-public-feed-page-value="{{ page }}"
-          data-public-feed-has-more-value="{{ hasMore ? 'true' : 'false' }}">
+          data-public-feed-has-more-value="{{ hasMore ? 'true' : 'false' }}"
+          data-public-feed-click-url-value="{{ path('app_public_group_click', {slug: group.publicSlug}) }}">
         {% if viewItems is empty %}
             <div class="empty">
                 <i class="fas fa-inbox"></i>
