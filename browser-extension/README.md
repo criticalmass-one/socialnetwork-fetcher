@@ -35,12 +35,16 @@ Danach `bin/console cache:clear --env=prod`. Leerer Token = Endpunkt deaktiviert
 2. Auf das Erweiterungs-Icon klicken → **Laden & hochladen**.
 3. Eine Benachrichtigung meldet Erfolg (Video/Fotos, ob Transkription eingereiht).
 
+## Wie die Medien geholt werden
+
+Die Erweiterung fragt Instagrams eigene Media-API aus deiner Browser-Session ab
+(`api/v1/media/{id}/info/`, Media-ID aus dem Shortcode berechnet) und bekommt so
+die **direkten CDN-URLs** für Video und Bild — unabhängig vom `blob:`-Player.
+Fällt die API aus, greift ein Fallback auf `og:video`/`og:image` und das
+Seiten-JSON.
+
 ## Grenzen (ehrlich)
 
-- Instagram liefert Videos teils nur als segmentierten `blob:`-Stream; solche
-  lassen sich nicht direkt herunterladen — die Erweiterung meldet dann „kein
-  ladbares Medium gefunden". Sie nutzt vorrangig die `og:video`/`og:image`-Meta-Tags
-  der Post-Seite, die meist die direkte CDN-URL enthalten.
-- Karussells (mehrere Bilder) laden aktuell nur das Hauptbild.
-- Instagram ändert seine Seiten häufig; die Extraktion kann brechen und
-  gelegentlich Anpassung brauchen.
+- Karussells (mehrere Medien) laden aktuell das erste Video bzw. das erste Bild.
+- Instagram ändert seine API/Seiten gelegentlich; dann kann die Extraktion
+  brechen und braucht Anpassung.

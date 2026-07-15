@@ -48,7 +48,10 @@ function extractMedia() {
         if (mm) author = mm[1];
     }
 
-    return { permalink, videoUrl: videoUrl || null, imageUrl: imageUrl || null, text, dateTime, author };
+    const scMatch = permalink.match(/\/(?:p|reel|reels|tv)\/([^/?#]+)/);
+    const shortcode = scMatch ? scMatch[1] : null;
+
+    return { permalink, shortcode, videoUrl: videoUrl || null, imageUrl: imageUrl || null, text, dateTime, author };
 }
 
 async function init() {
@@ -84,8 +87,8 @@ async function run(tabId) {
             func: extractMedia,
         });
 
-        if (!result || (!result.videoUrl && !result.imageUrl)) {
-            setStatus('Kein ladbares Medium gefunden. Instagram liefert das Video evtl. nur als Stream (blob:).', 'err');
+        if (!result || (!result.shortcode && !result.videoUrl && !result.imageUrl)) {
+            setStatus('Kein Post erkannt. Öffne die Instagram-Einzelpost-Seite (…/p/… oder …/reel/…).', 'err');
             goBtn.disabled = false;
             return;
         }
