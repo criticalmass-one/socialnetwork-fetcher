@@ -116,7 +116,33 @@ class ImportProfilesCommand extends Command
                 $isNew = false;
             } else {
                 $profile = new Profile();
-                $profile->setId($data['id']);
+
+                // The API-create path (ClientScopedProfileProcessor) assigns ids via
+                // findNextFreeId(), so the local id space can diverge from the source id.
+                // If the source id is already taken by an unrelated profile, fall back to a
+                // free local id instead of aborting the whole import with a duplicate-PK
+                // error (this command previously crashed mid-run on such a collision).
+                $newId = (int) $data['id'];
+
+                if (null !== $this->profileRepository->find($newId)) {
+                    if (!$dryRun && $batchCount > 0) {
+                        // Flush pending inserts so findNextFreeId() sees the current max.
+                        $this->entityManager->flush();
+                        $batchCount = 0;
+                    }
+
+                    $freeId = $this->profileRepository->findNextFreeId();
+                    $io->warning(sprintf(
+                        'Quell-ID %d bereits belegt – vergebe freie lokale ID %d für %s (%s).',
+                        $newId,
+                        $freeId,
+                        $data['identifier'],
+                        $data['network'],
+                    ));
+                    $newId = $freeId;
+                }
+
+                $profile->setId($newId);
                 $isNew = true;
             }
 
