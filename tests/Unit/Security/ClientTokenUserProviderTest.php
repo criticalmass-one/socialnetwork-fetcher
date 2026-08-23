@@ -34,6 +34,22 @@ class ClientTokenUserProviderTest extends TestCase
         $provider->loadUserByIdentifier('invalid-token');
     }
 
+    public function testFailedLookupDoesNotPutTheTokenOnTheException(): void
+    {
+        $repository = $this->createMock(ClientRepository::class);
+        $repository->method('findOneByToken')->willReturn(null);
+
+        $provider = new ClientTokenUserProvider($repository);
+
+        try {
+            $provider->loadUserByIdentifier('super-secret-token');
+            $this->fail('Expected a UserNotFoundException.');
+        } catch (UserNotFoundException $exception) {
+            $this->assertStringNotContainsString('super-secret-token', (string) $exception->getUserIdentifier());
+            $this->assertStringStartsWith('client-token#', (string) $exception->getUserIdentifier());
+        }
+    }
+
     public function testSupportsClassReturnsTrueForClient(): void
     {
         $repository = $this->createMock(ClientRepository::class);
@@ -50,12 +66,38 @@ class ClientTokenUserProviderTest extends TestCase
         $this->assertFalse($provider->supportsClass(\stdClass::class));
     }
 
-    public function testRefreshUserReturnsSameUser(): void
+    public function testRefreshUserReloadsTheClientFromTheDatabase(): void
     {
-        $client = new Client();
+        $stale = new Client();
+        $stale->setToken('valid-token');
+
+        $fresh = new Client();
+        $fresh->setToken('valid-token');
+
         $repository = $this->createMock(ClientRepository::class);
+        $repository->expects($this->once())
+            ->method('findOneByToken')
+            ->with('valid-token')
+            ->willReturn($fresh);
+
         $provider = new ClientTokenUserProvider($repository);
 
-        $this->assertSame($client, $provider->refreshUser($client));
+        $this->assertSame($fresh, $provider->refreshUser($stale));
+    }
+
+    public function testRefreshUserRejectsADisabledOrRotatedClient(): void
+    {
+        $client = new Client();
+        $client->setToken('revoked-token');
+
+        // findOneByToken filters on enabled=true, so a disabled client or a
+        // rotated token simply is not found any more.
+        $repository = $this->createMock(ClientRepository::class);
+        $repository->method('findOneByToken')->willReturn(null);
+
+        $provider = new ClientTokenUserProvider($repository);
+
+        $this->expectException(UserNotFoundException::class);
+        $provider->refreshUser($client);
     }
 }
