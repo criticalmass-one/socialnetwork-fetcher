@@ -2,22 +2,27 @@
 
 namespace App\MediaDownloader;
 
+use App\Http\SafeHttpFetcher;
 use League\Flysystem\FilesystemOperator;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class PhotoDownloader
 {
+    /** Photos, not disk images. */
+    private const MAX_BYTES = 32 * 1024 * 1024;
+
     public function __construct(
-        private readonly HttpClientInterface $httpClient,
+        private readonly SafeHttpFetcher $httpFetcher,
         private readonly FilesystemOperator $defaultStorage,
     ) {
     }
 
     public function download(string $url, int $profileId, int $itemId, int $index = 0): string
     {
-        $response = $this->httpClient->request('GET', $url);
-        $contentType = $response->getHeaders()['content-type'][0] ?? '';
-        $content = $response->getContent();
+        // $url is lifted out of a third-party payload (RSS.app description
+        // HTML, Bluesky/Mastodon attachments) — guard it before fetching.
+        $resource = $this->httpFetcher->get($url, self::MAX_BYTES);
+        $contentType = $resource->header('content-type') ?? '';
+        $content = $resource->content;
 
         $extension = $this->resolveExtension($contentType, $url);
         $path = sprintf('%d/%d/photo_%d.%s', $profileId, $itemId, $index, $extension);

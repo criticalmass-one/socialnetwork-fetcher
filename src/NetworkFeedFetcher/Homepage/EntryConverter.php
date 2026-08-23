@@ -2,15 +2,18 @@
 
 namespace App\NetworkFeedFetcher\Homepage;
 
+use App\Http\SafeHttpFetcher;
 use App\Model\Item;
 use App\Model\Profile;
 use Laminas\Feed\Reader\Entry\EntryInterface;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class EntryConverter
 {
+    /** An HTML page we keep in Item::rawSource — no reason to accept more. */
+    private const MAX_BYTES = 5 * 1024 * 1024;
+
     public function __construct(
-        private readonly HttpClientInterface $httpClient,
+        private readonly SafeHttpFetcher $httpFetcher,
     ) {
     }
 
@@ -50,7 +53,7 @@ class EntryConverter
     private function fetchPageSource(Item $item, string $permalink): void
     {
         try {
-            $html = $this->httpClient->request('GET', $permalink)->getContent();
+            $html = $this->httpFetcher->get($permalink, self::MAX_BYTES)->content;
             $item->setRawSource($html);
 
             $dom = new \DOMDocument();

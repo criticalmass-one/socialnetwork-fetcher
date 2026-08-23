@@ -2,14 +2,17 @@
 
 namespace App\SourceFetcher;
 
+use App\Http\SafeHttpFetcher;
 use App\Model\Item;
 use App\Model\Profile;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class SourceFetcher
 {
+    /** An HTML page we keep in Item::rawSource — no reason to accept more. */
+    private const MAX_BYTES = 5 * 1024 * 1024;
+
     public function __construct(
-        private readonly HttpClientInterface $httpClient,
+        private readonly SafeHttpFetcher $httpFetcher,
     ) {
     }
 
@@ -25,9 +28,10 @@ class SourceFetcher
             return;
         }
 
+        // The permalink comes out of a third-party feed, so it is guarded
+        // against pointing back into our own network before it is fetched.
         try {
-            $response = $this->httpClient->request('GET', $permalink);
-            $html = $response->getContent();
+            $html = $this->httpFetcher->get($permalink, self::MAX_BYTES)->content;
         } catch (\Throwable) {
             return;
         }

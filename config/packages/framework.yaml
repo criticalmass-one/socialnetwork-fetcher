@@ -11,6 +11,16 @@ framework:
         cookie_secure: auto
         cookie_samesite: lax
 
+    # Outbound HTTP. TLS verification is spelled out instead of relying on the
+    # default, and redirect chains are capped (Symfony's default is 20). URLs
+    # that come from third-party data go through App\Http\SafeHttpFetcher on
+    # top of this, which guards every single hop.
+    http_client:
+        default_options:
+            max_redirects: 5
+            verify_peer: true
+            verify_host: true
+
     #esi: true
     #fragments: true
     php_errors:

@@ -2,6 +2,7 @@
 
 namespace App\MediaDownloader;
 
+use App\Http\UrlGuard;
 use Symfony\Component\Process\Process;
 
 class VideoDownloader
@@ -9,6 +10,7 @@ class VideoDownloader
     private const VIDEO_EXTENSIONS = ['mp4', 'webm', 'mov', 'mkv', 'm4v', 'avi'];
 
     public function __construct(
+        private readonly UrlGuard $urlGuard,
         private readonly string $mediaDirectory,
         private readonly string $ytDlpCookiesFile = '',
     ) {
@@ -16,6 +18,10 @@ class VideoDownloader
 
     public function download(string $url, int $profileId, int $itemId): string
     {
+        // The URL is an item permalink, i.e. third-party data. Insist on a real
+        // http(s) URL so it can never be read as a yt-dlp option (--exec …).
+        $this->urlGuard->assertFetchableUrl($url);
+
         $outputDir = sprintf('%s/%d/%d', $this->mediaDirectory, $profileId, $itemId);
 
         if (!is_dir($outputDir)) {
@@ -30,6 +36,7 @@ class VideoDownloader
             ...$this->cookieArgs(),
             '--max-filesize', '100M',
             '-o', $outputTemplate,
+            '--',
             $url,
         ]);
 

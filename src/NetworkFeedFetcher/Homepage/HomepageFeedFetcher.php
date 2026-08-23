@@ -3,6 +3,7 @@
 namespace App\NetworkFeedFetcher\Homepage;
 
 use App\FeedFetcher\FetchInfo;
+use App\Http\UrlGuard;
 use App\NetworkFeedFetcher\AbstractNetworkFeedFetcher;
 use App\Model\Profile;
 use Laminas\Feed\Reader\Entry\EntryInterface;
@@ -14,6 +15,7 @@ class HomepageFeedFetcher extends AbstractNetworkFeedFetcher
     public function __construct(
         LoggerInterface $logger,
         private readonly EntryConverter $entryConverter,
+        private readonly UrlGuard $urlGuard,
     ) {
         parent::__construct($logger);
     }
@@ -33,11 +35,17 @@ class HomepageFeedFetcher extends AbstractNetworkFeedFetcher
     {
         $feedItemList = [];
 
+        // The identifier is client-supplied and the feed link is taken from the
+        // page it points at — both must stay outside our own network.
+        $this->urlGuard->resolve((string) $profile->getIdentifier());
+
         $feedLink = FeedUriDetector::findFeedLink($profile);
 
         if (!$feedLink) {
             return [];
         }
+
+        $this->urlGuard->resolve($feedLink);
 
         $this->logger->info(sprintf('Now quering %s', $feedLink));
 

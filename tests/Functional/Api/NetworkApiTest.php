@@ -27,6 +27,10 @@ class NetworkApiTest extends AbstractApiTestCase
         $data = $response->toArray();
         $networks = $data['hydra:member'] ?? $data['member'] ?? [];
 
+        if ([] === $networks) {
+            self::markTestSkipped('No network fixture available - cannot exercise the client guard.');
+        }
+
         $networkId = $networks[0]['id'];
 
         $this->requestAsClientA('GET', '/api/networks/' . $networkId);
@@ -34,41 +38,35 @@ class NetworkApiTest extends AbstractApiTestCase
         $this->assertResponseIsSuccessful();
     }
 
-    public function testPostCreateNetwork(): void
+    public function testPostCreateNetworkIsForbiddenForClients(): void
     {
-        $response = $this->requestAsClientA('POST', '/api/networks', [
+        // Networks are global configuration shared by every client. A Bearer
+        // token must not be able to add one (see the ROLE_ADMIN guard on the
+        // Network resource); the Web UI / a migration is the way in.
+        $this->requestAsClientA('POST', '/api/networks', [
             'json' => [
                 'identifier' => 'test_network',
                 'name' => 'Test Network',
                 'icon' => 'fas fa-test',
                 'backgroundColor' => '#000000',
                 'textColor' => '#ffffff',
-                'profileUrlPattern' => '#^https?://test\.example\.com/.+$#i',
+                'profileUrlPattern' => '#^https?://test\\.example\\.com/.+$#i',
             ],
         ]);
 
-        $this->assertResponseStatusCodeSame(201);
-
-        $data = $response->toArray();
-        $this->assertSame('test_network', $data['identifier']);
-        $this->assertSame('Test Network', $data['name']);
+        $this->assertResponseStatusCodeSame(403);
     }
 
-    public function testPutUpdateNetwork(): void
+    public function testPutUpdateNetworkIsForbiddenForClients(): void
     {
-        // Create a network to update
-        $response = $this->requestAsClientA('POST', '/api/networks', [
-            'json' => [
-                'identifier' => 'update_test',
-                'name' => 'Before Update',
-                'icon' => 'fas fa-test',
-                'backgroundColor' => '#000000',
-                'textColor' => '#ffffff',
-                'profileUrlPattern' => '#^https?://test\.example\.com/.+$#i',
-            ],
-        ]);
+        $response = $this->requestAsClientA('GET', '/api/networks');
+        $data = $response->toArray();
+        $networks = $data['hydra:member'] ?? $data['member'] ?? [];
+        if ([] === $networks) {
+            self::markTestSkipped('No network fixture available - cannot exercise the client guard.');
+        }
 
-        $id = $response->toArray()['id'];
+        $id = $networks[0]['id'];
 
         $this->requestAsClientA('PUT', '/api/networks/' . $id, [
             'json' => [
@@ -77,13 +75,10 @@ class NetworkApiTest extends AbstractApiTestCase
                 'icon' => 'fas fa-test',
                 'backgroundColor' => '#111111',
                 'textColor' => '#eeeeee',
-                'profileUrlPattern' => '#^https?://test\.example\.com/.+$#i',
+                'profileUrlPattern' => '#^https?://test\\.example\\.com/.+$#i',
             ],
         ]);
 
-        $this->assertResponseIsSuccessful();
-
-        $updated = $this->requestAsClientA('GET', '/api/networks/' . $id)->toArray();
-        $this->assertSame('After Update', $updated['name']);
+        $this->assertResponseStatusCodeSame(403);
     }
 }

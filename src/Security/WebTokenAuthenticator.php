@@ -2,6 +2,7 @@
 
 namespace App\Security;
 
+use App\Entity\Client;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -59,9 +60,12 @@ class WebTokenAuthenticator extends AbstractAuthenticator
 
         if ($request->hasSession()) {
             $session = $request->getSession();
+            // Never the user identifier here: for a Client that *is* the API
+            // token, and the flash is rendered straight into the page.
+            $user = $token->getUser();
             $session->getFlashBag()->add('success', sprintf(
                 'Eingeloggt als Client „%s".',
-                $token->getUser()?->getUserIdentifier() ?? 'unbekannt',
+                ($user instanceof Client ? $user->getName() : null) ?? 'unbekannt',
             ));
             $targetUrl = $this->getTargetPath($session, $firewallName) ?? $targetUrl;
         }

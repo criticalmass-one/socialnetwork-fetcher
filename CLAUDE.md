@@ -92,6 +92,29 @@ Network fetchers are auto-discovered: any class implementing `NetworkFeedFetcher
 - **PushSubscription** (table `push_subscription`) — a browser Web Push subscription for a group's public page: `id`, `group` (FK, cascade delete), `endpoint`, `p256dh`, `auth`, `createdAt`. See "Push Notifications".
 - **PublicPageEvent** (table `public_page_event`) — one timestamped row per public-page view or outbound-link click: `id`, `group` (FK, cascade delete), `type` (`view`|`click`), `url` (nullable, for clicks), `occurredAt`. See "Public Page Analytics".
 
+### Outbound HTTP Safety (SSRF guard)
+
+Most URLs this app fetches are not ours — item permalinks and media URLs come
+out of third-party feed payloads, profile identifiers come in through the API.
+Everything on that path goes through `src/Http/`:
+
+- **`UrlGuard`** — allows only `http`/`https` without embedded credentials, and
+  rejects hosts that resolve into loopback / private / link-local / CGNAT /
+  multicast / TEST-NET ranges. `resolve()` returns the validated IP;
+  `assertFetchableUrl()` is the cheap scheme-only check used for URLs handed to
+  an external process. `$allowPrivateNetworks` is bound to `false` everywhere
+  and only flipped to `true` in `config/services_test.yaml`.
+- **`SafeHttpFetcher`** — the only way third-party URLs get fetched. It follows
+  redirects **by hand** so every hop is guarded (a public URL redirecting to
+  `http://127.0.0.1/` would otherwise walk straight past the check), pins the
+  validated IP via HttpClient's `resolve` option, spells out
+  `verify_peer`/`verify_host`, and caps the response body.
+  Used by `SourceFetcher`, `Homepage\EntryConverter` and `PhotoDownloader`.
+- **yt-dlp** (`VideoDownloader`, `YtDlpPhotoDownloader`) — the permalink is
+  checked with `assertFetchableUrl()` and passed after a `--` separator, so it
+  can never be read as an option (`--exec …` would be remote code execution).
+- `framework.http_client.default_options` caps redirects at 5 for every client.
+
 ### Media Download System
 
 Profiles can opt into automatic photo/video downloads via `savePhotos` and `saveVideos` flags. Media is stored via Flysystem (local adapter at `public/media/`).

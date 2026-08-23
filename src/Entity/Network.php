@@ -23,13 +23,17 @@ use Symfony\Component\Serializer\Attribute\Groups;
             description: 'Returns a single network by ID.',
         ),
         new Post(
-            description: 'Registers a new social network.',
+            description: 'Registers a new social network. Administrators only — networks are global configuration shared by every API client, so a Bearer-token client cannot create them. Use the Web UI (/networks/new) or a migration instead.',
+            security: "is_granted('ROLE_ADMIN')",
+            securityMessage: 'Networks are global configuration and cannot be created through the API.',
         ),
         new Put(
-            description: 'Updates an existing network.',
+            description: 'Updates an existing network. Administrators only — networks are global configuration shared by every API client, so a Bearer-token client cannot change them. Use the Web UI (/networks/{id}/edit) instead.',
+            security: "is_granted('ROLE_ADMIN')",
+            securityMessage: 'Networks are global configuration and cannot be modified through the API.',
         ),
     ],
-    description: 'A social network type (e.g. Mastodon, Bluesky, Instagram). Networks define the identifier pattern and fetch schedule. Use the network IRI when creating profiles.',
+    description: 'A social network type (e.g. Mastodon, Bluesky, Instagram). Networks define the identifier pattern and fetch schedule. Use the network IRI when creating profiles. Read-only for API clients: networks are global configuration and are managed through the Web UI or a migration.',
     normalizationContext: ['groups' => ['network:read']],
     denormalizationContext: ['groups' => ['network:write']],
 )]

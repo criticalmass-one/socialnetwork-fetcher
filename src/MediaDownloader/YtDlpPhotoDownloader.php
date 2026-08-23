@@ -2,6 +2,7 @@
 
 namespace App\MediaDownloader;
 
+use App\Http\UrlGuard;
 use Symfony\Component\Process\Process;
 
 class YtDlpPhotoDownloader
@@ -9,6 +10,7 @@ class YtDlpPhotoDownloader
     private const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif'];
 
     public function __construct(
+        private readonly UrlGuard $urlGuard,
         private readonly string $mediaDirectory,
         private readonly string $ytDlpCookiesFile = '',
     ) {
@@ -19,6 +21,10 @@ class YtDlpPhotoDownloader
      */
     public function download(string $url, int $profileId, int $itemId): array
     {
+        // The URL is an item permalink, i.e. third-party data. Insist on a real
+        // http(s) URL so it can never be read as a yt-dlp option (--exec …).
+        $this->urlGuard->assertFetchableUrl($url);
+
         $outputDir = sprintf('%s/%d/%d', $this->mediaDirectory, $profileId, $itemId);
 
         if (!is_dir($outputDir)) {
@@ -35,6 +41,7 @@ class YtDlpPhotoDownloader
             '--skip-download',
             '--convert-thumbnails', 'jpg',
             '-o', $outputTemplate,
+            '--',
             $url,
         ]);
 
