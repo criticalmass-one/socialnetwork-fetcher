@@ -269,9 +269,13 @@ Disabled media is filtered out server-side, so e.g. an unpublished transcript is
 - `GET /api/timeline` — Chronological feed (default: last 24h, max 100 items)
   - Query params: `limit`, `since`, `until`, `network`
 
-**Networks** (public):
+**Networks** (read-only):
 - `GET /api/networks` — List all networks
 - `GET /api/networks/{id}` — Get single network
+
+Networks are global configuration shared by every client, so `POST`/`PUT`
+on `/api/networks` are refused for Bearer-token clients (403). Create and
+edit networks in the Web UI (`/networks/new`) or via a migration.
 
 **Documentation**:
 - `GET /api/docs` — Interactive OpenAPI documentation
