@@ -26,6 +26,9 @@ services:
             $vapidSubject: '%env(VAPID_SUBJECT)%'
             $mediaUploadToken: '%env(MEDIA_UPLOAD_TOKEN)%'
             $appSecret: '%kernel.secret%'
+            # UrlGuard: never let outbound fetches reach loopback / private
+            # networks in a real environment. Only the test env opens this up.
+            $allowPrivateNetworks: false
 
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name

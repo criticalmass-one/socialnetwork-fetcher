@@ -284,6 +284,15 @@ edit networks in the Web UI (`/networks/new`) or via a migration.
 
 Profiles are shared across clients via a join table. Each client sees only its linked profiles and their items. Creating a profile that already exists links it to the client (idempotent). Deleting a profile unlinks it; it is soft-deleted only when no clients reference it. Profiles and items are never physically deleted.
 
+## Outbound HTTP safety
+
+Permalinks, media URLs and profile identifiers are third-party data, so every
+fetch built on them runs through `App\Http\UrlGuard` / `App\Http\SafeHttpFetcher`:
+only `http(s)` without embedded credentials, no host that resolves into a
+loopback/private/link-local network, every redirect hop re-checked, the
+validated IP pinned for the connection, TLS verification on, and a response
+size cap. URLs handed to `yt-dlp` are scheme-checked and passed after `--`.
+
 ## Architecture
 
 ### Feed fetching flow

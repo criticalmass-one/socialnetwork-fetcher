@@ -1,3 +1,8 @@
 services:
     App\RssApp\RssAppInterface:
         class: App\Tests\Stub\NullRssApp
+
+    # Fixtures and the test web server legitimately live on 127.0.0.1.
+    App\Http\UrlGuard:
+        arguments:
+            $allowPrivateNetworks: true
