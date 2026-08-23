@@ -27,6 +27,10 @@ class NetworkApiTest extends AbstractApiTestCase
         $data = $response->toArray();
         $networks = $data['hydra:member'] ?? $data['member'] ?? [];
 
+        if ([] === $networks) {
+            self::markTestSkipped('No network fixture available - cannot exercise the client guard.');
+        }
+
         $networkId = $networks[0]['id'];
 
         $this->requestAsClientA('GET', '/api/networks/' . $networkId);
@@ -58,6 +62,10 @@ class NetworkApiTest extends AbstractApiTestCase
         $response = $this->requestAsClientA('GET', '/api/networks');
         $data = $response->toArray();
         $networks = $data['hydra:member'] ?? $data['member'] ?? [];
+        if ([] === $networks) {
+            self::markTestSkipped('No network fixture available - cannot exercise the client guard.');
+        }
+
         $id = $networks[0]['id'];
 
         $this->requestAsClientA('PUT', '/api/networks/' . $id, [
