@@ -11,9 +11,12 @@ use App\Model\Profile as ModelProfile;
 use App\NetworkFeedFetcher\NetworkFeedFetcherInterface;
 use App\RssApp\FeedRegistrar;
 use App\RssApp\RssAppInterface;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\NullLogger;
 
+// Shared setUp() mocks: only some tests configure expectations on each of them.
+#[AllowMockObjectsWithoutExpectations]
 class FeedRegistrarTest extends TestCase
 {
     private RssAppInterface $rssApp;
@@ -24,7 +27,7 @@ class FeedRegistrarTest extends TestCase
     protected function setUp(): void
     {
         $this->rssApp = $this->createMock(RssAppInterface::class);
-        $this->feedFetcher = $this->createMock(FeedFetcherInterface::class);
+        $this->feedFetcher = $this->createStub(FeedFetcherInterface::class);
         $this->feedItemPersister = $this->createMock(FeedItemPersisterInterface::class);
 
         $this->registrar = new FeedRegistrar(
@@ -292,13 +295,13 @@ class FeedRegistrarTest extends TestCase
     /** @param list<ItemModel> $items */
     private function wireImport(array $items): void
     {
-        $networkFetcher = $this->createMock(NetworkFeedFetcherInterface::class);
+        $networkFetcher = $this->createStub(NetworkFeedFetcherInterface::class);
         $networkFetcher->method('supports')->willReturn(true);
         $networkFetcher->method('fetch')->willReturn($items);
 
         $this->feedFetcher->method('getNetworkFetcherList')->willReturn([$networkFetcher]);
 
-        $this->feedItemPersister->method('persistFeedItemList')->with($items)->willReturnSelf();
+        $this->feedItemPersister->expects($this->once())->method('persistFeedItemList')->with($items)->willReturnSelf();
         $this->feedItemPersister->method('flush')->willReturnSelf();
     }
 

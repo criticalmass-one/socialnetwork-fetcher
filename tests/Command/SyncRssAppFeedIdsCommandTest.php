@@ -40,12 +40,12 @@ class SyncRssAppFeedIdsCommandTest extends TestCase
     {
         $profile = $this->createProfile(1, 'instagram_profile', 'https://www.instagram.com/testuser');
 
-        $rssApp = $this->createMock(RssAppInterface::class);
+        $rssApp = $this->createStub(RssAppInterface::class);
         $rssApp->method('listFeeds')->willReturn([
             ['id' => 'feed-abc', 'source_url' => 'https://www.instagram.com/testuser/'],
         ]);
 
-        $profileRepo = $this->createMock(ProfileRepository::class);
+        $profileRepo = $this->createStub(ProfileRepository::class);
         $profileRepo->method('findAll')->willReturn([$profile]);
 
         $em = $this->createMock(EntityManagerInterface::class);
@@ -65,12 +65,12 @@ class SyncRssAppFeedIdsCommandTest extends TestCase
     {
         $profile = $this->createProfile(1, 'instagram_profile', 'https://www.instagram.com/testuser', 'existing-feed');
 
-        $rssApp = $this->createMock(RssAppInterface::class);
+        $rssApp = $this->createStub(RssAppInterface::class);
         $rssApp->method('listFeeds')->willReturn([
             ['id' => 'feed-abc', 'source_url' => 'https://www.instagram.com/testuser/'],
         ]);
 
-        $profileRepo = $this->createMock(ProfileRepository::class);
+        $profileRepo = $this->createStub(ProfileRepository::class);
         $profileRepo->method('findAll')->willReturn([$profile]);
 
         $em = $this->createMock(EntityManagerInterface::class);
@@ -90,12 +90,12 @@ class SyncRssAppFeedIdsCommandTest extends TestCase
     {
         $profile = $this->createProfile(1, 'instagram_profile', 'https://www.instagram.com/testuser', 'old-feed');
 
-        $rssApp = $this->createMock(RssAppInterface::class);
+        $rssApp = $this->createStub(RssAppInterface::class);
         $rssApp->method('listFeeds')->willReturn([
             ['id' => 'new-feed', 'source_url' => 'https://www.instagram.com/testuser/'],
         ]);
 
-        $profileRepo = $this->createMock(ProfileRepository::class);
+        $profileRepo = $this->createStub(ProfileRepository::class);
         $profileRepo->method('findAll')->willReturn([$profile]);
 
         $em = $this->createMock(EntityManagerInterface::class);
@@ -114,12 +114,12 @@ class SyncRssAppFeedIdsCommandTest extends TestCase
     {
         $profile = $this->createProfile(1, 'facebook_profile', 'https://www.facebook.com/profile.php?id=12345');
 
-        $rssApp = $this->createMock(RssAppInterface::class);
+        $rssApp = $this->createStub(RssAppInterface::class);
         $rssApp->method('listFeeds')->willReturn([
             ['id' => 'feed-xyz', 'source_url' => 'https://www.facebook.com/profile.php?id=12345'],
         ]);
 
-        $profileRepo = $this->createMock(ProfileRepository::class);
+        $profileRepo = $this->createStub(ProfileRepository::class);
         $profileRepo->method('findAll')->willReturn([$profile]);
 
         $em = $this->createMock(EntityManagerInterface::class);
@@ -139,10 +139,10 @@ class SyncRssAppFeedIdsCommandTest extends TestCase
     {
         $profile = $this->createProfile(1, 'mastodon', 'https://mastodon.social/@user');
 
-        $rssApp = $this->createMock(RssAppInterface::class);
+        $rssApp = $this->createStub(RssAppInterface::class);
         $rssApp->method('listFeeds')->willReturn([]);
 
-        $profileRepo = $this->createMock(ProfileRepository::class);
+        $profileRepo = $this->createStub(ProfileRepository::class);
         $profileRepo->method('findAll')->willReturn([$profile]);
 
         $em = $this->createMock(EntityManagerInterface::class);
@@ -159,9 +159,9 @@ class SyncRssAppFeedIdsCommandTest extends TestCase
 
     public function testNetworkFilterRejectsInvalidNetwork(): void
     {
-        $rssApp = $this->createMock(RssAppInterface::class);
-        $profileRepo = $this->createMock(ProfileRepository::class);
-        $em = $this->createMock(EntityManagerInterface::class);
+        $rssApp = $this->createStub(RssAppInterface::class);
+        $profileRepo = $this->createStub(ProfileRepository::class);
+        $em = $this->createStub(EntityManagerInterface::class);
 
         $command = new SyncRssAppFeedIdsCommand($rssApp, $profileRepo, $em);
 
@@ -176,13 +176,13 @@ class SyncRssAppFeedIdsCommandTest extends TestCase
         $instagram = $this->createProfile(1, 'instagram_profile', 'https://www.instagram.com/testuser');
         $facebook = $this->createProfile(2, 'facebook_profile', 'https://www.facebook.com/profile.php?id=12345');
 
-        $rssApp = $this->createMock(RssAppInterface::class);
+        $rssApp = $this->createStub(RssAppInterface::class);
         $rssApp->method('listFeeds')->willReturn([
             ['id' => 'ig-feed', 'source_url' => 'https://www.instagram.com/testuser/'],
             ['id' => 'fb-feed', 'source_url' => 'https://www.facebook.com/profile.php?id=12345'],
         ]);
 
-        $profileRepo = $this->createMock(ProfileRepository::class);
+        $profileRepo = $this->createStub(ProfileRepository::class);
         $profileRepo->method('findAll')->willReturn([$instagram, $facebook]);
 
         $em = $this->createMock(EntityManagerInterface::class);
@@ -202,10 +202,10 @@ class SyncRssAppFeedIdsCommandTest extends TestCase
     {
         $profile = $this->createProfile(1, 'instagram_profile', 'https://www.instagram.com/unknownuser');
 
-        $rssApp = $this->createMock(RssAppInterface::class);
+        $rssApp = $this->createStub(RssAppInterface::class);
         $rssApp->method('listFeeds')->willReturn([]);
 
-        $profileRepo = $this->createMock(ProfileRepository::class);
+        $profileRepo = $this->createStub(ProfileRepository::class);
         $profileRepo->method('findAll')->willReturn([$profile]);
 
         $em = $this->createMock(EntityManagerInterface::class);

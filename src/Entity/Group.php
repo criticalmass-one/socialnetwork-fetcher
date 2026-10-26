@@ -2,9 +2,8 @@
 
 namespace App\Entity;
 
-use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
-use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
-use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Doctrine\Orm\Filter\PartialSearchFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SortFilter;
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
@@ -13,6 +12,8 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
+use ApiPlatform\Metadata\QueryParameter;
+use App\Doctrine\Filter\IriOrIdFilter;
 use App\Repository\GroupRepository;
 use App\State\ClientScopedGroupProcessor;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -28,6 +29,11 @@ use Symfony\Component\Serializer\Attribute\Groups;
     operations: [
         new GetCollection(
             description: 'Returns all groups owned by the authenticated client, ordered by name. Slim group:read group — pass through the single GET for embedded member profiles.',
+            parameters: [
+                'name' => new QueryParameter(filter: new PartialSearchFilter(caseSensitive: true)),
+                'profiles' => new QueryParameter(filter: new IriOrIdFilter()),
+                'order[:property]' => new QueryParameter(filter: new SortFilter(), properties: ['name', 'createdAt']),
+            ],
         ),
         new Get(
             description: 'Returns a single group with its member profiles embedded.',
@@ -56,11 +62,6 @@ use Symfony\Component\Serializer\Attribute\Groups;
     order: ['name' => 'ASC'],
     paginationItemsPerPage: 50,
 )]
-#[ApiFilter(SearchFilter::class, properties: [
-    'name' => 'partial',
-    'profiles' => 'exact',
-])]
-#[ApiFilter(OrderFilter::class, properties: ['name', 'createdAt'])]
 class Group
 {
     #[ORM\Id]

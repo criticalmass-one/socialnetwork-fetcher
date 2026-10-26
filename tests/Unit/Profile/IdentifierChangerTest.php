@@ -11,18 +11,22 @@ use App\Repository\ProfileRepository;
 use App\RssApp\FeedRegistrar;
 use Doctrine\ORM\EntityManagerInterface;
 use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\MockObject\Stub;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
+// Shared setUp() mocks: only some tests configure expectations on each of them.
+#[AllowMockObjectsWithoutExpectations]
 class IdentifierChangerTest extends TestCase
 {
-    private ProfileRepository&MockObject $profileRepository;
+    private ProfileRepository&Stub $profileRepository;
     private FeedRegistrar&MockObject $feedRegistrar;
     private EntityManagerInterface&MockObject $em;
     private IdentifierChanger $changer;
 
     protected function setUp(): void
     {
-        $this->profileRepository = $this->createMock(ProfileRepository::class);
+        $this->profileRepository = $this->createStub(ProfileRepository::class);
         $this->feedRegistrar = $this->createMock(FeedRegistrar::class);
         $this->em = $this->createMock(EntityManagerInterface::class);
 

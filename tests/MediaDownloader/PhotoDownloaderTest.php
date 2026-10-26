@@ -12,12 +12,12 @@ class PhotoDownloaderTest extends TestCase
 {
     public function testDownloadWritesFileAndReturnsPath(): void
     {
-        $response = $this->createMock(ResponseInterface::class);
+        $response = $this->createStub(ResponseInterface::class);
         $response->method('getHeaders')->willReturn(['content-type' => ['image/jpeg']]);
         $response->method('getContent')->willReturn('fake-image-data');
 
         $httpClient = $this->createMock(HttpClientInterface::class);
-        $httpClient->method('request')
+        $httpClient->expects($this->once())->method('request')
             ->with('GET', 'https://example.com/photo.jpg')
             ->willReturn($response);
 
@@ -34,11 +34,11 @@ class PhotoDownloaderTest extends TestCase
 
     public function testDownloadWithIndexCreatesNumberedFile(): void
     {
-        $response = $this->createMock(ResponseInterface::class);
+        $response = $this->createStub(ResponseInterface::class);
         $response->method('getHeaders')->willReturn(['content-type' => ['image/jpeg']]);
         $response->method('getContent')->willReturn('fake-image-data');
 
-        $httpClient = $this->createMock(HttpClientInterface::class);
+        $httpClient = $this->createStub(HttpClientInterface::class);
         $httpClient->method('request')->willReturn($response);
 
         $storage = $this->createMock(FilesystemOperator::class);
@@ -54,11 +54,11 @@ class PhotoDownloaderTest extends TestCase
 
     public function testDownloadResolvesExtensionFromContentType(): void
     {
-        $response = $this->createMock(ResponseInterface::class);
+        $response = $this->createStub(ResponseInterface::class);
         $response->method('getHeaders')->willReturn(['content-type' => ['image/png']]);
         $response->method('getContent')->willReturn('png-data');
 
-        $httpClient = $this->createMock(HttpClientInterface::class);
+        $httpClient = $this->createStub(HttpClientInterface::class);
         $httpClient->method('request')->willReturn($response);
 
         $storage = $this->createMock(FilesystemOperator::class);
@@ -74,11 +74,11 @@ class PhotoDownloaderTest extends TestCase
 
     public function testDownloadResolvesExtensionFromUrl(): void
     {
-        $response = $this->createMock(ResponseInterface::class);
+        $response = $this->createStub(ResponseInterface::class);
         $response->method('getHeaders')->willReturn(['content-type' => ['application/octet-stream']]);
         $response->method('getContent')->willReturn('webp-data');
 
-        $httpClient = $this->createMock(HttpClientInterface::class);
+        $httpClient = $this->createStub(HttpClientInterface::class);
         $httpClient->method('request')->willReturn($response);
 
         $storage = $this->createMock(FilesystemOperator::class);
@@ -94,11 +94,11 @@ class PhotoDownloaderTest extends TestCase
 
     public function testDownloadDefaultsToJpg(): void
     {
-        $response = $this->createMock(ResponseInterface::class);
+        $response = $this->createStub(ResponseInterface::class);
         $response->method('getHeaders')->willReturn(['content-type' => ['application/octet-stream']]);
         $response->method('getContent')->willReturn('data');
 
-        $httpClient = $this->createMock(HttpClientInterface::class);
+        $httpClient = $this->createStub(HttpClientInterface::class);
         $httpClient->method('request')->willReturn($response);
 
         $storage = $this->createMock(FilesystemOperator::class);

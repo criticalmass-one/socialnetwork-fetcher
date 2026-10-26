@@ -62,7 +62,7 @@ class ApiTokenAuthenticatorTest extends TestCase
     public function testOnAuthenticationSuccessReturnsNull(): void
     {
         $request = Request::create('/api/profiles');
-        $token = $this->createMock(\Symfony\Component\Security\Core\Authentication\Token\TokenInterface::class);
+        $token = $this->createStub(\Symfony\Component\Security\Core\Authentication\Token\TokenInterface::class);
 
         $this->assertNull($this->authenticator->onAuthenticationSuccess($request, $token, 'api'));
     }

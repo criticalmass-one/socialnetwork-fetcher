@@ -6,12 +6,14 @@ use App\FeedFetcher\FeedFetcherInterface;
 use App\Model\Profile;
 use App\NetworkFeedFetcher\NetworkFeedFetcherInterface;
 use App\ProfileFetcher\ProfileFetcherInterface;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+#[AsCommand(name: 'feed:list', description: 'List all feeds/profiles')]
 class FeedListCommand extends Command
 {
     public function __construct(
@@ -24,8 +26,6 @@ class FeedListCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('feed:list')
-            ->setDescription('List all feeds/profiles')
             ->addArgument('networks', InputArgument::IS_ARRAY, 'Filter by network identifiers');
     }
 

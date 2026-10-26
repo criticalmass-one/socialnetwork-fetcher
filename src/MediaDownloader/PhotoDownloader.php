@@ -3,12 +3,14 @@
 namespace App\MediaDownloader;
 
 use League\Flysystem\FilesystemOperator;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 class PhotoDownloader
 {
     public function __construct(
         private readonly HttpClientInterface $httpClient,
+        #[Target('default.storage')]
         private readonly FilesystemOperator $defaultStorage,
     ) {
     }

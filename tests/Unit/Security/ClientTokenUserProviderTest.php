@@ -16,7 +16,7 @@ class ClientTokenUserProviderTest extends TestCase
         $client->setToken('valid-token');
 
         $repository = $this->createMock(ClientRepository::class);
-        $repository->method('findOneByToken')->with('valid-token')->willReturn($client);
+        $repository->expects($this->once())->method('findOneByToken')->with('valid-token')->willReturn($client);
 
         $provider = new ClientTokenUserProvider($repository);
 
@@ -25,7 +25,7 @@ class ClientTokenUserProviderTest extends TestCase
 
     public function testLoadUserByIdentifierThrowsForInvalidToken(): void
     {
-        $repository = $this->createMock(ClientRepository::class);
+        $repository = $this->createStub(ClientRepository::class);
         $repository->method('findOneByToken')->willReturn(null);
 
         $provider = new ClientTokenUserProvider($repository);
@@ -36,7 +36,7 @@ class ClientTokenUserProviderTest extends TestCase
 
     public function testSupportsClassReturnsTrueForClient(): void
     {
-        $repository = $this->createMock(ClientRepository::class);
+        $repository = $this->createStub(ClientRepository::class);
         $provider = new ClientTokenUserProvider($repository);
 
         $this->assertTrue($provider->supportsClass(Client::class));
@@ -44,7 +44,7 @@ class ClientTokenUserProviderTest extends TestCase
 
     public function testSupportsClassReturnsFalseForOther(): void
     {
-        $repository = $this->createMock(ClientRepository::class);
+        $repository = $this->createStub(ClientRepository::class);
         $provider = new ClientTokenUserProvider($repository);
 
         $this->assertFalse($provider->supportsClass(\stdClass::class));
@@ -53,7 +53,7 @@ class ClientTokenUserProviderTest extends TestCase
     public function testRefreshUserReturnsSameUser(): void
     {
         $client = new Client();
-        $repository = $this->createMock(ClientRepository::class);
+        $repository = $this->createStub(ClientRepository::class);
         $provider = new ClientTokenUserProvider($repository);
 
         $this->assertSame($client, $provider->refreshUser($client));

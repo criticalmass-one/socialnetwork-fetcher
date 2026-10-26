@@ -9,8 +9,11 @@ use App\Repository\ItemRepository;
 use App\Transcription\TranscriptionService;
 use App\Transcription\WhisperTranscriber;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
+// Shared setUp() mocks: only some tests configure expectations on each of them.
+#[AllowMockObjectsWithoutExpectations]
 class TranscriptionServiceTest extends TestCase
 {
     private WhisperTranscriber $whisperTranscriber;

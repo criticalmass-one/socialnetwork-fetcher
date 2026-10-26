@@ -359,10 +359,10 @@ bin/phpunit --filter testParseHandleFormat            # run single test
 
 ## Tech Stack
 
-- **Framework**: Symfony 8.0
+- **Framework**: Symfony 8.1
 - **PHP**: 8.5+
 - **Database**: PostgreSQL 16
-- **API**: API Platform 4.2
+- **API**: API Platform 5.0
 - **Frontend**: Bootstrap 5.3, Stimulus 3.2, Handlebars 4.7
 - **Assets**: Symfony Asset Mapper (no build step)
 - **Testing**: PHPUnit 13

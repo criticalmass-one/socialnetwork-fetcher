@@ -7,7 +7,7 @@ use App\Entity\Group;
 use App\Entity\Item;
 use App\Entity\Profile;
 use App\Tests\Functional\AbstractApiTestCase;
-use ApiPlatform\Symfony\Bundle\Test\Client as ApiClient;
+use ApiPlatform\Test\Client as ApiClient;
 use Doctrine\ORM\EntityManagerInterface;
 
 class PublicGroupControllerTest extends AbstractApiTestCase

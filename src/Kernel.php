@@ -7,25 +7,22 @@ use App\DependencyInjection\Compiler\SocialNetworkPass;
 use App\NetworkFeedFetcher\NetworkFeedFetcherInterface;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
-use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 
+/*
+ * Config/route loading (config/packages/{,<env>/}*, services{,_<env>}.yaml,
+ * config/routes/{,<env>/}*, routes.yaml) is done by MicroKernelTrait's defaults.
+ */
 class Kernel extends BaseKernel
 {
     use MicroKernelTrait;
 
-    protected function configureContainer(ContainerConfigurator $container): void
+    /**
+     * @return list<string> An array of allowed values for APP_ENV
+     */
+    private function getAllowedEnvs(): array
     {
-        $container->import('../config/{packages}/*.yaml');
-        $container->import('../config/{packages}/'.$this->environment.'/*.yaml');
-
-        if (is_file(\dirname(__DIR__).'/config/services.yaml')) {
-            $container->import('../config/{services}.yaml');
-            $container->import('../config/{services}_'.$this->environment.'.yaml');
-        } elseif (is_file($path = \dirname(__DIR__).'/config/services.php')) {
-            (require $path)($container->withPath($path), $this);
-        }
+        return ['prod', 'dev', 'test'];
     }
 
     protected function build(ContainerBuilder $container): void
@@ -35,17 +32,5 @@ class Kernel extends BaseKernel
 
         $container->addCompilerPass(new SocialNetworkFetcherPass());
         $container->registerForAutoconfiguration(NetworkFeedFetcherInterface::class)->addTag('social_network.network_feed_fetcher');
-    }
-
-    protected function configureRoutes(RoutingConfigurator $routes): void
-    {
-        $routes->import('../config/{routes}/'.$this->environment.'/*.yaml');
-        $routes->import('../config/{routes}/*.yaml');
-
-        if (is_file(\dirname(__DIR__).'/config/routes.yaml')) {
-            $routes->import('../config/{routes}.yaml');
-        } elseif (is_file($path = \dirname(__DIR__).'/config/routes.php')) {
-            (require $path)($routes->withPath($path), $this);
-        }
     }
 }

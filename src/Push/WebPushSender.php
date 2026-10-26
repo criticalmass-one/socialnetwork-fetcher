@@ -7,6 +7,8 @@ use Doctrine\ORM\EntityManagerInterface;
 use Minishlink\WebPush\Subscription;
 use Minishlink\WebPush\WebPush;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpClient\Psr18Client;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
  * Sends Web Push notifications via VAPID and prunes subscriptions the push
@@ -15,12 +17,16 @@ use Psr\Log\LoggerInterface;
  */
 class WebPushSender implements WebPushSenderInterface
 {
+    /** Per-request timeout in seconds (web-push <= 10 used Guzzle with a 30 s default). */
+    private const int TIMEOUT = 30;
+
     private readonly bool $enabled;
     private ?WebPush $webPush = null;
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly LoggerInterface $logger,
+        HttpClientInterface $httpClient,
         string $vapidPublicKey,
         string $vapidPrivateKey,
         string $vapidSubject,
@@ -28,13 +34,24 @@ class WebPushSender implements WebPushSenderInterface
         $this->enabled = $vapidPublicKey !== '' && $vapidPrivateKey !== '';
 
         if ($this->enabled) {
-            $this->webPush = new WebPush([
-                'VAPID' => [
-                    'subject' => $vapidSubject !== '' ? $vapidSubject : 'mailto:admin@localhost',
-                    'publicKey' => $vapidPublicKey,
-                    'privateKey' => $vapidPrivateKey,
+            // web-push >= 11 speaks PSR-18/PSR-17 instead of Guzzle. Hand it
+            // Symfony's HttpClient (PSR-17 factories come from nyholm/psr7) so
+            // nothing depends on php-http/discovery finding an implementation.
+            $psr18Client = new Psr18Client($httpClient->withOptions(['timeout' => self::TIMEOUT]));
+
+            $this->webPush = new WebPush(
+                auth: [
+                    'VAPID' => [
+                        'subject' => $vapidSubject !== '' ? $vapidSubject : 'mailto:admin@localhost',
+                        'publicKey' => $vapidPublicKey,
+                        'privateKey' => $vapidPrivateKey,
+                    ],
                 ],
-            ]);
+                client: $psr18Client,
+                requestFactory: $psr18Client,
+                streamFactory: $psr18Client,
+                logger: $this->logger,
+            );
         }
     }
 
