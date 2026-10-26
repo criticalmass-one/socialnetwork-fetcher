@@ -22,7 +22,7 @@ class NetworkDetectorTest extends TestCase
             $this->network('homepage', '#^https?://.+$#i'),
         ];
 
-        $repository = $this->createMock(NetworkRepository::class);
+        $repository = $this->createStub(NetworkRepository::class);
         $repository->method('findAll')->willReturn($networks);
 
         $this->detector = new NetworkDetector($repository);

@@ -6,12 +6,14 @@ use App\Entity\Item;
 use App\MediaDownloader\MediaDownloadService;
 use App\Repository\ItemRepository;
 use App\Repository\ProfileRepository;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+#[AsCommand(name: 'app:download-media', description: 'Download media (photos/videos) for feed items')]
 class DownloadMediaCommand extends Command
 {
     public function __construct(
@@ -25,8 +27,6 @@ class DownloadMediaCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setName('app:download-media')
-            ->setDescription('Download media (photos/videos) for feed items')
             ->addOption('profile-id', null, InputOption::VALUE_REQUIRED, 'Download media for a specific profile ID')
             ->addOption('pending', null, InputOption::VALUE_NONE, 'Process items queued for download via the API (mediaStatus=pending)')
             ->addOption('retry-failed', null, InputOption::VALUE_NONE, 'Retry previously failed downloads')

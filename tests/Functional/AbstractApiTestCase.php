@@ -2,8 +2,8 @@
 
 namespace App\Tests\Functional;
 
-use ApiPlatform\Symfony\Bundle\Test\ApiTestCase;
-use ApiPlatform\Symfony\Bundle\Test\Client;
+use ApiPlatform\Test\ApiTestCase;
+use ApiPlatform\Test\Client;
 use App\DataFixtures\NetworkFixtures;
 use App\DataFixtures\TestFixtures;
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;

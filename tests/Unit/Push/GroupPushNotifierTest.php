@@ -19,11 +19,11 @@ class GroupPushNotifierTest extends TestCase
         $group = $this->group(1, 'Wahlkampf', 'slug-1');
         $subscription = (new PushSubscription())->setGroup($group)->setEndpoint('e')->setP256dh('p')->setAuth('a');
 
-        $groupRepo = $this->createMock(GroupRepository::class);
+        $groupRepo = $this->createStub(GroupRepository::class);
         $groupRepo->method('findByProfile')->willReturn([$group]);
 
         $subRepo = $this->createMock(PushSubscriptionRepository::class);
-        $subRepo->method('findByGroup')->with($group)->willReturn([$subscription]);
+        $subRepo->expects($this->once())->method('findByGroup')->with($group)->willReturn([$subscription]);
 
         $sender = $this->createMock(WebPushSenderInterface::class);
         $sender->method('isEnabled')->willReturn(true);
@@ -49,9 +49,9 @@ class GroupPushNotifierTest extends TestCase
         $group = $this->group(1, 'G', 's');
         $sub = (new PushSubscription())->setGroup($group)->setEndpoint('e')->setP256dh('p')->setAuth('a');
 
-        $groupRepo = $this->createMock(GroupRepository::class);
+        $groupRepo = $this->createStub(GroupRepository::class);
         $groupRepo->method('findByProfile')->willReturn([$group]);
-        $subRepo = $this->createMock(PushSubscriptionRepository::class);
+        $subRepo = $this->createStub(PushSubscriptionRepository::class);
         $subRepo->method('findByGroup')->willReturn([$sub]);
 
         $sender = $this->createMock(WebPushSenderInterface::class);
@@ -69,9 +69,9 @@ class GroupPushNotifierTest extends TestCase
         $group = $this->group(1, 'G', 's');
         $group->setPublicPageEnabled(false);
 
-        $groupRepo = $this->createMock(GroupRepository::class);
+        $groupRepo = $this->createStub(GroupRepository::class);
         $groupRepo->method('findByProfile')->willReturn([$group]);
-        $subRepo = $this->createMock(PushSubscriptionRepository::class);
+        $subRepo = $this->createStub(PushSubscriptionRepository::class);
 
         $sender = $this->createMock(WebPushSenderInterface::class);
         $sender->method('isEnabled')->willReturn(true);
@@ -86,7 +86,7 @@ class GroupPushNotifierTest extends TestCase
     {
         $groupRepo = $this->createMock(GroupRepository::class);
         $groupRepo->expects(self::never())->method('findByProfile');
-        $subRepo = $this->createMock(PushSubscriptionRepository::class);
+        $subRepo = $this->createStub(PushSubscriptionRepository::class);
 
         $sender = $this->createMock(WebPushSenderInterface::class);
         $sender->method('isEnabled')->willReturn(false);
@@ -112,7 +112,7 @@ class GroupPushNotifierTest extends TestCase
 
     private function urlGenerator(): UrlGeneratorInterface
     {
-        $generator = $this->createMock(UrlGeneratorInterface::class);
+        $generator = $this->createStub(UrlGeneratorInterface::class);
         $generator->method('generate')->willReturnCallback(
             static fn (string $route, array $params = []): string => 'https://example.test/p/' . ($params['slug'] ?? ''),
         );

@@ -1,6 +1,5 @@
 flysystem:
     storages:
         default.storage:
-            adapter: 'local'
-            options:
+            local:
                 directory: '%kernel.project_dir%/public/media'

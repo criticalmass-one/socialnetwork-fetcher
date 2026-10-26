@@ -219,6 +219,7 @@ Custom `App\Serializer\Serializer` (not Symfony's framework serializer). Uses `N
 - `POST /api/profiles/{id}/transcribe` and `POST /api/items/{id}/transcribe`: queue video (re)transcription (202, client-scoped, require `transcribeVideos`, drained by `app:transcribe --pending`)
 - Groups: full CRUD `GET/POST/PUT/PATCH/DELETE /api/groups[/{id}]` (writes via `ClientScopedGroupProcessor`, GET scoped by `ClientScopedGroupExtension`). Membership convenience routes `POST /api/groups/{id}/profiles` + `DELETE /api/groups/{id}/profiles/{profileId}` in `GroupMembershipController`. Combined feed `GET /api/groups/{groupId}/items` via `GroupItemsProvider` (filters since/until/network, excludes hidden/deleted), plus RSS at `GET /api/feeds/groups/{id}.rss`. Public-page settings (incl. write-only `publicPassword`, computed `publicUrl`) are read/written on the same resource — see "Public Group Page". Referenced profiles must belong to the client (400); foreign groups 404.
 - Networks: public read access
+- Collection filters are declared as `parameters: [... => new QueryParameter(filter: ...)]` on the main `GetCollection` of `Item`/`Profile`/`Group` (the legacy `#[ApiFilter]` attribute is deprecated since API Platform 4.4). Relation filters (`profile`, `profile.network`, `network`, `profiles`) use `App\Doctrine\Filter\IriOrIdFilter`, which accepts an IRI or a plain numeric id.
 - OpenAPI docs at `/api/docs`
 
 ## Adding a New Network Fetcher

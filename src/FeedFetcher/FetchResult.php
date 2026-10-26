@@ -16,12 +16,12 @@ class FetchResult
 
     public function getProfile(): Profile
     {
-        return $this->socialNetworkProfile;
+        return $this->profile;
     }
 
     public function setProfile(Profile $profile): FetchResult
     {
-        $this->socialNetworkProfile = $profile;
+        $this->profile = $profile;
 
         return $this;
     }

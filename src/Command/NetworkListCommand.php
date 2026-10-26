@@ -4,24 +4,19 @@ namespace App\Command;
 
 use App\FeedFetcher\FeedFetcherInterface;
 use App\NetworkFeedFetcher\NetworkFeedFetcherInterface;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+#[AsCommand(name: 'network:list', description: 'List all registered networks and their fetcher status')]
 class NetworkListCommand extends Command
 {
     public function __construct(
         private readonly FeedFetcherInterface $feedFetcher
     ) {
         parent::__construct();
-    }
-
-    protected function configure(): void
-    {
-        $this
-            ->setName('network:list')
-            ->setDescription('List all registered networks and their fetcher status');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int

@@ -12,8 +12,11 @@ use App\MediaDownloader\VideoDownloader;
 use App\MediaDownloader\YtDlpPhotoDownloader;
 use App\Repository\ItemRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\TestCase;
 
+// Shared setUp() mocks: only some tests configure expectations on each of them.
+#[AllowMockObjectsWithoutExpectations]
 class MediaDownloadServiceTest extends TestCase
 {
     private MediaUrlExtractor $extractor;
@@ -28,7 +31,7 @@ class MediaDownloadServiceTest extends TestCase
     {
         $this->extractor = $this->createMock(MediaUrlExtractor::class);
         $this->photoDownloader = $this->createMock(PhotoDownloader::class);
-        $this->videoDownloader = $this->createMock(VideoDownloader::class);
+        $this->videoDownloader = $this->createStub(VideoDownloader::class);
         $this->ytDlpPhotoDownloader = $this->createMock(YtDlpPhotoDownloader::class);
         $this->em = $this->createMock(EntityManagerInterface::class);
         $this->itemRepository = $this->createMock(ItemRepository::class);
@@ -229,7 +232,7 @@ class MediaDownloadServiceTest extends TestCase
 
         $item = $this->createItem();
 
-        $this->itemRepository->method('findBy')
+        $this->itemRepository->expects($this->once())->method('findBy')
             ->with(['profile' => $profile, 'mediaStatus' => null])
             ->willReturn([$item]);
 

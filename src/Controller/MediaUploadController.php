@@ -9,6 +9,7 @@ use App\Repository\ProfileRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use League\Flysystem\FilesystemOperator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -30,6 +31,7 @@ class MediaUploadController extends AbstractController
         private readonly ItemRepository $itemRepository,
         private readonly ProfileRepository $profileRepository,
         private readonly EntityManagerInterface $entityManager,
+        #[Target('default.storage')]
         private readonly FilesystemOperator $defaultStorage,
         private readonly string $mediaUploadToken,
     ) {

@@ -10,7 +10,7 @@
 #   PHP=/usr/bin/php COMPOSER=/usr/local/bin/composer ./deploy.sh
 #
 # What it does (in order):
-#   1. composer install --no-dev (with classmap / authoritative autoloader)
+#   1. rm -rf var/cache/<env>, then composer install --no-dev (classmap-authoritative)
 #   2. doctrine:migrations:migrate
 #   3. cache:clear + cache:warmup (prod)
 #   4. asset-map:compile (writes hashed assets to public/assets/)
@@ -60,6 +60,13 @@ ok "Composer: $($PHP "$COMPOSER" --version | head -n1)"
 ok "APP_ENV=$APP_ENV"
 
 # ---------- 1. composer install -------------------------------------------- #
+
+# composer install runs cache:clear as an auto-script, which boots the *old*
+# compiled container. After dependency/constructor changes that container no
+# longer matches the code (e.g. a TypeError while eagerly loading commands) and
+# the deploy aborts — so drop the compiled cache up front; step 3 rebuilds it.
+step "Remove stale compiled cache ($APP_ENV)"
+rm -rf "var/cache/$APP_ENV"
 
 step "composer install (no-dev, optimized autoloader)"
 $PHP "$COMPOSER" install \

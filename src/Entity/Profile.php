@@ -2,17 +2,19 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\ExactFilter;
+use ApiPlatform\Doctrine\Orm\Filter\PartialSearchFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SortFilter;
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
-use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
-use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\QueryParameter;
+use App\Doctrine\Filter\IriOrIdFilter;
 use App\State\ClientScopedProfileProcessor;
 use App\State\ProfileChangeIdentifierProcessor;
 use App\State\ProfileMediaDownloadProcessor;
@@ -21,6 +23,8 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\TypeInfo\Type\BuiltinType;
+use Symfony\Component\TypeInfo\TypeIdentifier;
 
 #[ORM\Table(name: 'profile')]
 #[ORM\UniqueConstraint(name: 'uniq_profile_network_identifier', columns: ['network_id', 'identifier'])]
@@ -30,6 +34,14 @@ use Symfony\Component\Serializer\Attribute\Groups;
     operations: [
         new GetCollection(
             description: 'Returns all profiles linked to the authenticated client. Soft-deleted profiles are excluded. See available filters below.',
+            parameters: [
+                'network' => new QueryParameter(filter: new IriOrIdFilter()),
+                'network.identifier' => new QueryParameter(filter: new ExactFilter(), property: 'network.identifier'),
+                'identifier' => new QueryParameter(filter: new PartialSearchFilter(caseSensitive: true)),
+                'title' => new QueryParameter(filter: new PartialSearchFilter(caseSensitive: true)),
+                'autoFetch' => new QueryParameter(filter: new ExactFilter(), nativeType: new BuiltinType(TypeIdentifier::BOOL), castToNativeType: true, schema: ['type' => 'boolean']),
+                'order[:property]' => new QueryParameter(filter: new SortFilter(), properties: ['identifier', 'title', 'createdAt', 'lastFetchSuccessDateTime']),
+            ],
         ),
         new Get(
             description: 'Returns a single profile by ID, including the additionalData payload (profile:detail group). Returns 404 if the profile is not linked to the authenticated client.',
@@ -89,14 +101,6 @@ use Symfony\Component\Serializer\Attribute\Groups;
     denormalizationContext: ['groups' => ['profile:write']],
     order: ['identifier' => 'ASC'],
 )]
-#[ApiFilter(SearchFilter::class, properties: [
-    'network' => 'exact',
-    'network.identifier' => 'exact',
-    'identifier' => 'partial',
-    'title' => 'partial',
-    'autoFetch' => 'exact',
-])]
-#[ApiFilter(OrderFilter::class, properties: ['identifier', 'title', 'createdAt', 'lastFetchSuccessDateTime'])]
 class Profile
 {
     #[ORM\Id]

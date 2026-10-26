@@ -2,25 +2,28 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
+use ApiPlatform\Doctrine\Orm\Filter\ExactFilter;
+use ApiPlatform\Doctrine\Orm\Filter\PartialSearchFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SortFilter;
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
-use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
-use ApiPlatform\Doctrine\Orm\Filter\BooleanFilter;
-use ApiPlatform\Doctrine\Orm\Filter\DateFilter;
-use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
-use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Metadata\QueryParameter;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use ApiPlatform\OpenApi\Model\Parameter;
+use App\Doctrine\Filter\IriOrIdFilter;
 use App\State\GroupItemsProvider;
 use App\State\ItemMediaDownloadProcessor;
 use App\State\ItemTranscriptionProcessor;
 use App\State\TimelineProvider;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\TypeInfo\Type\BuiltinType;
+use Symfony\Component\TypeInfo\TypeIdentifier;
 
 #[ORM\Table(name: 'item')]
 #[ORM\Index(columns: ['date_time'], name: 'item_date_time_index')]
@@ -36,6 +39,18 @@ use Symfony\Component\Serializer\Attribute\Groups;
 
             See available filters below for full query options.
             TEXT,
+            parameters: [
+                'profile' => new QueryParameter(filter: new IriOrIdFilter()),
+                'profile.network' => new QueryParameter(filter: new IriOrIdFilter(), property: 'profile.network'),
+                'profile.network.identifier' => new QueryParameter(filter: new ExactFilter(), property: 'profile.network.identifier'),
+                'text' => new QueryParameter(filter: new PartialSearchFilter(caseSensitive: true)),
+                'title' => new QueryParameter(filter: new PartialSearchFilter(caseSensitive: true)),
+                'dateTime' => new QueryParameter(filter: new DateFilter()),
+                'createdAt' => new QueryParameter(filter: new DateFilter()),
+                'hidden' => new QueryParameter(filter: new ExactFilter(), nativeType: new BuiltinType(TypeIdentifier::BOOL), castToNativeType: true, schema: ['type' => 'boolean']),
+                'deleted' => new QueryParameter(filter: new ExactFilter(), nativeType: new BuiltinType(TypeIdentifier::BOOL), castToNativeType: true, schema: ['type' => 'boolean']),
+                'order[:property]' => new QueryParameter(filter: new SortFilter(), properties: ['dateTime', 'createdAt']),
+            ],
         ),
         new GetCollection(
             uriTemplate: '/groups/{groupId}/items',
@@ -116,16 +131,6 @@ use Symfony\Component\Serializer\Attribute\Groups;
     order: ['dateTime' => 'DESC'],
     paginationItemsPerPage: 50,
 )]
-#[ApiFilter(SearchFilter::class, properties: [
-    'profile' => 'exact',
-    'profile.network' => 'exact',
-    'profile.network.identifier' => 'exact',
-    'text' => 'partial',
-    'title' => 'partial',
-])]
-#[ApiFilter(DateFilter::class, properties: ['dateTime', 'createdAt'])]
-#[ApiFilter(BooleanFilter::class, properties: ['hidden', 'deleted'])]
-#[ApiFilter(OrderFilter::class, properties: ['dateTime', 'createdAt'])]
 class Item
 {
     #[ORM\Id]
