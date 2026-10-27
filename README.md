@@ -100,6 +100,11 @@ php bin/console fetch-feed instagram_profile --count=50
 php bin/console app:fetch-scheduled
 ```
 
+`app:fetch-scheduled` is meant to run from cron every minute. It holds a lock per network
+(`LOCK_DSN`, default `flock`): a network whose previous run is still in progress is skipped
+for that minute, so two runs never fetch the same profiles at once. Other due networks run
+as usual. Do not wrap the cron job in a global `flock` — skipped minutes are not caught up.
+
 Options for `fetch-feed`:
 
 | Option | Short | Description |
