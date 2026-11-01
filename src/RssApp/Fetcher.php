@@ -9,11 +9,16 @@ use Psr\Log\LoggerInterface;
 
 abstract class Fetcher extends AbstractNetworkFeedFetcher
 {
+    private readonly StalenessDetector $stalenessDetector;
+
     public function __construct(
         LoggerInterface $logger,
-        private readonly RssAppInterface $rssApp
+        private readonly RssAppInterface $rssApp,
+        ?StalenessDetector $stalenessDetector = null,
     ) {
         parent::__construct($logger);
+
+        $this->stalenessDetector = $stalenessDetector ?? new StalenessDetector();
     }
 
     public function fetch(Profile $profile, FetchInfo $fetchInfo): array
@@ -55,6 +60,8 @@ abstract class Fetcher extends AbstractNetworkFeedFetcher
                     $sourceUrl,
                     $feedId,
                 ));
+            } else {
+                $this->warnIfStale($profile, $feedId, $feed['items'] ?? []);
             }
 
             $feedItemList = [];
@@ -79,5 +86,30 @@ abstract class Fetcher extends AbstractNetworkFeedFetcher
             ));
             return [];
         }
+    }
+
+    /**
+     * An "active" RSS.app feed can still be stuck on its last known items. That
+     * is not reliably distinguishable from a profile that simply went quiet, so
+     * it is only logged — `app:rssapp:stale-feeds` lists such feeds.
+     *
+     * @param array<int, array<string, mixed>> $items
+     */
+    private function warnIfStale(Profile $profile, string $feedId, array $items): void
+    {
+        $stale = $this->stalenessDetector->detectFromRssAppItems($items, new \DateTimeImmutable());
+
+        if ($stale === null) {
+            return;
+        }
+
+        $this->logger->warning(sprintf(
+            'RSS.app-Feed %s für %s liefert vermutlich nichts Neues mehr: neuester Beitrag vom %s (vor %.1f Tagen), üblicher Abstand %.1f Tage.',
+            $feedId,
+            $profile->getIdentifier(),
+            $stale->newestItem->format('Y-m-d H:i'),
+            $stale->ageDays,
+            $stale->medianGapDays,
+        ));
     }
 }

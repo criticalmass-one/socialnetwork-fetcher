@@ -7,6 +7,7 @@ use App\Model\Profile;
 use App\NetworkFeedFetcher\Instagram\InstagramFeedFetcher;
 use App\RssApp\RssAppInterface;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 
 class FetcherInactiveFeedTest extends TestCase
@@ -84,6 +85,32 @@ class FetcherInactiveFeedTest extends TestCase
 
         self::assertSame($firstError, $profile->getLastFetchFailureError());
         self::assertNotSame($firstDateTime, $profile->getLastFetchFailureDateTime());
+    }
+
+    public function testActiveButStaleFeedOnlyLogsWarning(): void
+    {
+        $items = [];
+        for ($i = 0; $i < 10; ++$i) {
+            $items[] = self::ITEM + ['date_published' => (new \DateTimeImmutable(sprintf('-%d days', 12 + $i)))->format(DATE_ATOM)];
+            $items[$i]['url'] .= $i;
+        }
+
+        $logger = $this->createMock(LoggerInterface::class);
+        $logger->expects($this->once())
+            ->method('warning')
+            ->with($this->stringContains('vermutlich nichts Neues'));
+
+        $profile = $this->makeProfile();
+        $fetcher = new InstagramFeedFetcher($logger, $this->rssAppReturning([
+            'id' => 'feed-1',
+            'is_active' => true,
+            'items' => $items,
+        ]));
+
+        $result = $fetcher->fetch($profile, new FetchInfo());
+
+        self::assertCount(10, $result);
+        self::assertNull($profile->getLastFetchFailureError(), 'staleness is a warning, not a failure');
     }
 
     private function makeProfile(): Profile
