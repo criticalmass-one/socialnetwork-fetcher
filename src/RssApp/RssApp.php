@@ -69,15 +69,18 @@ class RssApp implements RssAppInterface
 
     public function getItems(string $feedId, int $count = 100): array
     {
+        return $this->getFeed($feedId, $count)['items'] ?? [];
+    }
+
+    public function getFeed(string $feedId, int $count = 100): array
+    {
         $url = sprintf('https://api.rss.app/v1/feeds/%s?limit=%d', $feedId, $count);
 
         $response = $this->requestWithRetry('GET', $url, [
             'headers' => ['Authorization' => $this->bearer]
         ]);
 
-        $data = $response->toArray();
-
-        return $data['items'] ?? [];
+        return $response->toArray();
     }
 
     public function feedExists(string $feedId): bool

@@ -57,11 +57,14 @@ class FeedFetcher extends AbstractFeedFetcher
 
             if ($fetcher) {
                 try {
-                    $failureErrorBefore = $profile->getLastFetchFailureError();
+                    $failureDateTimeBefore = $profile->getLastFetchFailureDateTime();
                     $feedItemList = $fetcher->fetch($profile, $fetchInfo);
 
-                    // Check if the fetcher marked the profile as failed (e.g. invalid identifier)
-                    $fetcherMarkedAsFailed = $profile->getLastFetchFailureError() !== $failureErrorBefore;
+                    // Check if the fetcher marked the profile as failed (e.g. invalid identifier).
+                    // markAsFailed() always sets a fresh DateTimeImmutable, so compare by identity:
+                    // comparing the error message would miss a failure that repeats with the same
+                    // message and wrongly flip the profile back to "success" on every other run.
+                    $fetcherMarkedAsFailed = $profile->getLastFetchFailureDateTime() !== $failureDateTimeBefore;
 
                     foreach ($feedItemList as $feedItem) {
                         $this->sourceFetcher->fetch($feedItem, $profile);

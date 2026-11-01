@@ -43,11 +43,23 @@ abstract class Fetcher extends AbstractNetworkFeedFetcher
         }
 
         try {
-            $items = $this->rssApp->getItems($feedId, $fetchInfo->getCount());
+            $feed = $this->rssApp->getFeed($feedId, $fetchInfo->getCount());
+
+            // RSS.app keeps serving a deactivated feed with HTTP 200 and its last
+            // known items, so without this check the profile would silently look
+            // healthy while no new items ever arrive.
+            if (($feed['is_active'] ?? true) === false) {
+                $this->markAsFailed($profile, sprintf(
+                    'RSS.app hat den Feed %s für %s deaktiviert (is_active=false) – es kommen keine neuen Beiträge mehr. Feed bei RSS.app prüfen bzw. neu anlegen: https://rss.app/r/feed/%s',
+                    $feedId,
+                    $sourceUrl,
+                    $feedId,
+                ));
+            }
 
             $feedItemList = [];
 
-            foreach ($items as $item) {
+            foreach ($feed['items'] ?? [] as $item) {
                 $feedItem = Converter::convert($profile, $item);
 
                 if ($feedItem) {
