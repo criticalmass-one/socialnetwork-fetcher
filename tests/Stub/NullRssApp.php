@@ -11,6 +11,11 @@ class NullRssApp implements RssAppInterface
         return [];
     }
 
+    public function getFeed(string $feedId, int $count = 100): array
+    {
+        return ['id' => $feedId, 'is_active' => true, 'items' => []];
+    }
+
     public function feedExists(string $feedId): bool
     {
         return false;
