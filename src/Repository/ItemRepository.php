@@ -30,6 +30,28 @@ class ItemRepository extends ServiceEntityRepository
      *
      * @return list<Item>
      */
+    /**
+     * Unix timestamps of the profile's most recent items, newest first.
+     *
+     * @return list<int>
+     */
+    public function findRecentTimestampsForProfile(Profile|int $profile, int $limit): array
+    {
+        $rows = $this->createQueryBuilder('i')
+            ->select('i.dateTime')
+            ->where('i.profile = :profile')
+            ->setParameter('profile', $profile)
+            ->orderBy('i.dateTime', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getArrayResult();
+
+        return array_map(
+            static fn (array $row): int => $row['dateTime']->getTimestamp(),
+            $rows,
+        );
+    }
+
     public function findNewOrFailedForProfile(Profile $profile): array
     {
         return $this->createQueryBuilder('i')
