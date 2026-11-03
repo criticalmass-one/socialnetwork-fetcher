@@ -13,6 +13,8 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Lock\LockInterface;
 
 #[AsCommand(
     name: 'app:fetch-scheduled',
@@ -23,6 +25,7 @@ class ScheduledFetchCommand extends Command
     public function __construct(
         private readonly NetworkRepository $networkRepository,
         private readonly FeedFetcherInterface $feedFetcher,
+        private readonly LockFactory $lockFactory,
     ) {
         parent::__construct();
     }
@@ -71,10 +74,30 @@ class ScheduledFetchCommand extends Command
             return Command::SUCCESS;
         }
 
+        // Ein Netzwerk, dessen letzter Lauf noch nicht fertig ist, wird übersprungen,
+        // damit nicht zwei Läufe dieselben Profile gleichzeitig abrufen.
+        /** @var LockInterface[] $locks */
+        $locks = [];
+
+        foreach ($dueNetworks as $networkIdentifier) {
+            $lock = $this->lockFactory->createLock(sprintf('fetch-scheduled-%s', $networkIdentifier), null);
+
+            if (!$lock->acquire()) {
+                $io->warning(sprintf('%s: vorheriger Lauf noch aktiv, übersprungen.', $networkIdentifier));
+                continue;
+            }
+
+            $locks[$networkIdentifier] = $lock;
+        }
+
+        if ($locks === []) {
+            return Command::SUCCESS;
+        }
+
         $fetchInfo = new FetchInfo();
         $fetchInfo->setCount($count);
 
-        foreach ($dueNetworks as $networkIdentifier) {
+        foreach (array_keys($locks) as $networkIdentifier) {
             $fetchInfo->addNetwork($networkIdentifier);
         }
 
@@ -86,9 +109,15 @@ class ScheduledFetchCommand extends Command
             ));
         };
 
-        $this->feedFetcher
-            ->fetch($fetchInfo, $callback)
-            ->persist();
+        try {
+            $this->feedFetcher
+                ->fetch($fetchInfo, $callback)
+                ->persist();
+        } finally {
+            foreach ($locks as $lock) {
+                $lock->release();
+            }
+        }
 
         $io->success('Fertig.');
 

@@ -21,7 +21,7 @@ php bin/console fetch-feed mastodon -c 50              # fetch feeds (actual com
 php bin/console fetch-feed bluesky_profile --count=100 # fetch specific network
 php bin/console feed:list instagram_profile           # list profiles
 php bin/console network:list                          # list registered fetchers
-php bin/console app:fetch-scheduled                   # run scheduled fetches (cron-based)
+php bin/console app:fetch-scheduled                   # run scheduled fetches (cron-based, per-network lock skips networks still running)
 php bin/console app:import-profiles                   # import profiles from criticalmass.in API
 php bin/console app:import-items -v                   # import items from criticalmass.in API
 php bin/console app:import-items --network=twitter    # import only one network
