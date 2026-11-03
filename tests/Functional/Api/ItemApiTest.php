@@ -216,6 +216,69 @@ class ItemApiTest extends AbstractApiTestCase
         $this->assertNotContains('OnlyA item 2', $texts);
     }
 
+    public function testFilterByProfileIdList(): void
+    {
+        $sharedId = $this->profileIdByIdentifier('https://mastodon.social/@shared');
+
+        foreach (['profile[]=%d', 'profile[0]=%d', 'profile[]=/api/profiles/%d'] as $pattern) {
+            $texts = $this->itemTexts('/api/items?' . sprintf($pattern, $sharedId));
+
+            $this->assertNotEmpty($texts, $pattern);
+            foreach ($texts as $text) {
+                $this->assertStringContainsString('Shared', $text, $pattern);
+            }
+        }
+    }
+
+    public function testFilterByMultipleProfileIds(): void
+    {
+        $sharedId = $this->profileIdByIdentifier('https://mastodon.social/@shared');
+        $onlyAId = $this->profileIdByIdentifier('onlya.bsky.social');
+
+        // Symfony's HttpClient encodes an array query as profile[0]=…&profile[1]=…
+        $texts = $this->itemTexts(sprintf('/api/items?profile[0]=%d&profile[1]=%d&itemsPerPage=100', $sharedId, $onlyAId));
+
+        $this->assertContains('Shared item 1', $texts);
+        $this->assertContains('OnlyA item 1', $texts);
+    }
+
+    public function testFilterByForeignProfileIdListFindsNothing(): void
+    {
+        $data = $this->requestAsClientB('GET', '/api/profiles?itemsPerPage=100')->toArray();
+        $onlyB = array_values(array_filter(
+            $data['hydra:member'] ?? $data['member'] ?? [],
+            fn (array $p) => $p['identifier'] === 'https://mastodon.social/@onlyb',
+        ));
+        $this->assertCount(1, $onlyB);
+
+        $data = $this->requestAsClientA('GET', sprintf('/api/items?profile[0]=%d', $onlyB[0]['id']))->toArray();
+
+        $this->assertSame(0, $data['totalItems'] ?? $data['hydra:totalItems']);
+    }
+
+    /** @return string[] */
+    private function itemTexts(string $url): array
+    {
+        $response = $this->requestAsClientA('GET', $url);
+        $this->assertResponseIsSuccessful();
+        $data = $response->toArray();
+
+        return array_map(fn (array $i) => $i['text'], $data['hydra:member'] ?? $data['member'] ?? []);
+    }
+
+    private function profileIdByIdentifier(string $identifier): int
+    {
+        $data = $this->requestAsClientA('GET', '/api/profiles?itemsPerPage=100')->toArray();
+
+        foreach ($data['hydra:member'] ?? $data['member'] ?? [] as $profile) {
+            if ($profile['identifier'] === $identifier) {
+                return $profile['id'];
+            }
+        }
+
+        $this->fail('Profile not visible to client A: ' . $identifier);
+    }
+
     private function firstItemIdForProfile(int $profileId): int
     {
         $data = $this->requestAsClientA('GET', '/api/items?profile=/api/profiles/' . $profileId)->toArray();
