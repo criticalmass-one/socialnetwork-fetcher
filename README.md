@@ -152,7 +152,13 @@ php bin/console app:rssapp:sync-feed-ids              # sync RSS.app feed IDs to
 php bin/console app:rssapp:sync-feed-ids --dry-run    # preview
 php bin/console app:rssapp:sync-feed-ids --network=instagram_profile
 php bin/console app:rssapp:sync-feed-ids --force      # re-check existing feed IDs
+php bin/console app:rssapp:stale-feeds                # profiles that went silent recently (last 60 days)
+php bin/console app:rssapp:stale-feeds --all          # include long-dead profiles
+php bin/console app:rssapp:stale-feeds --network=instagram_profile --max-age=30
+php bin/console app:rssapp:stale-feeds --fail-on-stale  # exit code 1 if any found (cron/monitoring)
 ```
+
+**Silently failing feeds:** RSS.app deactivates feeds whose source it can no longer scrape (`is_active: false`); the fetch then records a failure on the profile. RSS.app can also keep a feed *active* while it is stuck on its last known items. That is detected heuristically — the newest item is older than 5× the profile's median posting gap and at least 7 days — and only logged as a warning during fetch, because it is indistinguishable from an account that simply went quiet. `app:rssapp:stale-feeds` lists such profiles.
 
 **Changing an identifier:** when an account is renamed (e.g. a new Instagram username), change the profile's identifier via the "Identifier ändern" action on the profile page in the Web UI or the `POST /api/profiles/{id}/change-identifier` endpoint. RSS.app cannot re-point an existing feed to a new source URL, so the old feed is deleted and a new one is created for the new identifier and its current items imported. The profile row and all previously imported items are kept, so no history is lost.
 

@@ -507,6 +507,13 @@ class ProfileController extends AbstractController
 
             $feedItemPersister->persistFeedItemList($feedItemList, $fetchResult)->flush();
 
+            // The fetcher may flag the profile as failed without throwing (e.g. a
+            // deactivated RSS.app feed still returns its old items) — surface that
+            // instead of reporting a success.
+            if ($modelProfile->getLastFetchFailureDateTime() !== null) {
+                throw new \RuntimeException((string) $modelProfile->getLastFetchFailureError());
+            }
+
             $profile->setLastFetchSuccessDateTime(new \DateTimeImmutable());
             $profile->setLastFetchFailureDateTime(null);
             $profile->setLastFetchFailureError(null);
