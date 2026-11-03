@@ -15,10 +15,22 @@ class RssApp implements RssAppInterface
 
     private readonly string $bearer;
 
+    /**
+     * source_url => feed id, built from listFeeds(). A scheduled fetch looks up
+     * every profile without a feed id, and each lookup used to page through the
+     * whole feed list — thousands of requests per run.
+     *
+     * @var array<string, string>|null
+     */
+    private ?array $feedIdsBySourceUrl = null;
+
+    private int $feedIdsLoadedAt = 0;
+
     public function __construct(
         private readonly HttpClientInterface $httpClient,
         string $rssAppApiKey,
         string $rssAppApiSecret,
+        private readonly int $feedListTtlSeconds = 600,
     ) {
         $this->bearer = sprintf('Bearer %s:%s', $rssAppApiKey, $rssAppApiSecret);
     }
@@ -124,13 +136,17 @@ class RssApp implements RssAppInterface
 
     public function findRssAppFeedIdBySourceUrl(string $sourceUrl): ?string
     {
-        foreach ($this->listFeeds() as $feed) {
-            if (($feed['source_url'] ?? '') === $sourceUrl) {
-                return $feed['id'];
+        if ($this->feedIdsBySourceUrl === null || time() - $this->feedIdsLoadedAt >= $this->feedListTtlSeconds) {
+            $this->feedIdsBySourceUrl = [];
+
+            foreach ($this->listFeeds() as $feed) {
+                $this->feedIdsBySourceUrl[$feed['source_url'] ?? ''] ??= $feed['id'];
             }
+
+            $this->feedIdsLoadedAt = time();
         }
 
-        return null;
+        return $this->feedIdsBySourceUrl[$sourceUrl] ?? null;
     }
 
     public function createFeed(string $url): array
@@ -158,7 +174,13 @@ class RssApp implements RssAppInterface
             ));
         }
 
-        return $response->toArray();
+        $feed = $response->toArray();
+
+        if ($this->feedIdsBySourceUrl !== null && isset($feed['id'])) {
+            $this->feedIdsBySourceUrl[$feed['source_url'] ?? $url] ??= $feed['id'];
+        }
+
+        return $feed;
     }
 
     private function extractMessage(string $body): ?string
@@ -185,5 +207,9 @@ class RssApp implements RssAppInterface
         $this->requestWithRetry('DELETE', sprintf('https://api.rss.app/v1/feeds/%s', $feedId), [
             'headers' => ['Authorization' => $this->bearer],
         ]);
+
+        if ($this->feedIdsBySourceUrl !== null) {
+            $this->feedIdsBySourceUrl = array_filter($this->feedIdsBySourceUrl, static fn (string $id): bool => $id !== $feedId);
+        }
     }
 }
