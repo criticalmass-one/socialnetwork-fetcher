@@ -87,6 +87,24 @@ class FetcherInactiveFeedTest extends TestCase
         self::assertNotSame($firstDateTime, $profile->getLastFetchFailureDateTime());
     }
 
+    public function testItemWithoutDateDoesNotFailTheProfile(): void
+    {
+        $profile = $this->makeProfile();
+        $fetcher = new InstagramFeedFetcher(new NullLogger(), $this->rssAppReturning([
+            'id' => 'feed-1',
+            'is_active' => true,
+            'items' => [
+                ['url' => 'https://www.instagram.com/accounts/login/', 'title' => 'Login'],
+                self::ITEM,
+            ],
+        ]));
+
+        $items = $fetcher->fetch($profile, new FetchInfo());
+
+        self::assertCount(1, $items);
+        self::assertNull($profile->getLastFetchFailureError());
+    }
+
     public function testActiveButStaleFeedOnlyLogsWarning(): void
     {
         $items = [];
