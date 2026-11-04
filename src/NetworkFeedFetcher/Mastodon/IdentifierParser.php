@@ -21,12 +21,26 @@ class IdentifierParser
         }
 
         $hostname = parse_url($profile->getIdentifier(), PHP_URL_HOST);
-        $username = parse_url($profile->getIdentifier(), PHP_URL_PATH);
+        $path = parse_url($profile->getIdentifier(), PHP_URL_PATH);
 
-        if (!$hostname || !$username) {
+        if (!$hostname || !$path) {
             return null;
         }
 
-        return new Account($hostname, trim($username, '/@'));
+        // Only the account segment counts: a post URL (/@user/110747383693611484) names the
+        // same account, a hashtag page (/tags/…) none at all.
+        $segments = array_values(array_filter(explode('/', $path), static fn (string $segment): bool => '' !== $segment));
+        $username = match (true) {
+            [] === $segments => null,
+            'users' === $segments[0] => $segments[1] ?? null,
+            in_array($segments[0], ['tags', 'explore', 'public', 'web', 'about'], true) => null,
+            default => ltrim($segments[0], '@'),
+        };
+
+        if (null === $username || '' === $username) {
+            return null;
+        }
+
+        return new Account($hostname, $username);
     }
 }

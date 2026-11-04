@@ -27,6 +27,12 @@ class MastodonFeedFetcher extends AbstractNetworkFeedFetcher
         try {
             $account = IdentifierParser::parse($profile);
 
+            if (null === $account) {
+                $this->markAsFailed($profile, sprintf('Failed to fetch social network profile %d: no Mastodon account in identifier "%s"', $profile->getId(), $profile->getIdentifier()));
+
+                return [];
+            }
+
             $accountInfo = $this->getAccountInfo($account);
             $response = $this->fetchTimeline($account, $accountInfo, $fetchInfo->getCount());
 

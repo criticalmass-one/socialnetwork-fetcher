@@ -60,6 +60,8 @@ class IdentifierParserTest extends TestCase
             'http scheme' => ['http://mastodon.social/@user', 'mastodon.social', 'user'],
             'subdomain URL' => ['https://social.example.org/@user', 'social.example.org', 'user'],
             'without @ in path' => ['https://mastodon.social/criticalmass', 'mastodon.social', 'criticalmass'],
+            'post URL' => ['https://norden.social/@ADFC_Hamburg/110747383693611484', 'norden.social', 'ADFC_Hamburg'],
+            'users path' => ['https://mastodon.social/users/criticalmass', 'mastodon.social', 'criticalmass'],
         ];
     }
 
@@ -81,6 +83,8 @@ class IdentifierParserTest extends TestCase
             'just a username' => ['criticalmass'],
             'single @' => ['@criticalmass'],
             'just a domain' => ['mastodon.social'],
+            'hashtag page' => ['https://norden.social/tags/CriticalMassElbvororte'],
+            'instance root' => ['https://mastodon.social/'],
         ];
     }
 }
