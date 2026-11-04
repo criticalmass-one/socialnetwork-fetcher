@@ -53,7 +53,11 @@ abstract class AbstractFeedFetcher implements FeedFetcherInterface
 
     protected function getProfiles(FetchInfo $fetchInfo): array
     {
-        return $this->profileFetcher->fetchByFetchInfo($fetchInfo);
+        // A profile with autoFetch switched off stays listed and editable, but is not fetched.
+        return array_values(array_filter(
+            $this->profileFetcher->fetchByFetchInfo($fetchInfo),
+            static fn ($profile): bool => false !== $profile->getAutoFetch(),
+        ));
     }
 
     public function getFeedItemList(): array
