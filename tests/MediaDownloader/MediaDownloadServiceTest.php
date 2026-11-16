@@ -189,6 +189,38 @@ class MediaDownloadServiceTest extends TestCase
         $this->assertSame(['42/100/photo_00001.jpg', '42/100/photo_00002.jpg'], $item->getPhotoPaths());
     }
 
+    public function testItemWithDirectMediaSkipsYtDlp(): void
+    {
+        $network = new Network();
+        $network->setIdentifier('instagram_profile');
+        $profile = new Profile();
+        $profile->setId(42);
+        $profile->setNetwork($network);
+        $profile->setIdentifier('test');
+
+        $item = new Item();
+        $ref = new \ReflectionProperty(Item::class, 'id');
+        $ref->setValue($item, 100);
+        $item->setProfile($profile);
+        $item->setPermalink('https://www.instagram.com/p/abc123');
+
+        $this->extractor->method('hasDirectMedia')->willReturn(true);
+        $this->extractor->method('extractPhotoUrls')->willReturn(['https://cdn.example/a.jpg']);
+        $this->extractor->method('extractVideoUrl')->willReturn(null);
+
+        $this->ytDlpPhotoDownloader->method('isAvailable')->willReturn(true);
+        $this->ytDlpPhotoDownloader->expects($this->never())->method('download');
+        $this->photoDownloader->expects($this->once())
+            ->method('download')
+            ->with('https://cdn.example/a.jpg', 42, 100, 0)
+            ->willReturn('42/100/photo_0.jpg');
+
+        $this->service->downloadMedia($item);
+
+        $this->assertSame('completed', $item->getMediaStatus());
+        $this->assertSame(['42/100/photo_0.jpg'], $item->getPhotoPaths());
+    }
+
     public function testDownloadMediaFallsBackToThumbnailWhenYtDlpFails(): void
     {
         $network = new Network();

@@ -342,4 +342,57 @@ class MediaUrlExtractorTest extends TestCase
             'https://bsky.example.com/thumb2.jpg',
         ], $this->extractor->extractPhotoUrls($item));
     }
+
+    public function testScrapeCreatorsPayloadYieldsPicturesAndVideoCovers(): void
+    {
+        $item = $this->createScrapeCreatorsItem([
+            ['type' => 'image', 'url' => 'https://cdn.example/a.jpg'],
+            ['type' => 'video', 'url' => 'https://cdn.example/v.mp4', 'thumbnail' => 'https://cdn.example/cover.jpg'],
+            ['type' => 'image', 'url' => 'https://cdn.example/b.jpg'],
+        ]);
+
+        $this->assertTrue($this->extractor->hasDirectMedia($item));
+        $this->assertSame(
+            ['https://cdn.example/a.jpg', 'https://cdn.example/cover.jpg', 'https://cdn.example/b.jpg'],
+            $this->extractor->extractPhotoUrls($item),
+        );
+    }
+
+    public function testScrapeCreatorsPayloadYieldsTheVideoFileInsteadOfThePermalink(): void
+    {
+        $item = $this->createScrapeCreatorsItem([
+            ['type' => 'image', 'url' => 'https://cdn.example/a.jpg'],
+            ['type' => 'video', 'url' => 'https://cdn.example/v.mp4', 'thumbnail' => 'https://cdn.example/cover.jpg'],
+        ]);
+
+        $this->assertSame('https://cdn.example/v.mp4', $this->extractor->extractVideoUrl($item));
+    }
+
+    public function testScrapeCreatorsPayloadWithoutVideoIsNotProbed(): void
+    {
+        $item = $this->createScrapeCreatorsItem([['type' => 'image', 'url' => 'https://cdn.example/a.jpg']]);
+
+        $this->assertNull($this->extractor->extractVideoUrl($item));
+    }
+
+    public function testRssAppPayloadHasNoDirectMedia(): void
+    {
+        $item = new Item();
+        $item->setRaw(json_encode(['thumbnail' => 'https://example.com/photo.jpg']));
+
+        $this->assertFalse($this->extractor->hasDirectMedia($item));
+        $this->assertFalse($this->extractor->hasDirectMedia(new Item()));
+    }
+
+    private function createScrapeCreatorsItem(array $media): Item
+    {
+        $item = $this->createItemForNetwork('instagram_profile');
+        $item->setRaw(json_encode([
+            'provider' => 'scrapecreators',
+            'thumbnail' => 'https://cdn.example/a.jpg',
+            'media' => $media,
+        ]));
+
+        return $item;
+    }
 }
