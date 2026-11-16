@@ -51,6 +51,7 @@ Key environment variables:
 | `CRITICALMASS_HOSTNAME` | criticalmass.in API hostname | `criticalmass.in` |
 | `RSS_APP_API_KEY` | RSS.app API key (for Instagram, Facebook, Threads, Twitter) | — |
 | `RSS_APP_API_SECRET` | RSS.app API secret | — |
+| `SCRAPECREATORS_API_KEY` | ScrapeCreators API key (Instagram and Threads for profiles switched to `fetchProvider=scrapecreators`) | — |
 | `WEB_ADMIN_USERNAME` | Web UI admin username | `admin` |
 | `WEB_ADMIN_PASSWORD_HASH` | Bcrypt hash for web login | `$2y$13$changeme` |
 
@@ -144,6 +145,15 @@ php bin/console app:client:regenerate-token <name>    # regenerate token
 php bin/console app:client:enable <name>              # enable client
 php bin/console app:client:disable <name>             # disable client
 ```
+
+### ScrapeCreators (alternative to RSS.app)
+
+Instagram and Threads profiles can be fetched through the [ScrapeCreators](https://scrapecreators.com) API instead of RSS.app. The switch is per profile: set **Abrufdienst** to *ScrapeCreators* in the profile form, or `"fetchProvider": "scrapecreators"` via `PATCH /api/profiles/{id}`; `null` returns the profile to RSS.app. Needs `SCRAPECREATORS_API_KEY`.
+
+- One fetch is one API request (one credit) and returns the newest page of posts — twelve for Instagram, pinned posts first. Requests for deleted or private profiles fail without being charged and are recorded as a fetch failure on the profile.
+- Permalinks have the same form RSS.app delivered (`https://www.instagram.com/p/<code>`, `https://threads.net/@<name>/post/<code>`), so a switched profile updates its existing items instead of duplicating them.
+- The stored `raw` payload is a compact summary (`provider`, `code`, `caption`, `owner`, `media[]` with direct picture/video URLs), not Instagram's full JSON. Photos and videos are downloaded straight from those URLs, without `yt-dlp` probing the permalink — this also works from the server, where Instagram itself is blocked. The URLs expire after a while and are refreshed with every fetch.
+- A profile needs no RSS.app feed while it is switched; an existing feed stays untouched.
 
 ### RSS.app integration
 

@@ -8,6 +8,7 @@ use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\CallbackTransformer;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
+use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -45,6 +46,13 @@ class ProfileType extends AbstractType
             ->add('fetchSource', CheckboxType::class, [
                 'label' => 'Quellcode einlesen',
                 'required' => false,
+            ])
+            ->add('fetchProvider', ChoiceType::class, [
+                'label' => 'Abrufdienst',
+                'required' => false,
+                'placeholder' => 'Standard des Netzwerks (RSS.app)',
+                'choices' => ['ScrapeCreators' => Profile::FETCH_PROVIDER_SCRAPECREATORS],
+                'help' => 'ScrapeCreators gibt es für Instagram und Threads.',
             ])
             ->add('savePhotos', CheckboxType::class, [
                 'label' => 'Fotos speichern',

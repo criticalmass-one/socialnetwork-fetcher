@@ -76,6 +76,8 @@ Network fetchers are auto-discovered: any class implementing `NetworkFeedFetcher
 - **Direct API fetchers**: `MastodonFeedFetcher`, `BlueskyFeedFetcher`, `HomepageFeedFetcher` — each extends `AbstractNetworkFeedFetcher` and calls the network's API directly
 - **RSS.app-based fetchers**: `FacebookFeedFetcher`, `InstagramFeedFetcher`, `ThreadFeedFetcher` — extend `RssApp\Fetcher` (abstract), which proxies through RSS.app's API
 
+- **ScrapeCreators-based fetchers**: `InstagramScrapeCreatorsFeedFetcher`, `ThreadsScrapeCreatorsFeedFetcher` — extend `ScrapeCreators\Fetcher` and read the paid ScrapeCreators API. They share the network identifier with the RSS.app fetcher; which one takes a profile is decided in `supports()` by `Profile.fetchProvider` (`null` = RSS.app, `scrapecreators`). See "ScrapeCreators" below.
+
 ### Each Network Fetcher Directory Contains
 
 - `*FeedFetcher.php` — implements `NetworkFeedFetcherInterface`, orchestrates fetching
@@ -121,6 +123,15 @@ Profiles can opt into automatic transcription of downloaded videos via the `tran
 - **API-triggered (re)transcription**: `POST /api/items/{id}/transcribe` and `POST /api/profiles/{id}/transcribe` (`?force=true` to re-queue all) mark items `pending` via `ItemTranscriptionProcessor`/`ProfileTranscriptionProcessor` (client-scoped, 202, require `transcribeVideos`; item route also requires a downloaded video).
 - The transcript is shown on the item detail page (Web-UI) and exposed on the single-item API GET (`item:detail` group). `transcriptStatus`/`transcriptError` are in `item:read`.
 - **Ops**: whisper.cpp binary + ggml model are a manual server-side install (see `WHISPER_*` env vars). Schedule `app:transcribe --pending` in cron alongside `app:download-media --pending`.
+
+### ScrapeCreators (replacement for RSS.app, per profile)
+
+RSS.app keeps deactivating Instagram feeds, so Instagram and Threads can be read through `https://api.scrapecreators.com` instead (`src/ScrapeCreators/`). Facebook and Twitter are **not** covered: in a test (11/2026) the Facebook endpoint skipped posts and the Twitter endpoint returned no retweets.
+
+- **Switch**: `Profile.fetchProvider` (nullable string, `Profile::FETCH_PROVIDERS`) — form field "Abrufdienst", API field in `profile:read`/`profile:write`. `RssApp\Fetcher::supports()` steps aside for switched profiles, `ScrapeCreators\Fetcher::supports()` takes them.
+- **`ScrapeCreators`** — HTTP client (`x-api-key`, `SCRAPECREATORS_API_KEY`), one request = one credit, one page per fetch. Errors arrive as JSON, partly with `"success": true` and HTTP 404 (private profile) — everything with an `error` key or status ≥ 400 becomes a `ScrapeCreatorsException` and thereby a fetch failure on the profile. Failed requests are not charged.
+- **`PostConverter`** — builds the item. The permalink deliberately has the exact form RSS.app stored (`https://www.instagram.com/p/<code>` without trailing slash, also for reels; `https://threads.net/@<name>/post/<code>`), because the persister dedupes on `uniqueIdentifier` — changing the form would duplicate every item of a switched profile. `raw` is a compact summary with `provider: scrapecreators` and `media[]` (direct CDN URLs, largest version each).
+- **Media**: `MediaUrlExtractor` recognises that payload (`hasDirectMedia()`), returns the picture URLs / the video file URL, and `MediaDownloadService` skips the yt-dlp photo extraction for such items. The server can load these CDN URLs although Instagram itself blocks it. The URLs expire; every fetch rewrites `raw`, so a later retry uses fresh ones.
 
 ### Changing a Profile Identifier
 
@@ -258,7 +269,7 @@ The app can run as a standalone instance that imports data from the criticalmass
 
 ## Environment Variables
 
-Key vars in `.env`: `CRITICALMASS_HOSTNAME` (API base URL), `RSS_APP_API_KEY`, `RSS_APP_API_SECRET`, `WEB_ADMIN_USERNAME`, `WEB_ADMIN_PASSWORD_HASH`, `DATABASE_URL`, `WHISPER_CLI_PATH`/`WHISPER_MODEL_PATH`/`WHISPER_LANGUAGE` (video transcription; empty model path disables it), `YT_DLP_COOKIES_FILE`. Added since: `DEFAULT_URI` (absolute URLs in CLI/cron contexts — set to the public origin; drives `framework.router.default_uri`), `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`/`VAPID_SUBJECT` (web push; empty disables it), `MEDIA_UPLOAD_TOKEN` (bearer for `POST /media-upload`; empty disables the endpoint). Real secrets live in `.env.local` (prod) / `.env.test` uses dummies. Binds are in `services.yaml` (`$criticalmassHostname`, `$vapidPublicKey`, `$mediaUploadToken`, `$appSecret` = `%kernel.secret%`, …).
+Key vars in `.env`: `CRITICALMASS_HOSTNAME` (API base URL), `RSS_APP_API_KEY`, `RSS_APP_API_SECRET`, `WEB_ADMIN_USERNAME`, `WEB_ADMIN_PASSWORD_HASH`, `DATABASE_URL`, `WHISPER_CLI_PATH`/`WHISPER_MODEL_PATH`/`WHISPER_LANGUAGE` (video transcription; empty model path disables it), `YT_DLP_COOKIES_FILE`. Added since: `DEFAULT_URI` (absolute URLs in CLI/cron contexts — set to the public origin; drives `framework.router.default_uri`), `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`/`VAPID_SUBJECT` (web push; empty disables it), `MEDIA_UPLOAD_TOKEN` (bearer for `POST /media-upload`; empty disables the endpoint), `SCRAPECREATORS_API_KEY` (ScrapeCreators fetchers; empty makes switched profiles fail with a clear message). Real secrets live in `.env.local` (prod) / `.env.test` uses dummies. Binds are in `services.yaml` (`$criticalmassHostname`, `$vapidPublicKey`, `$mediaUploadToken`, `$appSecret` = `%kernel.secret%`, …).
 
 ## Local Development
 
