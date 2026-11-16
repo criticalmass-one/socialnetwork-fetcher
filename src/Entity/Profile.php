@@ -23,6 +23,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Attribute\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\TypeInfo\Type\BuiltinType;
 use Symfony\Component\TypeInfo\TypeIdentifier;
 
@@ -103,6 +104,11 @@ use Symfony\Component\TypeInfo\TypeIdentifier;
 )]
 class Profile
 {
+    public const FETCH_PROVIDER_SCRAPECREATORS = 'scrapecreators';
+
+    /** Values of fetchProvider besides null (= the network's default, RSS.app). */
+    public const FETCH_PROVIDERS = [self::FETCH_PROVIDER_SCRAPECREATORS];
+
     #[ORM\Id]
     #[ORM\Column(type: 'integer')]
     #[Groups(['profile:read', 'item:read'])]
@@ -180,6 +186,12 @@ class Profile
     #[Groups(['profile:detail', 'profile:write'])]
     #[ApiProperty(description: 'RSS.app feed ID linked to this profile (only set for RSS.app-based networks). Only included on the single-profile endpoint, not in collections.')]
     private ?string $rssAppFeedId = null;
+
+    #[ORM\Column(type: 'string', length: 32, nullable: true)]
+    #[Groups(['profile:read', 'profile:write'])]
+    #[ApiProperty(description: 'Which service fetches this profile. `null` is the network default (RSS.app for Instagram, Threads, Facebook and Twitter); `scrapecreators` reads Instagram and Threads profiles through the ScrapeCreators API instead.', example: 'scrapecreators')]
+    #[Assert\Choice(choices: self::FETCH_PROVIDERS, message: 'Unbekannter Abrufdienst.')]
+    private ?string $fetchProvider = null;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     #[Groups(['profile:read', 'profile:write'])]
@@ -348,6 +360,18 @@ class Profile
     public function setAdditionalData(?array $additionalData): self
     {
         $this->additionalData = $additionalData !== null ? json_encode($additionalData) : null;
+
+        return $this;
+    }
+
+    public function getFetchProvider(): ?string
+    {
+        return $this->fetchProvider;
+    }
+
+    public function setFetchProvider(?string $fetchProvider): self
+    {
+        $this->fetchProvider = $fetchProvider ?: null;
 
         return $this;
     }

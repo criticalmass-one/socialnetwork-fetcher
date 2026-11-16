@@ -17,6 +17,7 @@ class Profile
     protected bool $saveVideos = false;
     protected ?string $additionalData = null;
     protected ?string $rssAppFeedId = null;
+    protected ?string $fetchProvider = null;
 
     public function getId(): ?int
     {
@@ -181,6 +182,18 @@ class Profile
     public function setRssAppFeedId(?string $rssAppFeedId): self
     {
         $this->rssAppFeedId = $rssAppFeedId;
+
+        return $this;
+    }
+
+    public function getFetchProvider(): ?string
+    {
+        return $this->fetchProvider;
+    }
+
+    public function setFetchProvider(?string $fetchProvider): self
+    {
+        $this->fetchProvider = $fetchProvider ?: null;
 
         return $this;
     }

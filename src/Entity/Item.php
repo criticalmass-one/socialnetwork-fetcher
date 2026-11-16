@@ -28,6 +28,7 @@ use Symfony\Component\TypeInfo\TypeIdentifier;
 #[ORM\Table(name: 'item')]
 #[ORM\Index(columns: ['date_time'], name: 'item_date_time_index')]
 #[ORM\Index(columns: ['created_at'], name: 'item_created_at_index')]
+#[ORM\Index(columns: ['permalink'], name: 'item_permalink_index', options: ['lengths' => [191]])]
 #[ORM\Entity(repositoryClass: \App\Repository\ItemRepository::class)]
 #[ApiResource(
     operations: [
