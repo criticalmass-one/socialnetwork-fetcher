@@ -21,6 +21,15 @@ abstract class Fetcher extends AbstractNetworkFeedFetcher
         $this->stalenessDetector = $stalenessDetector ?? new StalenessDetector();
     }
 
+    /**
+     * Profiles that were switched to another provider (see Profile::fetchProvider)
+     * are left to that provider's fetcher.
+     */
+    public function supports(Profile $profile): bool
+    {
+        return parent::supports($profile) && $profile->getFetchProvider() === null;
+    }
+
     public function fetch(Profile $profile, FetchInfo $fetchInfo): array
     {
         $sourceUrl = $profile->getIdentifier();
