@@ -27,6 +27,28 @@ class ScrapeCreatorsTest extends TestCase
         self::assertContains('x-api-key: geheim', $seen['headers']);
     }
 
+    public function testInstagramPageCarriesTheCursorAndSendsItBack(): void
+    {
+        $urls = [];
+        $client = new MockHttpClient(function (string $method, string $url) use (&$urls): MockResponse {
+            $urls[] = $url;
+
+            return new MockResponse(json_encode(count($urls) === 1
+                ? ['items' => [['code' => 'a']], 'next_max_id' => '123_456', 'more_available' => true]
+                : ['items' => [['code' => 'b']], 'next_max_id' => '789_456', 'more_available' => false]));
+        });
+        $api = new ScrapeCreators($client, 'geheim');
+
+        $first = $api->getInstagramPostsPage('cm_hh');
+        self::assertSame('123_456', $first->nextCursor);
+        self::assertTrue($first->hasMore());
+
+        $second = $api->getInstagramPostsPage('cm_hh', $first->nextCursor);
+        self::assertSame([['code' => 'b']], $second->posts);
+        self::assertFalse($second->hasMore(), 'more_available=false ends the paging');
+        self::assertSame('https://api.scrapecreators.com/v2/instagram/user/posts?handle=cm_hh&next_max_id=123_456', $urls[1]);
+    }
+
     public function testThreadsReadsThePostsList(): void
     {
         $client = new MockHttpClient(new MockResponse(json_encode(['success' => true, 'posts' => [['code' => 'abc']]])));

@@ -14,7 +14,7 @@ class ThreadsScrapeCreatorsFeedFetcher extends Fetcher
         return 'threads_profile';
     }
 
-    protected function loadPosts(string $handle): array
+    protected function loadPosts(string $handle, Profile $profile): array
     {
         return $this->scrapeCreators->getThreadsPosts($handle);
     }
