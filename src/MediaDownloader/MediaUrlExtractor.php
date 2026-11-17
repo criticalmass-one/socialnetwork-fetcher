@@ -31,6 +31,22 @@ class MediaUrlExtractor
             return [];
         }
 
+        // ScrapeCreators format: direct CDN links, one entry per picture/video.
+        // A video contributes its cover so video-only posts still get a picture.
+        if ($this->isDirectMediaPayload($data)) {
+            $urls = [];
+
+            foreach ($data['media'] as $entry) {
+                $url = ($entry['type'] ?? null) === 'video' ? ($entry['thumbnail'] ?? null) : ($entry['url'] ?? null);
+
+                if (is_string($url) && $url !== '') {
+                    $urls[] = $url;
+                }
+            }
+
+            return array_values(array_unique($urls));
+        }
+
         // RSS.app format: extract images from description_html (carousel support + original quality)
         $htmlUrls = $this->extractImageUrlsFromHtml($data['description_html'] ?? '');
 
@@ -90,6 +106,20 @@ class MediaUrlExtractor
             return null;
         }
 
+        // ScrapeCreators names the video file itself, so nothing has to be
+        // probed through the (server-side blocked) Instagram permalink.
+        $data = json_decode((string) $item->getRaw(), true);
+
+        if (is_array($data) && $this->isDirectMediaPayload($data)) {
+            foreach ($data['media'] as $entry) {
+                if (($entry['type'] ?? null) === 'video' && is_string($entry['url'] ?? null) && $entry['url'] !== '') {
+                    return $entry['url'];
+                }
+            }
+
+            return null;
+        }
+
         $networkIdentifier = $item->getProfile()?->getNetwork()?->getIdentifier();
 
         if (in_array($networkIdentifier, self::VIDEO_DETECTABLE_NETWORKS, true) && !$this->rawContainsVideo($item)) {
@@ -97,6 +127,22 @@ class MediaUrlExtractor
         }
 
         return $permalink;
+    }
+
+    /**
+     * True when the item's raw payload already carries direct media URLs
+     * (ScrapeCreators). Such items need no yt-dlp extraction from the permalink.
+     */
+    public function hasDirectMedia(Item $item): bool
+    {
+        $data = json_decode((string) $item->getRaw(), true);
+
+        return is_array($data) && $this->isDirectMediaPayload($data);
+    }
+
+    private function isDirectMediaPayload(array $data): bool
+    {
+        return ($data['provider'] ?? null) === 'scrapecreators' && is_array($data['media'] ?? null);
     }
 
     private function rawContainsVideo(Item $item): bool

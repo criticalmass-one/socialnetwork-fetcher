@@ -63,6 +63,10 @@
                             </td>
                         </tr>
                         <tr>
+                            <th>Abrufdienst</th>
+                            <td>{{ profile.fetchProvider == 'scrapecreators' ? 'ScrapeCreators' : 'Standard des Netzwerks' }}</td>
+                        </tr>
+                        <tr>
                             <th>Quelltext laden</th>
                             <td>
                                 {% include '_partials/_profile_toggle.html.twig' with { profile: profile, field: 'fetchSource', state: profile.fetchSource } %}

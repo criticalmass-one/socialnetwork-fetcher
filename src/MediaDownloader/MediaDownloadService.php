@@ -133,6 +133,7 @@ class MediaDownloadService
         if ($permalink
             && $networkIdentifier
             && in_array($networkIdentifier, self::YTDLP_PHOTO_NETWORKS, true)
+            && !$this->mediaUrlExtractor->hasDirectMedia($item)
             && $this->ytDlpPhotoDownloader->isAvailable()
         ) {
             try {

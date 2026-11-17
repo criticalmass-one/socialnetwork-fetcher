@@ -17,6 +17,7 @@ services:
             $criticalmassHostname: '%env(CRITICALMASS_HOSTNAME)%'
             $rssAppApiKey: '%env(RSS_APP_API_KEY)%'
             $rssAppApiSecret: '%env(RSS_APP_API_SECRET)%'
+            $scrapeCreatorsApiKey: '%env(SCRAPECREATORS_API_KEY)%'
             $webAdminUsername: '%env(WEB_ADMIN_USERNAME)%'
             $webAdminPasswordHash: '%env(WEB_ADMIN_PASSWORD_HASH)%'
             $mediaDirectory: '%kernel.project_dir%/public/media'
@@ -50,6 +51,9 @@ services:
 
     App\RssApp\RssAppInterface:
         alias: App\RssApp\RssApp
+
+    App\ScrapeCreators\ScrapeCreatorsInterface:
+        alias: App\ScrapeCreators\ScrapeCreators
 
     App\FeedFetcher\FeedFetcherInterface:
         alias: App\FeedFetcher\FeedFetcher

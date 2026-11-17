@@ -73,6 +73,7 @@ class DoctrineProfileFetcher implements ProfileFetcherInterface
         }
 
         $model->setRssAppFeedId($entity->getRssAppFeedId());
+        $model->setFetchProvider($entity->getFetchProvider());
 
         return $model;
     }
