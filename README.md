@@ -52,6 +52,7 @@ Key environment variables:
 | `RSS_APP_API_KEY` | RSS.app API key (for Instagram, Facebook, Threads, Twitter) | — |
 | `RSS_APP_API_SECRET` | RSS.app API secret | — |
 | `SCRAPECREATORS_API_KEY` | ScrapeCreators API key (Instagram and Threads for profiles switched to `fetchProvider=scrapecreators`) | — |
+| `SCRAPECREATORS_MIN_INTERVAL_HOURS` | Minimum hours between two ScrapeCreators fetches of one profile (`0` = none) | `24` |
 | `WEB_ADMIN_USERNAME` | Web UI admin username | `admin` |
 | `WEB_ADMIN_PASSWORD_HASH` | Bcrypt hash for web login | `$2y$13$changeme` |
 
@@ -154,6 +155,7 @@ Instagram and Threads profiles can be fetched through the [ScrapeCreators](https
 - Permalinks have the same form RSS.app delivered (`https://www.instagram.com/p/<code>`, `https://threads.net/@<name>/post/<code>`), so a switched profile updates its existing items instead of duplicating them.
 - The stored `raw` payload is a compact summary (`provider`, `code`, `caption`, `owner`, `media[]` with direct picture/video URLs), not Instagram's full JSON. Photos and videos are downloaded straight from those URLs, without `yt-dlp` probing the permalink — this also works from the server, where Instagram itself is blocked. The URLs expire after a while and are refreshed with every fetch.
 - A profile needs no RSS.app feed while it is switched; an existing feed stays untouched.
+- A switched profile is fetched at most once per `SCRAPECREATORS_MIN_INTERVAL_HOURS` (default 24), counted from its last attempt, although the network cron runs every few minutes — otherwise 50 profiles would use about 5,000 credits a day. The "fetch now" button ignores the interval.
 
 ### RSS.app integration
 

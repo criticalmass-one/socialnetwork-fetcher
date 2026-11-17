@@ -471,6 +471,7 @@ class ProfileController extends AbstractController
         $modelProfile->setIdentifier($profile->getIdentifier());
         $modelProfile->setNetwork($profile->getNetwork()->getIdentifier());
         $modelProfile->setFetchSource($profile->isFetchSource());
+        $modelProfile->setFetchProvider($profile->getFetchProvider());
 
         $fetcher = null;
         foreach ($feedFetcher->getNetworkFetcherList() as $networkFetcher) {

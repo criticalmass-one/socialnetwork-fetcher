@@ -36,6 +36,31 @@ class FetcherTest extends TestCase
         self::assertFalse($fetcher->supports($this->makeProfile()->setFetchProvider('scrapecreators')));
     }
 
+    public function testProfileIsOnlyTakenAgainAfterTheMinimumInterval(): void
+    {
+        $fetcher = new InstagramScrapeCreatorsFeedFetcher(new NullLogger(), $this->createStub(ScrapeCreatorsInterface::class), 24);
+        $switched = fn (): Profile => $this->makeProfile()->setFetchProvider('scrapecreators');
+
+        self::assertTrue($fetcher->supports($switched()), 'never fetched');
+        self::assertFalse($fetcher->supports($switched()->setLastFetchSuccessDateTime(new \DateTimeImmutable('-2 hours'))));
+        self::assertTrue($fetcher->supports($switched()->setLastFetchSuccessDateTime(new \DateTimeImmutable('-25 hours'))));
+        // A failed attempt counts as well, otherwise a dead account is asked every run.
+        self::assertFalse($fetcher->supports(
+            $switched()
+                ->setLastFetchSuccessDateTime(new \DateTimeImmutable('-30 days'))
+                ->setLastFetchFailureDateTime(new \DateTimeImmutable('-1 hour'))
+        ));
+    }
+
+    public function testIntervalOfZeroDisablesTheThrottle(): void
+    {
+        $fetcher = new InstagramScrapeCreatorsFeedFetcher(new NullLogger(), $this->createStub(ScrapeCreatorsInterface::class), 0);
+
+        self::assertTrue($fetcher->supports(
+            $this->makeProfile()->setFetchProvider('scrapecreators')->setLastFetchSuccessDateTime(new \DateTimeImmutable('-1 minute'))
+        ));
+    }
+
     public function testFetchConvertsPostsAndSkipsBrokenOnes(): void
     {
         $api = $this->createMock(ScrapeCreatorsInterface::class);
