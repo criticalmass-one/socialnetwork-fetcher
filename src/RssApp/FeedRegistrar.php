@@ -158,6 +158,7 @@ class FeedRegistrar
         $modelProfile->setNetwork($profile->getNetwork()->getIdentifier());
         $modelProfile->setAdditionalData($profile->getAdditionalData());
         $modelProfile->setRssAppFeedId($profile->getRssAppFeedId());
+        $modelProfile->setFetchProvider($profile->getFetchProvider());
 
         $fetcher = null;
         foreach ($this->feedFetcher->getNetworkFetcherList() as $networkFetcher) {

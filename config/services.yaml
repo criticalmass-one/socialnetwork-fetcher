@@ -18,6 +18,7 @@ services:
             $rssAppApiKey: '%env(RSS_APP_API_KEY)%'
             $rssAppApiSecret: '%env(RSS_APP_API_SECRET)%'
             $scrapeCreatorsApiKey: '%env(SCRAPECREATORS_API_KEY)%'
+            $scrapeCreatorsMinIntervalHours: '%env(int:SCRAPECREATORS_MIN_INTERVAL_HOURS)%'
             $webAdminUsername: '%env(WEB_ADMIN_USERNAME)%'
             $webAdminPasswordHash: '%env(WEB_ADMIN_PASSWORD_HASH)%'
             $mediaDirectory: '%kernel.project_dir%/public/media'
