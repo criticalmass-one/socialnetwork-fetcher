@@ -57,7 +57,7 @@ abstract class Fetcher extends AbstractNetworkFeedFetcher
         }
 
         try {
-            $posts = $this->loadPosts($handle);
+            $posts = $this->loadPosts($handle, $profile);
         } catch (ScrapeCreatorsException $e) {
             $this->markAsFailed($profile, sprintf('ScrapeCreators-Fehler für %s: %s', $handle, $e->getMessage()));
 
@@ -82,7 +82,7 @@ abstract class Fetcher extends AbstractNetworkFeedFetcher
      *
      * @throws ScrapeCreatorsException
      */
-    abstract protected function loadPosts(string $handle): array;
+    abstract protected function loadPosts(string $handle, Profile $profile): array;
 
     abstract protected function convert(Profile $profile, array $post): ?Item;
 }

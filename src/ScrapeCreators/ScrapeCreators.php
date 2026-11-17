@@ -27,18 +27,48 @@ class ScrapeCreators implements ScrapeCreatorsInterface
 
     public function getInstagramPosts(string $handle): array
     {
-        return $this->request('/v2/instagram/user/posts', $handle, 'items');
+        return $this->getInstagramPostsPage($handle)->posts;
+    }
+
+    public function getInstagramPostsPage(string $handle, ?string $nextMaxId = null): PostPage
+    {
+        $query = ['handle' => $handle];
+
+        if ($nextMaxId !== null && $nextMaxId !== '') {
+            $query['next_max_id'] = $nextMaxId;
+        }
+
+        $data = $this->request('/v2/instagram/user/posts', $query);
+        $cursor = $data['next_max_id'] ?? null;
+        $more = ($data['more_available'] ?? true) !== false;
+
+        return new PostPage(
+            $this->extractList($data, 'items'),
+            $more && is_string($cursor) && $cursor !== '' ? $cursor : null,
+        );
     }
 
     public function getThreadsPosts(string $handle): array
     {
-        return $this->request('/v1/threads/user/posts', $handle, 'posts');
+        return $this->extractList($this->request('/v1/threads/user/posts', ['handle' => $handle]), 'posts');
     }
 
     /**
      * @return list<array<string, mixed>>
      */
-    private function request(string $path, string $handle, string $listKey): array
+    private function extractList(array $data, string $listKey): array
+    {
+        $list = $data[$listKey] ?? [];
+
+        return is_array($list) ? array_values(array_filter($list, 'is_array')) : [];
+    }
+
+    /**
+     * @param array<string, string> $query
+     *
+     * @return array<string, mixed>
+     */
+    private function request(string $path, array $query): array
     {
         if (!$this->isConfigured()) {
             throw new ScrapeCreatorsException('Kein API-Schlüssel gesetzt (SCRAPECREATORS_API_KEY).');
@@ -47,7 +77,7 @@ class ScrapeCreators implements ScrapeCreatorsInterface
         try {
             $response = $this->httpClient->request('GET', self::BASE_URI . $path, [
                 'headers' => ['x-api-key' => $this->scrapeCreatorsApiKey],
-                'query' => ['handle' => $handle],
+                'query' => $query,
                 'timeout' => 60,
             ]);
 
@@ -71,8 +101,6 @@ class ScrapeCreators implements ScrapeCreatorsInterface
             ));
         }
 
-        $list = $data[$listKey] ?? [];
-
-        return is_array($list) ? array_values(array_filter($list, 'is_array')) : [];
+        return $data;
     }
 }
